@@ -152,7 +152,7 @@ function cladOpts(){const L=LIB.cladding,ord=Object.keys(CLAD_DN),out=[];
   [['fc','Fibre cement'],['tb','Timber'],['br','Brick veneer'],['ot','Other']].forEach(([g,lbl])=>{const it=L.map((o,j)=>j).filter(j=>(L[j].grp||'ot')===g).sort((a,b)=>{const x=ord.indexOf(L[a].n),y=ord.indexOf(L[b].n);return(x<0?999:x)-(y<0?999:y)});
     if(!it.length)return;out.push(['§',lbl]);it.forEach(j=>out.push([j,(L[j].dn||L[j].n)+(L[j].vsrc&&/generic/.test(L[j].dn||'')?' *':'')]))});return out}
 /* wall cladding as three dropdowns: material → brand (only where there is more than one) → product. Only the product is stored */
-const CLG=[['fc','Fibre cement'],['tb','Timber'],['br','Brick veneer'],['ot','Other']],CLBR=['James Hardie','Clad Solutions','Generic'];
+const CLG=[['fc','Fibre cement'],['tb','Timber'],['br','Brick veneer'],['ot','Other']],CLBR=[...CLAD_BR,'Generic'];   /* brands from js/products.js, then Generic */
 const cladIn=(g,b)=>{const L=LIB.cladding,ord=Object.keys(CLAD_DN);return L.map((o,j)=>j).filter(j=>(L[j].grp||'ot')===g&&(b==null||L[j].brand===b)).sort((x,y)=>{const a=ord.indexOf(L[x].n),c=ord.indexOf(L[y].n);return(a<0?999:a)-(c<0?999:c)})};
 const cladBrands=g=>CLBR.filter(b=>cladIn(g,b).length);
 function cladSel(f,m){const L=LIB.cladding,o=L[m]||L[0],g=o.grp||'ot',brs=cladBrands(g),b=brs.length>1?o.brand:null;
@@ -263,13 +263,12 @@ function trussBody(o,s,ov0,F,depth,row,f,mv,fr,cvr,on,x,i,num,tR){const gn=group
     bar=`<div class="v6wr"><div class="v6wrb"><i style="width:${(F.f*100).toFixed(1)}%"></i><i></i></div><div class="v6wrl"><span><b>Through the timber ${pc(F.f)}</b> · R${r2(t0+sh)} <em>(chord ${depth} mm ${r2(tR)}${two&&t0-tR>.005?' + '+r2(t0-tR):''}${sh?' + '+r2(sh):''})</em></span><span><b>Through the insulation ${pc(1-F.f)}</b> · R${r2(t1+sh)}${sh?` <em>(${r2(t1)} + ${r2(sh)})</em>`:''}</span></div>
     ${gn?'<p class="lsub">This layer’s own paths — the combined value is below.</p>':`<p class="lsub">Bridged portion (2.1.3.2) — the two paths in parallel: R${r2(row.r)}</p>`}</div>`}
   return `<div class="v6fb v6wall">${frame}${ins}${bar}${gn}</div>`}
-/* Pink® Batts® declared values — Product Guide (March 2023). [name, R, thickness mm, width mm, note] */
-const PB_CEIL=[['Pink® Batts® Classic',1.8,95,432],['Pink® Batts® Classic',2.2,115,432],['Pink® Batts® R2.6C',2.6,110,432,'two'],['Pink® Batts® Classic',2.6,140,432],
-  ['Pink® Batts® Ceiling Retrofit',2.9,150,432],['Pink® Batts® R3.0C',3.0,160,432,'two'],['Pink® Batts® Classic',3.2,170,432],['Pink® Batts® Ceiling Retrofit',3.3,175,432],
-  ['Pink® Batts® Classic',3.6,180,432],['Pink® Batts® Ultra®',4.0,195,432],['Pink® Superbatts®',4.5,210,460],['Pink® Superbatts®',5.0,225,460],['Pink® Superbatts®',6.0,245,460],['Pink® Superbatts®',7.0,275,460]];
-const PB_SKILL=[['Pink® Superbatts®',1.0,40,580],['Pink® Batts® Skillion',3.2,115,432],['Pink® Batts® Skillion',3.6,165,432],['Pink® Batts® Skillion',4.5,165,432],
-  ['Pink® Superbatts®',5.0,180,560],['Pink® Superbatts®',6.0,230,560],['Pink® Superbatts®',7.4,275,560]];
-const PB_SRC='Pink® Batts® declared values — Pink® Batts® Product Guide (March 2023); BRANZ Appraisal 238 (ceiling) / 767 (skillion).';
+/* insulation products: js/products.js. [name, R, thickness mm, width mm, note, brand] */
+/* listed by R-value, then thickness — never by brand or file order (the listing rules on for-manufacturers.html) */
+const RPI=window.RVC_PRODUCTS.insulation,pbT=L=>L.slice().sort((a,b)=>a.r-b.r||a.t-b.t).map(p=>[p.name,p.r,p.t,p.w,p.note,p.brand]);
+const PB_CEIL=pbT(RPI.ceiling),PB_SKILL=pbT(RPI.skillion);
+/* a list's heading and source line name the brands in it */
+const brandsOf=L=>[...new Set(L.map(p=>p[5]))],pbHead=L=>'Insulation · '+brandsOf(L).join(' · '),pbSrc=L=>brandsOf(L).map(b=>RPI.sources[b]||b+' declared values.').join(' ');
 const pbList=m=>m==='chord'?PB_CEIL:m==='rafter'?PB_SKILL:null;
 /* one product row: R · thickness · width, name, chips */
 const pbRow=(p,chips,max)=>`<button class="prow2 v6pr" data-a="prod" data-r="${p[1]}" data-t="${p[2]}" data-n="${esc(p[0])}"><b>R${p[1].toFixed(1)} · ${max?'max ':''}${p[2]} mm</b><em>${esc(p[0])} · ${p[3]} mm wide${p[4]==='two'?'<br>Two-layer system with Superbatts®':''}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`;
@@ -341,21 +340,21 @@ function slotLabel(c,id){const s=(tpl(c).slots||[]).find(s=>s.id===id);return s?
 function prodCard(c){const t=tpl(c),ovr=isStrat(c)&&S.af==='over'&&(t.slots||[]).find(x=>x.id==='over'),s=ovr||(!t.manual&&(t.slots||[]).find(x=>x.id===S.af&&x.k==='frame'));
   if(ovr){const v=c.v.over||{},sel=(r,th)=>Math.abs((+v.r||0)-r)<1e-9&&+v.t===th;
     const cov=!!(c.v.fr||{}).cover,rows=PB_CEIL.map(p=>{const ch=[];if(sel(p[1],p[2]))ch.push('<i class="pchip on">Selected</i>');if(cov&&p[3]===460)ch.push('<i class="pchip fit">Suits covering the chords</i>');return pbRow(p,ch)}).join('');
-    return `<div class="card prodcard"><div class="prod-hd"><h2>Insulation · Pink® Batts®</h2><p>Click a product to fill ${esc(ovr.label.toLowerCase())} — R-value and thickness together.</p></div><div class="prodscroll">${rows}</div><div class="prodsrc">${PB_SRC} Fills the selected layer only.</div></div>`}
-  const hd=`<div class="prod-hd"><h2>Insulation · Pink® Batts®</h2><p>${s?`Click a product to fill ${esc(s.label.toLowerCase())} — R-value and thickness together.`:'Select a framing layer to fill it from this list.'}</p></div>`;
+    return `<div class="card prodcard"><div class="prod-hd"><h2>${esc(pbHead(PB_CEIL))}</h2><p>Click a product to fill ${esc(ovr.label.toLowerCase())} — R-value and thickness together.</p></div><div class="prodscroll">${rows}</div><div class="prodsrc">${esc(pbSrc(PB_CEIL))} Fills the selected layer only.</div></div>`}
+  const PLh=s?pbList(s.member):null,hd=`<div class="prod-hd"><h2>${esc(PLh?pbHead(PLh):'Insulation · '+RPI.byMember.brand)}</h2><p>${s?`Click a product to fill ${esc(s.label.toLowerCase())} — R-value and thickness together.`:'Select a framing layer to fill it from this list.'}</p></div>`;
   if(!s)return `<div class="card prodcard">${hd}</div>`;
   const v=c.v[s.id]||{},depth=+v.d||MEMBER[s.member].d,L=PROD[s.member]||[];
   const sk=XP&&s.id==='fr'?XP.suggKey(c):null,PL=pbList(s.member);
   if(PL){const cov=s.member==='chord'&&!!v.cover;const rows=PL.map(p=>{const r=p[1],th=p[2],chips=[];if(Math.abs((+v.insR||0)-r)<1e-9&&+v.insT===th)chips.push('<i class="pchip on">Selected</i>');if(sk===r+'@'+th)chips.push('<i class="pchip sugg">Suggested</i>');
       if(th===depth)chips.push(`<i class="pchip fit">Fills a ${depth} mm ${MEMBER[s.member].name.toLowerCase().replace(/s$/,'')}</i>`);else if(th>depth&&!s.cover)chips.push('<i class="pchip squash">Compressed in this depth</i>');
       if(cov&&p[3]===460)chips.push('<i class="pchip fit">Suits covering the chords</i>');return pbRow(p,chips,s.member==='rafter')}).join('');
-    return `<div class="card prodcard">${hd}<div class="prodscroll">${rows}</div><div class="prodsrc">${PB_SRC} Fills the selected framing layer only.</div></div>`}
+    return `<div class="card prodcard">${hd}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(pbSrc(PL))} Fills the selected framing layer only.</div></div>`}
   const rows=L.map(([r,th])=>{const chips=[];if(Math.abs((+v.insR||0)-r)<1e-9&&+v.insT===th)chips.push('<i class="pchip on">Selected</i>');if(sk===r+'@'+th)chips.push('<i class="pchip sugg">Suggested</i>');
     if(th===depth)chips.push(`<i class="pchip fit">Fills a ${depth} mm ${MEMBER[s.member].name.toLowerCase().replace(/s$/,'')}</i>`);
     /* members that let insulation rise above them (truss chords) never compress it — whether it is counted over the chords is a separate choice */
     else if(th>depth&&!s.cover)chips.push('<i class="pchip squash">Compressed in this depth</i>');
     return `<button class="prow2 v6pr" data-a="prod" data-r="${r}" data-t="${th}"><b>R${r.toFixed(1)} · ${th} mm</b><em>${esc(MEMBER[s.member].name)}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`}).join('');
-  return `<div class="card prodcard">${hd}<div class="prodscroll">${rows||'<div class="pgrp">No products listed for this member — enter the R-value.</div>'}</div><div class="prodsrc">Pink® Batts® declared product values. Fills the selected framing layer only.</div></div>`}
+  return `<div class="card prodcard">${hd}<div class="prodscroll">${rows||'<div class="pgrp">No products listed for this member — enter the R-value.</div>'}</div><div class="prodsrc">${esc(RPI.byMember.brand)} declared product values. Fills the selected framing layer only.</div></div>`}
 /* ---------- render ---------- */
 /* ---------- Open project ---------- */
 let PEND=null;
@@ -431,7 +430,7 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
     c.kind=raw;const back=c.vk[raw];
     frs(raw).forEach(s=>{if(back&&back[s.id]){c.v[s.id]=JSON.parse(JSON.stringify(back[s.id]));return}
       const d=MEMBER[s.member],SK=s.member==='rafter'?PB_SKILL.filter(p=>/Skillion/.test(p[0])&&p[2]<=d.d).map(p=>[p[1],p[2],p[0]]):null,L=SK||(PROD[s.member]||[]).filter(([,t])=>t<=d.d),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;   /* skillion: the highest-R Pink® Batts® Skillion that fits */
-      c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:b?b[0]:null,insT:b?b[1]:null,gap:0,cover:false,prod:b?(b[2]||'Pink® Batts®'):''},d.dw?{dw:d.dw}:{},c.el==='roof'&&s.id==='st'?{d:35,w:70,s:450,lock:true}:{})});
+      c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:b?b[0]:null,insT:b?b[1]:null,gap:0,cover:false,prod:b?(b[2]||RPI.byMember.brand):''},d.dw?{dw:d.dw}:{},c.el==='roof'&&s.id==='st'?{d:35,w:70,s:450,lock:true}:{})});
     retype(c);return}
   if(path==='v.slab.sF'){const sv=c.v.slab=c.v.slab||{};sv.sF=raw;if(raw==='raft')sv.sU='none';return}
   if(path.startsWith('v.slab.parts.')){const [,,,i,k]=path.split('.'),sv=c.v.slab=c.v.slab||{};sv.parts=sv.parts||[];const pt=sv.parts[+i]=sv.parts[+i]||{};pt[k]=k==='len'?(raw===''?'':parseFloat(raw)):raw;return}
@@ -502,7 +501,7 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   else if(a==='gapauto'){const o=c.v[v];if(o)o.gapMan=false}
   else if(a==='fedit'){const k=c.id+':'+v;FEDIT.has(k)?FEDIT.delete(k):FEDIT.add(k)}
   else if(a==='unlock'){UNL.add(c.id+':'+v)}
-  else if(a==='prod'){const s=c.v[S.af];if(!s)return;if(S.af==='over'){s.r=+b.dataset.r;s.t=+b.dataset.t;s.on=true}else{s.insR=+b.dataset.r;s.insT=+b.dataset.t}s.prod=b.dataset.n||'Pink® Batts®'}
+  else if(a==='prod'){const s=c.v[S.af];if(!s)return;if(S.af==='over'){s.r=+b.dataset.r;s.t=+b.dataset.t;s.on=true}else{s.insR=+b.dataset.r;s.insT=+b.dataset.t}s.prod=b.dataset.n||RPI.byMember.brand}
   else if(a==='pdf'){openPdf();return}
   else if(a==='pnew'){npOpen();return}
   else if(a==='np'){npAct(v);return}

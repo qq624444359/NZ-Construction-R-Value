@@ -24,6 +24,8 @@ const D={se:0.03,si:0.09,vent:0.08,roofSpace:0.11,kTimber:0.12,wallH:2400,plate:
 const PBSRC="Convention value — to be confirmed with Winstone GIB data";
 const PB=(n,mm,r,x)=>Object.assign({n,r,t:mm,pr:1},x||{});
 const M=(n,r,x)=>Object.assign({n,r},x||{}), K=(n,mm,k,x)=>M(n,+(mm/1000/k).toFixed(3),Object.assign({t:mm,k},x||{}));
+/* manufacturer products: js/products.js (data only) */
+const RP=(typeof window!=='undefined'?window:globalThis).RVC_PRODUCTS;
 const LIB={
   cladding:[M('None (cladding is part of the insulation system)',0),M('None — faces outside air',0),
     M('None — faces still indoor air (garage, roof space)',0,{still:1}),
@@ -32,10 +34,8 @@ const LIB={
     K('Brick veneer 70 mm',70,1.2),K('Brick veneer 90 mm',90,1.2),K('AAC panel 50 mm',50,.16),K('AAC panel 75 mm',75,.16),
     M('Metal sheet or aluminium weatherboard',0),K('Plaster / stucco 20 mm',20,.9),
     PB('Plasterboard 10 mm into still air (garage)',10,0.04,{still:1}),PB('Plasterboard 13 mm into still air (garage)',13,0.06,{still:1}),K('Vertical timber board 18 mm',18,.12),
-    /* named products used by the House Guide: fibre cement k 0.25 as for the generic boards; thickness and R to be confirmed with the manufacturer */
-    K('James Hardie Linea Weatherboard 16 mm',16,.25,{vsrc:'Value to be confirmed with the manufacturer'}),K('James Hardie Stria Cladding 14 mm',14,.25,{vsrc:'Value to be confirmed with the manufacturer'}),K('James Hardie Axon Panel 9 mm',9,.25,{vsrc:'Value to be confirmed with the manufacturer'}),
-    K('James Hardie Oblique Weatherboard 14 mm',14,.25,{vsrc:'Value to be confirmed with the manufacturer'}),K('James Hardie HardieFlex sheet 6 mm',6,.25,{vsrc:'Value to be confirmed with the manufacturer'}),
-    K('Clad Solutions Shera Weatherboard Cavity Cladding 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'}),K('Clad Solutions Shera Shiplap Vertical Weatherboard 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'}),
+    /* named products: js/products.js */
+    ...RP.cladding.map(p=>K(p.n,p.t,p.k,p.src?{vsrc:p.src}:{})),
     /* profiles without their own data: same material and generic thickness, k as above */
     K('Timber bevelback weatherboard 18 mm',18,.12,{vsrc:'Value to be confirmed with the manufacturer'}),K('Fibre cement weatherboard horizontal 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'}),
     K('Fibre cement vertical 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'}),K('Fibre cement bevelback 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'})],
@@ -63,22 +63,22 @@ const LIB={
   gap:[M('None',0),M('Still air gap 12 mm, non-reflective',.15),M('Still air gap 20–90 mm, non-reflective',.16)]
 };
 LIB.ceiling=LIB.lining;
-/* wall cladding as shown to the designer: category first, brand and product in brackets. Display only — n and the saved ids stay. [group, display] */
-const CLAD_DN={
-  'James Hardie Linea Weatherboard 16 mm':['fc','Weatherboard — horizontal (James Hardie Linea, 16 mm)'],'James Hardie Oblique Weatherboard 14 mm':['fc','Weatherboard — horizontal (James Hardie Oblique, 14 mm)'],
-  'James Hardie Stria Cladding 14 mm':['fc','Weatherboard — horizontal (James Hardie Stria, 14 mm)'],'Clad Solutions Shera Weatherboard Cavity Cladding 7.5 mm':['fc','Weatherboard — horizontal (Clad Solutions Shera Weatherboard Cavity Cladding, 7.5 mm)'],
+/* wall cladding as shown to the designer: category first, brand and product in brackets. Display only — n and the saved ids stay. [group, display]
+   Generic entries here; each product from js/products.js goes just before the generic entry of the same kind ("Weatherboard — horizontal", …), in its file order */
+const CLAD_DN=(G=>{const kind=d=>d.split(' (')[0],out={},put=new Set(),add=p=>{out[p.n]=[p.group,p.display];put.add(p.n)};
+  Object.entries(G).forEach(([n,v])=>{RP.cladding.forEach(p=>{if(!put.has(p.n)&&p.group===v[0]&&kind(p.display)===kind(v[1]))add(p)});out[n]=v});
+  RP.cladding.forEach(p=>{if(!put.has(p.n))add(p)});return out})({
   'Fibre cement weatherboard horizontal 7.5 mm':['fc','Weatherboard — horizontal (generic, 7.5 mm)'],'Fibre cement bevelback 7.5 mm':['fc','Bevelback weatherboard (generic, 7.5 mm)'],
-  'Clad Solutions Shera Shiplap Vertical Weatherboard 7.5 mm':['fc','Board — vertical (Clad Solutions Shera Shiplap Vertical, 7.5 mm)'],'Fibre cement vertical 7.5 mm':['fc','Board — vertical (generic, 7.5 mm)'],
-  'James Hardie Axon Panel 9 mm':['fc','Sheet / panel (James Hardie Axon, 9 mm)'],'James Hardie HardieFlex sheet 6 mm':['fc','Sheet / panel (James Hardie HardieFlex, 6 mm)'],
+  'Fibre cement vertical 7.5 mm':['fc','Board — vertical (generic, 7.5 mm)'],
   'Fibre cement 6 mm':['fc','Sheet / panel (generic, 6 mm)'],'Fibre cement 7.5 mm':['fc','Sheet / panel (generic, 7.5 mm)'],'Fibre cement 9 mm':['fc','Sheet / panel (generic, 9 mm)'],'Fibre cement 14 mm':['fc','Sheet / panel (generic, 14 mm)'],
   'Timber weatherboard 18 mm':['tb','Weatherboard — horizontal (generic, 18 mm)'],'Timber bevelback weatherboard 18 mm':['tb','Bevelback weatherboard (generic, 18 mm)'],'Vertical timber board 18 mm':['tb','Board — vertical (generic, 18 mm)'],
   'Plywood 9 mm':['tb','Sheet / panel (plywood, 9 mm)'],'Plywood 12 mm':['tb','Sheet / panel (plywood, 12 mm)'],
   'Brick veneer 70 mm':['br','Brick veneer (70 mm)'],'Brick veneer 90 mm':['br','Brick veneer (90 mm)'],'AAC panel 50 mm':['ot','AAC panel (50 mm)'],'AAC panel 75 mm':['ot','AAC panel (75 mm)'],
   'Metal sheet or aluminium weatherboard':['ot','Metal sheet or aluminium weatherboard'],'Plaster / stucco 20 mm':['ot','Plaster / stucco (20 mm)'],
   'Plasterboard 10 mm into still air (garage)':['ot','Plasterboard into still air — garage side (10 mm)'],'Plasterboard 13 mm into still air (garage)':['ot','Plasterboard into still air — garage side (13 mm)'],
-  'None — faces still indoor air (garage, roof space)':['ot','None — faces still indoor air (garage, roof space)'],'None — faces outside air':['ot','None — faces outside air'],'None (cladding is part of the insulation system)':['ot','None (cladding is part of the insulation system)']};
+  'None — faces still indoor air (garage, roof space)':['ot','None — faces still indoor air (garage, roof space)'],'None — faces outside air':['ot','None — faces outside air'],'None (cladding is part of the insulation system)':['ot','None (cladding is part of the insulation system)']});
 /* brand for the second dropdown, read from the display name; products without one are Generic */
-const CLAD_BR=['James Hardie','Clad Solutions'];
+const CLAD_BR=[...new Set(RP.cladding.map(p=>p.brand))];   /* brands in js/products.js order */
 LIB.cladding.forEach(o=>{const d=CLAD_DN[o.n];if(d){o.grp=d[0];o.dn=d[1]}o.brand=CLAD_BR.find(b=>(o.dn||'').includes('('+b+' '))||'Generic';
   o.pn=(o.dn||o.n).replace('('+o.brand+' ','(').replace('(generic, ','(')});
 /* ---------- saved projects store each choice by a fixed material id, not its place in the list ----------
@@ -107,9 +107,8 @@ function fromSaved0(list,fmt){return(list||[]).map(c=>{if(c&&c.el==='roof'&&c.v&
     if(k==null&&typeof v[f]==='number')k=idAt(lib,v[f]);const i=LIB[lib].findIndex(o=>o.id===k);
     /* a saved choice that is no longer in this slot's list (an intertenancy wall saved with a cladding entry) is kept as it was */
     if(i<0&&k){const lm=Object.keys(LIB).map(n=>LIB[n].find(o=>o.id===k)).find(Boolean);if(lm){v.lm=Object.assign({},lm);v[f]=-1;return}}v[f]=i<0?0:i});return c})}
-const PROD={stud:[[2.2,90],[2.4,90],[2.6,90],[2.8,90],[3.2,140],[3.6,140],[4.0,140],[4.3,140]],
-  chord:[[1.8,95],[2.2,115],[2.6,110],[2.6,140],[3.0,160],[3.2,170],[3.6,180]],
-  rafter:[[2.6,110],[3.0,160],[3.2,170],[3.6,180]],joist:[[1.8,95],[2.6,110],[3.2,170],[3.6,180]],batten:[]};
+/* insulation R · thickness offered for each framing member: js/products.js */
+const PROD=Object.fromEntries(Object.entries(RP.insulation.byMember).filter(([k])=>k!=='brand').map(([k,L])=>[k,L.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1])]));   /* by R, then thickness */
 const MEMBER={stud:{d:90,w:45,s:600,dw:800,name:'Studs'},chord:{d:90,w:45,s:900,name:'Truss bottom chords'},rafter:{d:190,w:45,s:600,name:'Rafters'},
   joist:{d:190,w:45,s:400,name:'Joists'},batten:{d:35,w:45,s:600,name:'Battens'}};
 

@@ -91,7 +91,7 @@ function optionsOf(c){
   const v=c.v.fr||{},depth=+v.d||MEMBER[s.member].d;
   /* only products that suit the frame depth: at least 70% of it (a 190 stud takes 140 mm or thicker), unless nothing does */
   const fitL=(PROD[s.member]||[]).filter(([,th])=>th<=depth||(s.cover&&v.cover)),suit=fitL.filter(([,th])=>th>=0.7*depth),use=suit.length?suit:fitL;
-  return use.map(([r,th])=>({key:r+'@'+th,label:'R'+r.toFixed(1)+' · '+th+' mm'+(th<depth-1?' · leaves a '+(depth-th)+' mm air gap':''),r,th,cost:COST(r),apply:q=>{q.v.fr=Object.assign({},q.v.fr,{insR:r,insT:th,prod:'Pink® Batts®'})}}))}
+  return use.map(([r,th])=>({key:r+'@'+th,label:'R'+r.toFixed(1)+' · '+th+' mm'+(th<depth-1?' · leaves a '+(depth-th)+' mm air gap':''),r,th,cost:COST(r),apply:q=>{q.v.fr=Object.assign({},q.v.fr,{insR:r,insT:th,prod:window.RVC_PRODUCTS.insulation.byMember.brand})}}))}
 function curKey(c){if(isStrat(c)){const fr=c.v.fr||{},ov=OV(c);const o=ROOFOPT.find(o=>+fr.insR===o.fr[0]&&+fr.insT===o.fr[1]&&(+ov.r||0)===o.ov[0]&&(+ov.t||0)===o.ov[1]);return o?o.key:'custom'}
   const v=c.v.fr||{};return(+v.insR)+'@'+(+v.insT)}
 /* R of a (possibly modified) construction: whole / field, and the ceiling perimeter part */
