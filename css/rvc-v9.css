@@ -1,0 +1,60 @@
+/* v10 — locked truss size, fractions inside the path cards, section + Pink® Batts® table floating together */
+/* truss size: one locked value, or two rows on Custom */
+.rodisp{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 11px;border-radius:9px;background:var(--bg-el);border:1px solid var(--border)}
+.rodisp b{font:700 13.5px/1 'JetBrains Mono',monospace;color:var(--text)}
+.rodisp .ms{font-size:14px;color:var(--text-3)}
+.rodisp.empty b{color:var(--text-3)}
+.minibtn{padding:0 10px;height:34px;border-radius:9px;background:transparent;border:1px solid var(--border);font:600 11.5px/1 Inter;color:var(--text-2);cursor:pointer}
+.minibtn:hover{border-color:var(--brand);color:var(--brand-on)}
+.minibtn.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.fhdctl .trussg.open{display:block;flex:1 1 100%;max-width:640px}
+.trussg.open>.glbl{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.trussg.open>.glbl .minibtn{height:26px;letter-spacing:0;text-transform:none}
+.trussrows{display:flex;flex-direction:column;gap:9px}
+.trow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.trow .tl{width:104px;font:600 12px/1.3 Inter;color:var(--text-2)}
+.trow .ib{width:74px}
+.trow .ib em{display:none}
+.trow .gx,.trow .unit{line-height:34px}
+.trow em{font:500 11px/1.4 Inter;color:var(--text-3);font-style:normal}
+.lockwarn{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:10px;padding:9px 11px;border-radius:10px;background:var(--review-soft);border:1px solid rgba(245,158,11,.4);font:500 11.5px/1.5 Inter;color:var(--review-on)}
+.lockwarn>span:nth-child(2){flex:1;min-width:180px}
+.lockwarn .ms{color:var(--review-on)}
+/* the fraction now lives in the path card it describes */
+.fcalcbig{margin-top:10px;padding-top:9px;border-top:1px dashed var(--hairline);display:flex;flex-direction:column;gap:4px}
+.fcalcbig .fx{font:500 11.5px/1.4 'JetBrains Mono',monospace;color:var(--text-3)}
+.fcalcbig b{font:800 17px/1.1 'JetBrains Mono',monospace;color:var(--brand-on);letter-spacing:-.02em}
+.pitem .pih .lr{font:700 13px/1 'JetBrains Mono',monospace;color:var(--text-3)}
+.pitem .pmeta{margin-top:4px}
+/* insulation slots */
+.frow.slots{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:flex-start}
+.fgrp.slot{display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+.fgrp.slot .ginputs{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fgrp.slot .glbl{display:flex;align-items:center;gap:7px}
+.cchip{font:700 9.5px/1.7 Inter;letter-spacing:.07em;text-transform:uppercase;padding:0 6px;border-radius:999px;background:var(--review-soft);border:1px solid rgba(245,158,11,.45);color:var(--review-on);font-style:normal}
+.fgrp.slot .fcalc{min-height:14px}
+.flashfg{animation:flashfg 1.5s ease-out 1}
+@keyframes flashfg{0%,50%{background:var(--brand-soft);box-shadow:0 0 0 6px var(--brand-soft)}100%{background:transparent;box-shadow:none}}
+.lowerwarn{display:flex;gap:8px;align-items:flex-start;flex-basis:100%;margin-top:2px;padding:9px 11px;border-radius:9px;background:var(--review-soft);border:1px solid rgba(245,158,11,.32);font:500 11.5px/1.55 Inter;color:var(--review-on)}
+.lowerwarn .ms{color:var(--review-on)}
+/* right column: section + product table in one floating stack, never taller than the viewport */
+.stickyside{position:sticky;top:88px;margin-top:16px;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 104px);min-height:0;z-index:3}
+.secpanel{position:static!important;margin-top:0;flex:0 0 auto}
+.secpanel svg{height:300px}
+.prodcard{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.prodcard .prod-hd{padding:13px 16px 8px;flex:0 0 auto}
+.prodcard .prod-hd h2{font:700 14.5px/1.25 Inter;color:var(--text)}
+.prodcard .prod-hd p{margin-top:4px;font:500 11.5px/1.5 Inter;color:var(--text-3)}
+.prodscroll{overflow:auto;min-height:60px;padding:0 10px 6px;display:flex;flex-direction:column;gap:5px}
+.prodscroll .pgrp{position:sticky;top:0;background:var(--surface);padding:7px 4px 5px;font:800 10px/1.4 Inter;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);z-index:1}
+.prow2{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:8px 11px;border-radius:10px;background:var(--surface-2);border:1px solid var(--hairline);cursor:pointer;text-align:left}
+.prow2:hover{border-color:var(--brand)}
+.prow2 .pl{display:flex;align-items:baseline;gap:9px;min-width:0}
+.prow2 .pl b{font:700 12.5px/1.2 'JetBrains Mono',monospace;color:var(--text);white-space:nowrap}
+.prow2 .pl em{font:500 10.5px/1.3 Inter;color:var(--text-3);font-style:normal;white-space:nowrap}
+.prow2 .pchips{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.pchip{font:700 9.5px/1.8 Inter;letter-spacing:.06em;text-transform:uppercase;padding:0 7px;border-radius:999px;font-style:normal;white-space:nowrap}
+.pchip.on{background:var(--brand);color:#fff}
+.pchip.fit{background:var(--timber-soft);border:1px solid var(--timber-accent);color:var(--timber-on)}
+.prodsrc{flex:0 0 auto;padding:9px 16px 13px;border-top:1px solid var(--hairline);font:500 10.5px/1.5 Inter;color:var(--text-3);text-wrap:pretty}
+@media (max-width:1100px){.stickyside{position:static;max-height:none}.prodscroll{max-height:340px}}

@@ -1,0 +1,21 @@
+name: Feature request
+description: Ask for a construction type, material, check or anything else the calculator should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like the calculator to do?
+      placeholder: e.g. Add a steel-framed wall; add James Hardie Linea 21 mm as a cladding
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why — what are you working on?
+      description: The job or drawing this comes up in helps decide how it should work.
+  - type: textarea
+    id: refs
+    attributes:
+      label: Clauses, tables or product data
+      description: H1/AS1 paragraphs, NZS 4214 clauses, manufacturer data sheets or BRANZ references that apply.

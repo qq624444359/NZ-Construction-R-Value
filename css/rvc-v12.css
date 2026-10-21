@@ -1,0 +1,157 @@
+/* round 15 — choosing a product: the table rises, the section folds to a live strip */
+.secpanel.choosing{overflow:hidden}
+.secpanel.choosing .sechd,.secpanel.choosing .secfoot{display:none}
+.secpanel.choosing .svgwrap{height:120px;padding:0;overflow:hidden}
+.secpanel.choosing .es-thumb{height:100%}
+.secpanel .es-thumb svg.eaves-section.x{display:none}
+.secpanel.choosing .es-thumb svg.eaves-section{height:120px!important;max-height:none;aspect-ratio:auto!important;width:100%}
+.stickyside.choosing{max-height:none}
+.stickyside.choosing .prodcard{height:calc(100vh - 88px - 120px - 30px);flex:0 0 auto}
+.prodcard .flipin{display:flex;flex-direction:column;min-height:0;height:100%}
+.prodcard.choose .chd{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 16px 10px;border-bottom:1px solid var(--hairline)}
+.prodcard.choose .chd h2{font:800 16px/1.25 Inter;color:var(--text)}
+.prodcard.choose .chd p{margin-top:3px;font:500 12px/1.5 Inter;color:var(--text-3)}
+.srcchip{flex:none;font:600 10.5px/1 Inter;color:var(--text-3);padding:5px 8px;border-radius:999px;border:1px solid var(--border)}
+.prodcard.choose .prodscroll{flex:1 1 auto;padding-top:4px}
+.prow2.cur{border-color:var(--brand);background:var(--surface-3)}
+.prow2.none{cursor:default;border-style:dashed;background:transparent}
+.prow2.none b{color:var(--text-3)!important}
+.prow2.picked{border-left:3px solid var(--brand)}
+.pchip.squash{background:var(--review-soft);border:1px solid var(--review);color:var(--review-on,var(--review-on-soft))}
+.cfoot{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px 12px 16px;border-top:1px solid var(--hairline);font:500 11px/1.4 Inter;color:var(--text-3)}
+.donebtn{font:700 12.5px/1 Inter;color:#fff;background:var(--brand);border:0;border-radius:9px;padding:9px 16px;cursor:pointer}
+.donebtn:hover{background:var(--brand-h)}
+/* left column: the row being filled holds the brand edge, the rest step back */
+#stack.choosing .irow{transition:opacity .2s cubic-bezier(.2,.8,.2,1)}
+#stack.choosing .irow:not(.choosing){opacity:.6}
+.irow.choosing{border-color:var(--brand)!important;border-left-color:var(--brand)!important;box-shadow:0 0 0 1px var(--brand)}
+.irow.previewing .ipr{color:var(--text-3);font-style:italic}
+/* hover preview in the strip */
+.eaves-section g.pv{opacity:.6}
+/* rows arrive one after another, first twelve only */
+@keyframes rowin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.prodcard.enter .prow2.st{animation:rowin 240ms cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(300ms + var(--i)*25ms)}
+/* beam + flying value */
+.beamov{position:fixed;inset:0;pointer-events:none;z-index:60}
+.beamov svg{position:absolute;inset:0;overflow:visible}
+.beamov path{fill:none;stroke:var(--brand);stroke-width:2;stroke-linecap:round}
+.beamdot{position:absolute;left:0;top:0;width:9px;height:9px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--brand);filter:drop-shadow(0 0 6px var(--brand));offset-rotate:0deg;offset-anchor:center}
+.flyval{position:fixed;z-index:61;pointer-events:none;font:700 13px/1.3 'JetBrains Mono',monospace;color:var(--brand-on,var(--brand));background:var(--surface);padding:0 4px;border-radius:5px;box-shadow:0 0 0 1px var(--brand);transform-origin:right center;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.prodcard.enter .prow2.st{animation:none}#stack.choosing .irow{transition:none}}
+/* ④ ⑤ framing blocks: no warm left edge, same 1px border as the rest */
+.flayer{border-left:1px solid var(--hairline)}
+.row-hl.flayer{border-left-color:var(--brand)!important}
+/* insulation rows: R-value and thickness lead */
+.irow .ipr{display:flex;align-items:baseline;gap:2px;white-space:nowrap;font-family:'JetBrains Mono',monospace}
+.irow .ipr .rv{font:800 16px/1.1 'JetBrains Mono',monospace;color:var(--text)}
+.irow .ipr .th{font:700 14px/1.1 'JetBrains Mono',monospace;color:var(--text)}
+.irow .ipr .dot{color:var(--text-3);font-size:13px}
+.irow .ipr .ex{font:500 11.5px/1 'JetBrains Mono',monospace;color:var(--text-3);margin-left:2px}
+.irow .inm{font-weight:600;color:var(--text-2)}
+.irow.previewing .ipr .rv,.irow.previewing .ipr .th{color:var(--text-3);font-style:italic}
+/* wall section (js/wall-section.js) — same tokens as the eaves section */
+.wall-section{--ink:var(--text);--ink-3:var(--text-3);--timber:var(--mat-timber);--timber-beyond:color-mix(in oklch,var(--mat-timber) 30%,transparent);--lining:var(--text-2);--insulation:var(--mat-insul-line);--air:var(--brand);font-family:Inter,sans-serif}
+.wall-section { width: 100%; height: auto; display: block; }
+.wall-section .cut { stroke: var(--ink); stroke-width: 3; }
+.wall-section .timber { fill: var(--timber); }
+.wall-section .cut.x { fill: var(--timber); }
+.wall-section .beyond { fill: var(--timber-beyond); stroke: var(--timber); stroke-width: 2; stroke-dasharray: 10 8; }
+.wall-section .cut.lining, .wall-section .cut.ply { fill: var(--lining); stroke-width: 2; }
+.wall-section .cut.ply { fill: var(--timber); }
+.wall-section .insulation { stroke: var(--insulation); stroke-width: 3; }
+.wall-section .batt { fill: none; stroke: var(--insulation); stroke-width: 4; }
+.wall-section .beyond-outline { fill: none; stroke: var(--timber); stroke-width: 3; stroke-dasharray: 14 10; }
+.wall-section .air-fill { fill: var(--air); fill-opacity: .08; stroke: none; }
+.wall-section .squashed { fill: #ff6b3d; fill-opacity: .18; stroke: none; }
+.wall-section .underlay { fill: none; stroke: var(--ink); stroke-width: 3; stroke-dasharray: 18 10; }
+.wall-section .hidden { fill: none; stroke: var(--ink); stroke-width: 2; stroke-dasharray: 12 8; }
+.wall-section .break { fill: none; stroke: var(--ink-3); stroke-width: 2; }
+.wall-section .leader { fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
+.wall-section .leader-dot { fill: var(--ink-3); }
+.wall-section .label { fill: var(--ink); font-size: 40px; }
+.wall-section .caption { fill: var(--ink-3); font-size: 34px; letter-spacing: 4px; }
+.secpanel .svgwrap svg.wall-section{width:100%;height:auto;max-height:660px}
+.wall-section text{paint-order:stroke;stroke:var(--surface);stroke-width:10px;stroke-linejoin:round}
+.wall-section [data-layer]{transition:opacity .16s;cursor:pointer}
+.wall-section.es-dim [data-layer]{opacity:.4}
+.wall-section.es-dim [data-layer].hl{opacity:1}
+.wall-section [data-layer].hl polygon,.wall-section [data-layer].hl polyline{stroke:var(--brand);stroke-width:2px;vector-effect:non-scaling-stroke}
+.secpanel.choosing .es-thumb svg.wall-section{height:120px!important;max-height:none;width:100%}
+.wallins{margin-top:10px}
+.insnote{display:flex;align-items:center;gap:6px;margin-top:6px;font:600 12px/1.4 Inter;color:var(--text-2);transition:opacity .4s}
+.insnote.out{opacity:0}
+.pempty{padding:14px 4px;font:500 12.5px/1.5 Inter;color:var(--text-3)}
+/* section drawing at 70% — centred in its panel */
+.secpanel:not(.choosing) .es-thumb{display:flex;justify-content:center}
+.secpanel:not(.choosing) .es-thumb svg.eaves-section,.secpanel:not(.choosing) .es-thumb svg.wall-section{width:70%!important;max-height:462px!important}
+/* floor section (js/floor-section.js) */
+.floor-section{--ink:var(--text);--ink-3:var(--text-3);--timber:var(--mat-timber);--timber-beyond:color-mix(in oklch,var(--mat-timber) 30%,transparent);--lining:var(--text-2);--insulation:var(--mat-insul-line);--air:var(--brand);font-family:Inter,sans-serif}
+.floor-section { width: 100%; height: auto; display: block; }
+.floor-section .cut { stroke: var(--ink); stroke-width: 3; }
+.floor-section .timber { fill: var(--timber); }
+.floor-section .cut.x { fill: var(--timber); }
+.floor-section .beyond { fill: var(--timber-beyond); stroke: var(--timber); stroke-width: 2; stroke-dasharray: 10 8; }
+.floor-section .cut.lining, .floor-section .cut.ply { fill: var(--lining); stroke-width: 2; }
+.floor-section .cut.ply { fill: var(--timber); }
+.floor-section .insulation { stroke: var(--insulation); stroke-width: 3; }
+.floor-section .batt { fill: none; stroke: var(--insulation); stroke-width: 4; }
+.floor-section .beyond-outline { fill: none; stroke: var(--timber); stroke-width: 3; stroke-dasharray: 14 10; }
+.floor-section .air-fill { fill: var(--air); fill-opacity: .08; stroke: none; }
+.floor-section .squashed { fill: #ff6b3d; fill-opacity: .18; stroke: none; }
+.floor-section .strap { fill: none; stroke: var(--ink-3); stroke-width: 3; }
+.floor-section .break { fill: none; stroke: var(--ink-3); stroke-width: 2; }
+.floor-section .leader { fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
+.floor-section .leader-dot { fill: var(--ink-3); }
+.floor-section .label { fill: var(--ink); font-size: 40px; }
+.floor-section .caption { fill: var(--ink-3); font-size: 34px; letter-spacing: 4px; }
+.floor-section text{paint-order:stroke;stroke:var(--surface);stroke-width:10px;stroke-linejoin:round}
+.floor-section [data-layer]{transition:opacity .16s;cursor:pointer}
+.floor-section.es-dim [data-layer]{opacity:.4}
+.floor-section.es-dim [data-layer].hl{opacity:1}
+.floor-section [data-layer].hl polygon,.floor-section [data-layer].hl polyline{stroke:var(--brand);stroke-width:2px;vector-effect:non-scaling-stroke}
+.secpanel:not(.choosing) .es-thumb svg.floor-section{width:70%!important;max-height:462px!important;height:auto}
+.secpanel.choosing .es-thumb svg.floor-section{height:120px!important;max-height:none;width:100%}
+/* floor stack */
+.ftype{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:0 16px 12px}
+.ftype .fsub{font:500 12px/1.4 Inter;color:var(--text-3)}
+.hfd{font-style:normal;font:600 10.5px/1 Inter;color:var(--text-3);padding:3px 7px;border:1px solid var(--border);border-radius:999px;margin-left:6px;vertical-align:1px}
+.fdepth{padding:0 14px 8px 50px;font:500 12px/1.4 Inter;color:var(--text-3)}
+.fdepth b{font:700 12px/1 'JetBrains Mono',monospace;color:var(--text);margin:0 4px}
+.fair{display:flex;align-items:center;gap:6px;margin-top:8px;padding:8px 10px;border-radius:9px;border:1px dashed var(--border);font:600 12px/1.3 Inter;color:var(--text-2)}
+.fair.row-hl{border-color:var(--brand)}
+.fnote{margin-top:6px;font:500 11.5px/1.45 Inter;color:var(--text-3)}
+.fnote.review{display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:8px;background:var(--review-soft);border:1px solid var(--review);color:var(--review-on,var(--review-on-soft))}
+.mono{font:700 13px/1 'JetBrains Mono',monospace;color:var(--text);padding:9px 0}
+.g4 .cell .pn.hastip{position:relative;text-decoration:underline dotted;text-underline-offset:3px;cursor:help}
+.g4 .cell .pn.hastip .tip{position:absolute;left:0;top:calc(100% + 6px);z-index:20;width:260px;padding:9px 11px;border-radius:9px;background:var(--surface-3);border:1px solid var(--border);font:500 11.5px/1.45 Inter;color:var(--text);opacity:0;visibility:hidden;transition:opacity .15s;text-decoration:none}
+.g4 .cell .pn.hastip:hover .tip,.g4 .cell .pn.hastip:focus .tip{opacity:1;visibility:visible}
+
+/* floor: layer cards flush with the ② ③ framing cards */
+.fstack{padding-left:0;padding-right:0}.fstack-lo{padding-top:0}
+.fstack>.lrow{border-left-width:1px;border-radius:13px}
+.fstack>.lrow:not(.fixed){padding-left:12px}
+.prod-hd .pspec{margin-top:2px;font-style:italic;color:var(--text-3)}
+.fstack .lctl>.ib{flex-direction:row;align-items:center;gap:6px;width:auto}.fstack .lctl>.ib input{width:74px}.fstack .lctl>.ib em{text-align:left}
+
+/* Building table (headroom band, always open) */
+.bt-g{display:flex;flex-direction:column;padding:6px 10px 10px}
+.bt-r{display:grid;grid-template-columns:minmax(120px,1.1fr) minmax(96px,.7fr) minmax(96px,.7fr) minmax(0,2fr);align-items:center;gap:12px;padding:7px 8px;border-radius:10px}
+.bt-r+.bt-r:not(.bt-h){border-top:1px solid var(--hairline)}
+.bt-r.on{background:var(--surface-3)}.bt-r.on+.bt-r,.bt-r+.bt-r.on{border-top-color:transparent}
+.bt-h{padding-top:8px;padding-bottom:4px;font:700 10px/1.3 Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3)}
+.bt-n{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:700 13px/1.3 Inter;color:var(--text)}
+.bt-here{font:700 9.5px/1 Inter;font-style:normal;letter-spacing:.08em;text-transform:uppercase;padding:3px 6px;border-radius:999px;background:var(--brand);color:#fff}
+.bt-in{display:flex;align-items:center;gap:6px}
+.bt-in input{width:72px;height:32px;font:600 12.5px/1 'JetBrains Mono',monospace}
+.bt-in em{font:500 11.5px/1 Inter;font-style:normal;color:var(--text-3)}
+.bt-o{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;font:600 12px/1.3 Inter}
+.bt-o i{font-style:normal;font:600 11.5px/1 Inter;color:var(--text-3)}
+.bt-o b{font:700 13px/1 'JetBrains Mono',monospace}
+.bt-o.pass b{color:var(--pass-on,var(--text))}.bt-o.fail b,.bt-o.fail{color:var(--fail-on)}.bt-o.fail i{color:var(--fail-on);text-transform:uppercase;letter-spacing:.06em;font-size:10.5px}
+.bt-o.mute{color:var(--text-3)}
+.bt-o .lim{padding:3px 8px;border-radius:999px;background:var(--bg-el);border:1px solid var(--border);font:600 10.5px/1.4 Inter;color:var(--text-3)}
+.bt-v{display:flex;align-items:center;gap:6px;font:600 12px/1.3 Inter}.bt-v.pass{color:var(--pass-on,var(--pass))}.bt-v.fail{color:var(--fail-on)}
+.hr.bt .hr-fail{margin-top:0}
+@media (max-width:720px){.bt-h{display:none}.bt-r{grid-template-columns:1fr 1fr;row-gap:8px}.bt-n,.bt-o{grid-column:1/-1}}
+
+#headroom:empty{display:none}

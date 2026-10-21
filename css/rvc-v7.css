@@ -1,0 +1,117 @@
+/* v7 — framing layer as a layer, sticky section, hover pairing, perimeter panel */
+/* ---- ④ the framing layer: same numbering, warm timber accent ---- */
+.flayer{margin:10px 12px;border-radius:13px;background:var(--surface-2);border:1px solid var(--hairline);border-left:3px solid var(--timber-accent)}
+.flh{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;padding:13px 14px 12px 12px}
+.flh .lnum{margin:2px 0 0}
+.flh .fname{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.flh .fname h3{font:700 14.5px/1.25 Inter;color:var(--text)}
+.flh .fsub{margin-top:4px;font:500 12px/1.5 Inter;color:var(--text-3)}
+.flh .lr{font:700 13.5px/1 'JetBrains Mono',monospace;color:var(--text)}
+.ficon{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:var(--timber-soft);border:1px solid var(--timber-accent);color:var(--timber-on)}
+.ficon .ms{font-size:15px}
+.bchip{position:relative;display:inline-flex;align-items:center;gap:5px;padding:2px 8px 2px 6px;border-radius:999px;background:var(--bg-el);border:1px solid var(--border);font:700 10px/1.6 Inter;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);cursor:help}
+.bchip .ms{font-size:13px}
+.bchip .tip{position:absolute;left:0;top:calc(100% + 7px);width:290px;padding:9px 11px;border-radius:9px;background:var(--surface-3);border:1px solid var(--border-strong);box-shadow:0 12px 28px rgba(0,0,0,.34);font:500 11.5px/1.55 Inter;letter-spacing:0;text-transform:none;color:var(--text-2);opacity:0;visibility:hidden;transition:opacity .14s;z-index:6;text-wrap:pretty}
+.bchip:hover .tip,.bchip:focus-visible .tip{opacity:1;visibility:visible}
+.fhdctl{display:flex;align-items:flex-start;gap:4px 24px;flex-wrap:wrap;padding:13px 14px 15px 50px;border-bottom:1px solid var(--hairline)}
+/* one shared three-row rhythm so every label, field and caption line up across the row */
+.fhdctl .fgrp,.pfields .fgrp{display:grid;grid-template-rows:14px 34px 18px;row-gap:7px;align-content:start;justify-items:start}
+.fhdctl .fgrp>.glbl,.pfields .fgrp>.glbl{align-self:end}
+.fhdctl .ginputs,.pfields .ginputs{align-items:start;align-self:center}
+/* numeric fields: no spinners, a suggestion list instead — global so every box behaves */
+.ib{position:relative;width:88px}
+.ib input{width:100%;height:34px;-moz-appearance:textfield}
+.ib input::-webkit-outer-spin-button,.ib input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ib input::-webkit-calendar-picker-indicator{opacity:0;width:20px;position:absolute;right:0;height:34px;cursor:pointer}
+.ib.haslist input{padding-right:20px;text-align:left;padding-left:10px}
+.ib .caretdn{position:absolute;top:9px;right:5px;font-size:16px;color:var(--text-3);pointer-events:none}
+.ib input:focus~.caretdn{color:var(--brand-on)}
+.fhdctl .ib em,.pfields .ib em{position:absolute;left:0;right:0;top:calc(100% + 4px);margin:0}
+.pitem .ib em{text-align:left;padding-left:2px}
+.fhdctl .gx,.fhdctl .unit,.pfields .gx,.pfields .unit{line-height:34px}
+.fhdctl .fcalc,.pfields .fcalc{margin:0;align-self:center;min-height:14px}
+.fhdctl .seg{height:34px;align-self:center;align-items:center}
+.fhdctl .inlab{margin:0;height:34px;align-self:center}
+.flayer .szone{padding:10px 8px 10px 50px}
+.flayer .twocol{margin:0;padding:0 8px}
+.flayer .tcol{padding:12px 14px 14px 42px}
+.flayer .tcol+.tcol{padding:12px 8px 14px 18px}
+@media (max-width:1100px){.fhdctl,.flayer .szone,.flayer .tcol{padding-left:14px}}
+/* path items inside ④ — no numbers, they are paths not layers */
+.pitem{padding:11px 13px;border-radius:11px;background:var(--surface);border:1px solid var(--hairline)}
+.pitem+.pitem{margin-top:9px}
+.pitem .pih{display:flex;align-items:baseline;gap:10px}
+.pitem .pih .nm{font:700 13px/1.3 Inter;color:var(--text);flex:1}
+.pitem .pih .fq{font:700 12.5px/1 'JetBrains Mono',monospace;color:var(--brand-on)}
+.pitem .pmeta{margin-top:5px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;font:500 12px/1.5 Inter;color:var(--text-2)}
+.pitem .pmeta b{font:700 12px/1.5 'JetBrains Mono',monospace;color:var(--text)}
+.pitem .pr{display:flex;justify-content:flex-end;margin-top:8px;font:700 13px/1 'JetBrains Mono',monospace;color:var(--text)}
+.mseg{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
+.mseg button{padding:6px 11px;border-radius:9px;background:var(--bg-el);border:1px solid var(--border);font:600 11.5px/1.2 Inter;color:var(--text-2);cursor:pointer}
+.mseg button.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-on);font-weight:700}
+.balloon{display:flex;gap:8px;align-items:flex-start;margin-top:9px;padding:9px 11px;border-radius:9px;background:var(--review-soft);border:1px solid rgba(245,158,11,.32);font:500 11.5px/1.55 Inter;color:var(--review-on);text-wrap:pretty}
+/* ---- hover / pin pairing ---- */
+[data-layer]{transition:background .14s,border-color .14s}
+[data-layer]:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.row-hl{background:var(--brand-soft)!important;border-color:var(--brand)!important}
+.row-hl.flayer{background:var(--surface-3)!important;border-left-color:var(--timber-accent)!important;box-shadow:inset 0 0 0 1px var(--brand)}
+.pinned{box-shadow:0 0 0 1px var(--brand)}
+.pinchip{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:1px 7px;border-radius:999px;background:var(--brand);color:#fff;font:700 9.5px/1.7 Inter;letter-spacing:.07em;text-transform:uppercase}
+.pinchip .ms{font-size:12px}
+/* ---- sticky section panel ---- */
+.secpanel{position:sticky;top:88px;margin-top:16px;z-index:3}
+.secpanel .sechd{padding:13px 16px 6px;display:flex;align-items:flex-start;gap:12px}
+.secpanel .sechd h2{font:700 14.5px/1.25 Inter;color:var(--text)}
+.secpanel .sechd p{margin-top:4px;font:500 11.5px/1.5 Inter;color:var(--text-3);text-wrap:pretty}
+.secpanel .svgwrap{padding:2px 10px 12px}
+.secpanel svg{width:100%;height:330px;display:block}
+.secfoot{display:flex;align-items:center;gap:8px;padding:0 16px 13px;font:500 11.5px/1.5 Inter;color:var(--text-3)}
+.secfoot .ms{font-size:14px;color:var(--text-3)}
+.secsvg [data-part]{transition:opacity .16s}
+.secsvg.dim [data-part]{opacity:.4}
+.secsvg [data-part].hl{opacity:1;filter:brightness(1.14)}
+.secsvg [data-part].hl>rect,.secsvg [data-part].hl>path,.secsvg [data-part].hl>polygon,.secsvg [data-part].hl>g>rect,.secsvg [data-part].hl>g>path{stroke:var(--brand);stroke-width:2}
+.secsvg .gh{opacity:0;transition:opacity .16s}
+.secsvg [data-part].hl .gh{opacity:.55}
+.secsvg [data-part]{cursor:pointer}
+/* ---- ⑥ roof perimeter ---- */
+.perimlayer{margin:10px 12px 0;border-radius:13px;background:var(--surface-2);border:1px solid var(--hairline);border-left:3px solid var(--review)}
+.perimlayer .ph2{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;padding:13px 14px 4px 12px}
+.perimlayer .ph2 h3{font:700 14.5px/1.25 Inter;color:var(--text)}
+.perimlayer .ph2 .stripchip{font:700 12px/1.6 'JetBrains Mono',monospace;color:var(--review-on)}
+.perimlayer .fsub{margin-top:4px;font:500 12px/1.5 Inter;color:var(--text-3)}
+.perimlayer .pfields{display:flex;align-items:flex-start;gap:4px 24px;flex-wrap:wrap;padding:12px 14px 15px 50px}
+.pgeo{margin:0 14px 0 50px;padding:11px 0;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);display:flex;flex-direction:column;gap:7px}
+.pgeo .gl{display:flex;align-items:baseline;justify-content:space-between;gap:16px;font:500 12.5px/1.4 Inter;color:var(--text-2)}
+.pgeo .gl b{font:700 13px/1.4 'JetBrains Mono',monospace;color:var(--text);text-align:right}
+.pgeo .gl.soft b{font:600 12.5px/1.4 Inter;color:var(--text-2)}
+.pcr{padding:12px 14px 4px 50px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.pcr .note{flex:1;min-width:240px;font:500 11.5px/1.55 Inter;color:var(--text-3);text-wrap:pretty}
+.pdecl{font:600 11.5px/1.5 Inter;color:var(--text-3)}
+.pclause{margin:10px 14px 14px 50px;padding:9px 11px;border-radius:9px;background:var(--bg-el);border:1px solid var(--hairline);font:500 11.5px/1.6 Inter;color:var(--text-2);text-wrap:pretty}
+.ventzero{margin:6px 14px 0 50px;display:flex;gap:8px;align-items:flex-start;padding:9px 11px;border-radius:9px;background:var(--review-soft);border:1px solid rgba(245,158,11,.32);font:500 11.5px/1.55 Inter;color:var(--review-on);text-wrap:pretty}
+@media (max-width:1100px){.perimlayer .pfields,.pgeo,.pcr,.pclause,.ventzero{padding-left:14px;margin-left:14px}}
+[data-theme="dark"]{--timber-accent:#B07B46;--timber-soft:rgba(176,123,70,.16);--timber-on:#D9A470}
+[data-theme="light"]{--timber-accent:#A9743F;--timber-soft:#FBF1E6;--timber-on:#8A5A28}
+/* second-level disclosure for the 2×2 path grid */
+.calcwrap{margin:2px 0 10px}
+.calcbtn{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:9px;background:var(--bg-el);border:1px solid var(--border);font:600 11.5px/1.3 Inter;color:var(--text-2);cursor:pointer}
+.calcbtn:hover{border-color:var(--brand);color:var(--brand-on)}
+.calcbtn .cv{transition:transform .16s}
+.calcwrap.open .calcbtn{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-on)}
+.calcwrap.open .calcbtn .cv{transform:rotate(180deg)}
+.calcpop{display:none;margin-top:9px}
+.calcwrap:hover .calcpop,.calcwrap.open .calcpop,.calcwrap:focus-within .calcpop{display:block}
+/* perimeter as an add-on inside the insulation path */
+.addon-btn{display:flex;align-items:center;gap:8px;width:100%;margin-top:10px;padding:9px 11px;border-radius:10px;background:var(--review-soft);border:1px dashed rgba(245,158,11,.5);font:500 11.5px/1.45 Inter;color:var(--review-on);text-align:left;cursor:pointer;text-wrap:pretty}
+.addon-btn:hover{border-style:solid;background:rgba(245,158,11,.16)}
+.addon-btn b{font-weight:700}
+.addon-on{display:flex;align-items:center;gap:7px;margin-top:10px;font:600 11.5px/1.4 Inter;color:var(--pass-on,var(--brand-on))}
+.perimlayer.addon{margin:0 14px 14px 50px;border-left-width:3px}
+.perimlayer.addon .ph2{grid-template-columns:34px minmax(0,1fr) max-content 26px;align-items:center}
+.perimlayer.addon .stripchip{justify-self:end;white-space:nowrap}
+.perimlayer.addon .pfields,.perimlayer.addon .pgeo,.perimlayer.addon .pcr,.perimlayer.addon .pclause,.perimlayer.addon .ventzero{padding-left:14px;margin-left:14px}
+.lnum.sub{width:auto;padding:0 6px;font-size:10.5px;letter-spacing:.04em}
+.addon-x{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:transparent;border:1px solid var(--border);color:var(--text-3);cursor:pointer}
+.addon-x:hover{border-color:var(--fail);color:var(--fail-on)}
+@media (max-width:1100px){.perimlayer.addon{margin-left:14px}}

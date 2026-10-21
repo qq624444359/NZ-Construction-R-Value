@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construction R-value — EZbuild</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/rvc.css?v=3">
+<link rel="stylesheet" href="css/rvc-v3.css">
+<link rel="stylesheet" href="css/rvc-v4.css">
+<link rel="stylesheet" href="css/rvc-v5.css?v=3">
+<link rel="stylesheet" href="css/rvc-v6.css">
+<link rel="stylesheet" href="css/rvc-v7.css">
+<link rel="stylesheet" href="css/rvc-v8.css">
+<link rel="stylesheet" href="css/rvc-v9.css">
+<link rel="stylesheet" href="css/rvc-v10.css">
+<link rel="stylesheet" href="css/rvc-v11.css">
+<link rel="stylesheet" href="css/rvc-v12.css?v=20261007b">
+<link rel="stylesheet" href="css/rvc-3col.css?v=45">
+<link rel="stylesheet" href="css/rvc-project.css?v=44">
+<style>.nav-r{display:flex;align-items:center;gap:8px;flex:none}.nav-r a{text-decoration:none}.nav-req{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:600 12.5px/1 Inter;white-space:nowrap}.nav-req:hover{border-color:var(--border-strong)}.foot a{color:var(--brand-on)}@media(max-width:560px){.nav-links{display:none!important}.nav-req span:last-child{display:none}.nav-req{width:36px;padding:0;justify-content:center}}</style>
+</head>
+<body data-theme="dark">
+<script>try{var t=localStorage.getItem('ezbuild-theme');if(t)document.body.dataset.theme=t}catch(e){}</script><nav class="nav"><div class="nav-in"><div class="nav-l"><a class="logo" href="https://ezbuild.co.nz/">EZbuild<span class="beta">Beta</span></a><div class="nav-links"><a href="https://ezbuild.co.nz/">Home</a><a href="https://ezbuild.co.nz/for-revit.html">For Revit</a><a class="on" href="index.html" data-a="rvhome" aria-current="page">Construction R-value</a></div></div><div class="nav-r"><a class="nav-req" href="https://github.com/qq624444359/NZ-Construction-R-Value/issues/new/choose" target="_blank" rel="noopener"><span class="ms s18">lightbulb</span><span>Request a feature</span></a><a class="icon-btn" href="mailto:pitayadesign.ezbuild@gmail.com?subject=Construction%20R-value%20calculator%20%E2%80%94%20feature%20request" aria-label="Email a feature request" title="No GitHub account? Email your request"><span class="ms s18">mail</span></a><a class="icon-btn" href="https://github.com/qq624444359/NZ-Construction-R-Value" target="_blank" rel="noopener" aria-label="Source code on GitHub" title="Source code on GitHub"><span class="ms s18">code</span></a><button class="icon-btn" data-a="theme" aria-label="Light or dark"><span class="ms s18">contrast</span></button></div></div></nav>
+<div class="wrap3">
+<div class="head"><div><p class="kicker">NZBC H1/AS1 6th Edition · Construction R-value · NZS 4214</p><h1>Construction R-value Calculator</h1><p class="lede">Every construction is the same stack, outside to inside. Framing layers split into the path through the timber and the path beside it.</p></div><div class="v6hr"><button class="v6btn" data-a="pnew"><span class="ms s18">note_add</span>New project</button><button class="v6btn" data-a="psave"><span class="ms s18">save</span>Save project</button><button class="v6btn" data-a="popen"><span class="ms s18">folder_open</span>Open project</button><button class="v6pdfb" data-a="pdf"><span class="ms s18">picture_as_pdf</span>Export PDF</button></div></div>
+<div class="banner"><span class="ms s18">info</span><span>Material, air-gap and surface values are provisional defaults you can overwrite on every row. Confirm each against your own copy of NZS 4214 before a figure goes into a consent.</span></div>
+<div class="c3" style="margin-top:20px"><aside id="c-left"></aside><main id="c-mid"></main><aside id="c-right"></aside></div>
+</div>
+<div class="foot" id="contact">Paragraph 2.1.2.11 minimums: roof R2.60 · wall R1.00 · suspended floor R1.30; slab on ground has none. Table 2.1.2.12 applies only to heated elements: ceiling R6.60 · wall R2.90 · heated floor R2.50 (zones 1–3) / R2.80 (zone 4) / R3.00 (zones 5–6). Construction R-values by isothermal planes, NZS 4214 as modified by H1/AS1 2.1.3.2.<br>Open source (MIT) — <a href="https://github.com/qq624444359/NZ-Construction-R-Value">source code</a>. Something missing or wrong? <a href="https://github.com/qq624444359/NZ-Construction-R-Value/issues/new/choose">Request a feature or report a problem</a>, or email <a href="mailto:pitayadesign.ezbuild@gmail.com?subject=Construction%20R-value%20calculator%20%E2%80%94%20feature%20request">pitayadesign.ezbuild@gmail.com</a>.</div>
+<script src="js/export-name.js?v=2"></script>
+<script src="js/project-file.js?v=2"></script>
+<script src="js/eaves-section.js?v=21"></script>
+<script src="js/wall-section.js?v=7"></script>
+<script src="js/floor-section.js?v=7"></script>
+<script src="js/it-wall-section.js?v=6"></script>
+<script src="js/rvalue-model.js?v=47"></script>
+<script src="js/h1-data.js?v=3"></script>
+<script src="js/slab-appendix-e.js?v=1"></script>
+<script src="js/rvc-project.js?v=59"></script>
+<script src="js/rvc-v6.js?v=111"></script>
+</body>
+</html>

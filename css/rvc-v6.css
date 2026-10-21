@@ -1,0 +1,28 @@
+/* v6 — bridged portion as two parallel paths */
+.szone{padding:4px 4px 10px}
+.szt{font:800 10px/1.5 Inter;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);padding:2px 6px 8px}
+.szrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--surface);border:1px dashed var(--border-strong)}
+.szrow+.szrow{margin-top:7px}
+.szrow .ms{color:var(--text-3)}
+.szrow .v{flex:1;font:600 12.5px/1.4 Inter;color:var(--text)}
+.szrow .lr{font:700 13px/1 'JetBrains Mono',monospace;color:var(--text)}
+.szrow.lit{animation:litrow 1.4s ease-out 1}
+@keyframes litrow{0%,55%{background:var(--brand-soft);border-color:var(--brand)}100%{background:var(--surface);border-color:var(--border-strong)}}
+.twocol{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;border-top:1px solid var(--hairline);margin-top:2px}
+@media (max-width:860px){.twocol{grid-template-columns:minmax(0,1fr)}.tcol+.tcol{border-left:0!important;border-top:1px solid var(--hairline);padding-left:4px!important;margin-top:8px}}
+.tcol{padding:12px 14px 14px 4px;display:flex;flex-direction:column;gap:9px}
+.tcol+.tcol{border-left:1px solid var(--hairline);padding:12px 4px 14px 16px}
+.ck{font:800 10px/1.5 Inter;letter-spacing:.13em;text-transform:uppercase;color:var(--brand);margin-bottom:1px}
+.pcard{padding:12px 13px;border-radius:11px;background:var(--surface);border:1px solid var(--hairline)}
+.pcard>.ph{display:flex;align-items:center;gap:9px}
+.pcard>.ph .lnum{margin:0}
+.pcard>.ph .nm{font:700 13.5px/1.25 Inter;color:var(--text);flex:1}
+.pcard>.ph .fq{font:700 13px/1 'JetBrains Mono',monospace;color:var(--brand-on)}
+.pcard .pr{display:flex;justify-content:flex-end;margin-top:10px;font:700 13.5px/1 'JetBrains Mono',monospace;color:var(--text)}
+.pcard .frow{gap:14px 18px}
+.dlist{margin-top:9px;display:flex;flex-direction:column;gap:4px;font:500 12px/1.5 Inter;color:var(--text-2)}
+.dlist b{font:700 12px/1.5 'JetBrains Mono',monospace;color:var(--text)}
+.dlist .sh{display:inline-flex;align-items:center;gap:5px;color:var(--brand-on);font-weight:700;cursor:pointer;text-align:left}
+.dlist .sh .ms{font-size:14px}
+.gapnote{display:flex;gap:8px;align-items:flex-start;margin-top:10px;padding:9px 11px;border-radius:9px;background:var(--review-soft);border:1px solid rgba(245,158,11,.32);font:500 11.5px/1.55 Inter;color:var(--review-on);text-wrap:pretty}
+.bwrap .bout{margin-top:0;border-top:1px solid var(--hairline);border-top-style:solid}

@@ -1,0 +1,41 @@
+/* v8 — ⑤ ceiling battens as its own layer, the ④⑤ bridge bracket, the shared grid, sticky section fixed */
+/* the bracket that ties ④ and ⑤ into one bridged段 */
+.bgroup{position:relative;padding-left:20px;margin:10px 0}
+.bgroup>.flayer{margin:0 12px 0 0}
+.bgroup>.flayer+.flayer{margin-top:8px}
+.bbracket{position:absolute;left:2px;top:6px;bottom:6px;width:11px;border:2px solid var(--timber-accent);border-right:0;border-radius:7px 0 0 7px;display:block}
+.bbracket:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+.bridgechip{position:absolute;left:-4px;top:50%;transform:translate(-50%,-50%);writing-mode:vertical-rl;display:inline-flex;align-items:center;gap:5px;padding:9px 3px;border-radius:999px;background:var(--bg);border:1px solid var(--timber-accent);color:var(--timber-on);font:700 9.5px/1 Inter;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;cursor:help}
+.bridgechip .ms{font-size:12px;writing-mode:horizontal-tb}
+.bridgechip .tip{position:absolute;left:calc(100% + 9px);top:0;width:300px;padding:10px 12px;border-radius:9px;background:var(--surface-3);border:1px solid var(--border-strong);box-shadow:0 12px 28px rgba(0,0,0,.28);writing-mode:horizontal-tb;font:500 11.5px/1.55 Inter;letter-spacing:0;text-transform:none;color:var(--text-2);opacity:0;visibility:hidden;transition:opacity .14s;z-index:9}
+.bbracket:hover .tip,.bbracket:focus-visible .tip,.bridgechip:hover .tip{opacity:1;visibility:visible}
+.row-hl.bbracket{background:var(--brand-soft);border-color:var(--brand)}
+.row-hl.bbracket .bridgechip{border-color:var(--brand);color:var(--brand-on)}
+/* R— in a bridged layer header: part of the combined value, not its own */
+.lr.hastip{position:relative;cursor:help}
+.lr.hastip .tip{position:absolute;right:0;top:calc(100% + 7px);width:250px;padding:9px 11px;border-radius:9px;background:var(--surface-3);border:1px solid var(--border-strong);box-shadow:0 12px 28px rgba(0,0,0,.28);font:500 11.5px/1.5 Inter;color:var(--text-2);text-align:left;opacity:0;visibility:hidden;transition:opacity .14s;z-index:9}
+.lr.hastip:hover .tip,.lr.hastip:focus-visible .tip{opacity:1;visibility:visible}
+/* the one shared grid, sitting under ⑤ as the close of the bracket */
+.bgrid{margin:8px 12px 0 0;border-radius:13px;background:var(--surface-2);border:1px solid var(--hairline);border-left:3px solid var(--timber-accent)}
+.bgrid .ptitle{display:flex;align-items:center;gap:9px;padding:12px 14px 2px;font:800 10.5px/1.4 Inter;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.bgrid .gnums{padding:1px 7px;border-radius:999px;background:var(--timber-soft);border:1px solid var(--timber-accent);color:var(--timber-on);letter-spacing:.06em}
+.bgrid .g4{grid-template-columns:186px minmax(0,1fr) minmax(0,1fr)}
+.bgrid .ch span,.bgrid .rh span{display:inline-flex;align-items:baseline;gap:6px}
+.bgrid .ch i,.bgrid .rh i{font-style:normal;color:var(--timber-on);font-size:12px}
+.bgrid .bcomb{border-radius:0}
+.bgrid .calcwrap{padding:10px 14px 12px}
+.bgrid .calcpop{display:none;margin-top:9px;border-radius:10px;background:var(--surface);border:1px solid var(--hairline);padding:4px 0}
+.bgrid .calcwrap:hover .calcpop,.bgrid .calcwrap.open .calcpop,.bgrid .calcwrap:focus-within .calcpop{display:block}
+.wline{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:7px 12px;font:600 11.5px/1.4 Inter;color:var(--text-2)}
+.wline+.wline{border-top:1px solid var(--hairline)}
+.wline b{font:700 12px/1 'JetBrains Mono',monospace;color:var(--text)}
+.bgrid .sumline{padding:8px 12px 6px}
+.row-hl.bgrid{background:var(--surface-3)!important;border-left-color:var(--timber-accent)!important;box-shadow:inset 0 0 0 1px var(--brand)}
+/* read-only field: one source for the between-the-members thickness */
+.ib.ro input{background:var(--bg-el);color:var(--text-2);cursor:default;padding-right:24px}
+.ib.ro .lk{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text-3);pointer-events:none}
+/* right column must be as tall as the left one, or sticky stops at its own content */
+.cols3{align-items:stretch}
+#side{display:flex;flex-direction:column}
+.secpanel{align-self:stretch}
+@media (max-width:1100px){.bgroup{padding-left:14px;padding-top:15px}.bbracket{top:15px}.bridgechip{writing-mode:horizontal-tb;left:10px;top:-9px;transform:none;padding:2px 9px}.bridgechip .tip{left:0;top:calc(100% + 8px)}}

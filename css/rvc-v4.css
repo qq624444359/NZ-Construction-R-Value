@@ -1,0 +1,49 @@
+/* v4 — numbered stack with in-layer field groups, headroom band */
+.hr{margin:0 0 20px;border-radius:15px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden}
+.hr.bad{border-color:var(--fail);box-shadow:0 0 0 3px var(--fail-soft)}
+.hr-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 18px;border-bottom:1px solid var(--hairline)}
+.hr-hd .k{font:800 10.5px/1.3 Inter;letter-spacing:.16em;text-transform:uppercase;color:var(--brand)}
+.hr-hd .meta{font:600 12.5px/1.3 Inter;color:var(--text-2)}
+.hr-hd .sp{flex:1}
+.hr-lede{padding:12px 18px 2px;font:400 12.5px/1.5 Inter;color:var(--text-3)}
+.hr-rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;padding:12px 18px 16px}
+.hrrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 13px;border-radius:11px;background:var(--surface-2);border:1px solid var(--hairline);opacity:.62}
+.hrrow.on{opacity:1;background:var(--surface-3);border-color:var(--border-strong)}
+.hrrow .nm{font:700 12.5px/1.2 Inter;color:var(--text);min-width:58px}
+.hrrow .cur,.hrrow .low{font:700 15px/1 'JetBrains Mono',monospace}
+.hrrow .cur{color:var(--text-2)}
+.hrrow .ar{font-size:15px;line-height:1}
+.hrrow.pass .ar,.hrrow.pass .low{color:var(--pass-on)}
+.hrrow.fail .ar,.hrrow.fail .low{color:var(--fail-on)}
+.hrrow .must{font:700 10.5px/1.3 Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--fail-on)}
+.hrrow .lim{margin-left:auto;padding:3px 8px;border-radius:999px;background:var(--bg-el);border:1px solid var(--border);font:600 10.5px/1.5 Inter;color:var(--text-3);white-space:nowrap}
+.hr-block{padding:18px;display:flex;flex-direction:column;gap:9px;align-items:flex-start}
+.hr-block h3{font:800 15px/1.2 Inter}
+.hr-block p{font:400 12.5px/1.6 Inter;color:var(--text-3);max-width:560px;text-wrap:pretty}
+.hr-fail{margin:0 18px 16px;padding:12px 14px;border-radius:11px;background:var(--fail-soft);border:1px solid var(--fail);font:600 12.5px/1.55 Inter;color:var(--fail-on);display:flex;gap:9px;align-items:flex-start}
+.envbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px 12px;padding:13px 18px;background:var(--bg-el);border-bottom:1px solid var(--hairline)}
+.envbar .ef{display:flex;flex-direction:column;gap:5px}
+.envbar label{font:700 10px/1.3 Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3)}
+.envbar input{height:32px;font-size:12.5px;width:100%}
+/* field groups inside layer cards */
+.fgrp{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fgrp>.glbl{font:700 10.5px/1.3 Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3)}
+.ginputs{display:flex;align-items:flex-start;gap:7px}
+.ib{display:flex;flex-direction:column;gap:3px;width:74px}
+.ib input{width:100%;height:34px;font:600 13px/1 'JetBrains Mono',monospace;text-align:center}
+.ib em{font:500 10.5px/1.3 Inter;font-style:normal;color:var(--text-3);text-align:center}
+.ib.bad input{border-color:var(--fail);box-shadow:0 0 0 2px var(--fail-soft)}
+.gx{font:600 13px/34px 'JetBrains Mono',monospace;color:var(--text-3)}
+.unit{font:600 12px/34px Inter;color:var(--text-3)}
+.frow{display:flex;flex-wrap:wrap;gap:18px 22px;margin-top:10px}
+.fcalc{font:600 11.5px/1.4 'JetBrains Mono',monospace;color:var(--text-3);margin-top:2px}
+.fcalc b{color:var(--text)}
+.fbad{display:flex;gap:7px;align-items:flex-start;margin-top:8px;font:600 11.5px/1.5 Inter;color:var(--fail-on)}
+.inlab{display:flex;align-items:center;gap:9px;margin-top:11px;font:600 12.5px/1.3 Inter;color:var(--text-2)}
+/* bridged container wrapping numbered layers */
+.bwrap{margin:0 12px;padding:10px;border-radius:14px;border:1px solid var(--border-strong);background:var(--bg-el)}
+.bwrap>.bkick{position:static;transform:none;display:inline-flex;align-items:center;gap:7px;margin:2px 2px 9px;padding:4px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--border);font:800 10px/1.5 Inter;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2)}
+.bwrap .stack{padding:0;gap:8px}
+.bwrap .lrow{background:var(--surface)}
+.bout{margin-top:10px;padding-top:2px;border-top:1px dashed var(--border-strong)}
+.bout .ptitle{padding:11px 4px 0;font:700 10.5px/1.3 Inter;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}

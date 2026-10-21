@@ -1,0 +1,90 @@
+/* v13 — ventilation first, timber inputs and their auto-calculated split on the left, insulation emphasised on the right */
+.flayer .vzone{padding:12px 8px 12px 50px}
+.vzone .szrow{background:var(--surface-3);border-style:solid}
+.szrow .inlab.tight{margin:0;flex:0 0 auto;font:600 11.5px/1 Inter;color:var(--text-2)}
+/* left column: the framing inputs, then the split they produce */
+.tcol .fhdctl.inner{padding:0;border:0;gap:12px 22px}
+.tcol .fhdctl.inner .trussg.open{max-width:none}
+.tcol .fhdctl.inner .fgrp{grid-template-rows:14px 34px 16px}
+.frcalc{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;margin-top:2px;padding:10px 12px;border-radius:11px;background:var(--surface);border:1px solid var(--hairline)}
+.frcalc .fx{font:500 11px/1.4 'JetBrains Mono',monospace;color:var(--text-3);flex:1 1 100%}
+.frcalc b{font:800 13px/1.2 Inter;color:var(--text)}
+.frcalc b.alt{color:var(--brand-on)}
+.frcalc .fsp{color:var(--text-3)}
+.frcalc:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+/* right column: the insulation stack is the point of the tool */
+.tcol.insulcol{background:var(--brand-soft);border-radius:14px;margin:8px 0 10px;padding:12px 12px 14px 16px}
+.flayer .tcol.insulcol{padding:12px 12px 14px 16px;border-left:1px solid var(--brand-line,var(--border-strong))}
+.insulcol .ck{color:var(--brand-on);font-weight:900}
+.insulcol .irow{background:var(--bg-el)}
+/* the add button: labelled, and it breathes until it is used */
+.addbtn.wide{width:100%;height:auto;display:grid;grid-template-columns:22px minmax(0,1fr);align-items:center;gap:1px 10px;padding:10px 13px;text-align:left;justify-items:start;border-radius:12px;animation:addpulse 2.6s ease-in-out infinite}
+.addbtn.wide .ms{grid-row:1/3;font-size:20px;color:var(--brand-on)}
+.addbtn.wide .albl{font:800 12.5px/1.3 Inter;color:var(--text)}
+.addbtn.wide em{font:500 10.5px/1.4 Inter;font-style:normal;color:var(--text-3)}
+.addbtn.wide:hover,.addbtn.wide.open{animation:none;border-style:solid;border-color:var(--brand);background:var(--surface-3)}
+@keyframes addpulse{0%,100%{border-color:var(--border-strong);box-shadow:0 0 0 0 transparent}50%{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}}
+@media (prefers-reduced-motion:reduce){.addbtn.wide{animation:none}}
+.iaddwrap{margin-top:2px}
+.imenu{width:min(330px,100%)}
+/* dwell-to-enlarge on the section */
+.secpanel .svgwrap .secsvg{width:100%;height:auto;max-height:660px}
+.svgwrap{position:relative}
+.svgwrap:not(.zoom) [data-zonly]{display:none}
+.svgwrap.zoom [data-znone]{display:none}
+.svgwrap.arming::after{content:"Hold to enlarge\2026";position:absolute;right:10px;bottom:10px;z-index:2;padding:5px 9px;border-radius:8px;font:700 11px/1 Inter;color:var(--brand-on);background:var(--brand-soft);border:1px solid var(--brand);animation:armfill 3s linear}
+@keyframes armfill{from{opacity:.35}to{opacity:1}}
+.svgwrap.zoom{position:fixed;inset:2vh 2vw;z-index:90;margin:0;padding:10px;border-radius:16px;background:var(--surface);border:1px solid var(--border-strong);box-shadow:0 40px 90px rgba(0,0,0,.6);animation:zoomin .22s ease-out}
+@keyframes zoomin{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+.svgwrap.zoom .secsvg{width:100%;height:100%;max-height:none;aspect-ratio:auto}
+.svgwrap.zoom::after{content:"Move the cursor off the drawing to close \00b7 Esc";position:absolute;right:14px;bottom:12px;padding:6px 10px;border-radius:8px;font:700 11.5px/1 Inter;color:var(--text-3);background:var(--bg-el);border:1px solid var(--border)}
+body.zoomlock::before{content:"";position:fixed;inset:0;z-index:89;background:rgba(0,0,0,.5);backdrop-filter:blur(2px)}
+@media (prefers-reduced-motion:reduce){.svgwrap.zoom,.svgwrap.arming::after{animation:none}}
+.rodisp{white-space:nowrap}
+.szrow .lr{margin-left:4px}
+
+/* eaves section (js/eaves-section.js) — tokens mapped to the project palette */
+.eaves-section{--ink:var(--text);--ink-3:var(--text-3);--timber:var(--mat-timber);--timber-beyond:color-mix(in oklch,var(--mat-timber) 30%,transparent);--lining:var(--text-2);--insulation:var(--mat-insul-line);--air:var(--brand);display:block;width:100%;height:auto;max-height:660px;font-family:Inter,sans-serif}
+.eaves-section text{paint-order:stroke;stroke:var(--surface);stroke-width:10px;stroke-linejoin:round}
+.eaves-section [data-layer]{transition:opacity .16s;cursor:pointer}
+.eaves-section.es-dim [data-layer]{opacity:.4}
+.eaves-section.es-dim [data-layer].hl{opacity:1}
+.eaves-section [data-layer].hl>polygon,.eaves-section [data-layer].hl>polyline{stroke:var(--brand);stroke-width:2px;vector-effect:non-scaling-stroke}
+.eaves-section g[data-layer].grew{transform-box:fill-box;transform-origin:center bottom;animation:igrow .2s ease-out}
+.eaves-section g[data-layer].gone{opacity:0;transition:opacity .15s ease-in}
+.svgwrap .es-zoom{display:none}
+.secpanel .es-thumb svg.eaves-section{width:100%;height:auto;max-height:660px}
+.svgwrap.zoom .es-thumb{display:none}
+.svgwrap.zoom .es-zoom{display:block;width:100%;height:100%;max-height:none}
+.svgwrap.zoom .es-zoom .eaves-section{width:100%;height:100%;max-height:none}
+.eaves-section .cut { stroke: var(--ink); stroke-width: 3; }
+.eaves-section .timber { fill: var(--timber); }
+.eaves-section .cut.x { fill: var(--timber); }
+.eaves-section .beyond { fill: var(--timber-beyond); stroke: var(--timber); stroke-width: 2; stroke-dasharray: 10 8; }
+.eaves-section .cut.lining, .eaves-section .cut.ply { fill: var(--lining); stroke-width: 2; }
+.eaves-section .cut.ply { fill: var(--timber); }
+.eaves-section .insulation { stroke: var(--insulation); stroke-width: 3; }
+.eaves-section .batt { fill: none; stroke: var(--insulation); stroke-width: 4; }
+.eaves-section .beyond-outline { fill: none; stroke: var(--timber); stroke-width: 3; stroke-dasharray: 14 10; }
+.eaves-section .strong-heel { stroke: var(--ink-3); }
+.eaves-section .roofspace-fill { fill: var(--air); fill-opacity: .05; stroke: none; }
+.eaves-section .squashed { fill: #ff6b3d; fill-opacity: .18; stroke: none; }
+.eaves-section .sheet { fill: none; stroke: var(--lining); stroke-width: 7; }
+.eaves-section .sheet-rib { fill: none; stroke: var(--lining); stroke-width: 2.5; stroke-dasharray: 6 10; }
+.eaves-section .underlay { fill: none; stroke: var(--ink); stroke-width: 3; stroke-dasharray: 18 10; }
+.eaves-section .underlay.solid { stroke-dasharray: none; stroke-width: 3; }
+.eaves-section .shingles { fill: none; stroke: var(--ink-3); stroke-width: 4; }
+.eaves-section .gutter { fill: none; stroke: var(--lining); stroke-width: 5; }
+.eaves-section .edge { stroke: var(--ink-3); stroke-width: 2; }
+.eaves-section .leader { fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
+.eaves-section .leader-dot { fill: var(--ink-3); }
+.eaves-section .label { fill: var(--ink); font-size: 44px; }
+.eaves-section .note { fill: var(--ink-3); font-size: 44px; font-style: italic; }
+.eaves-section .caption { fill: var(--ink-3); font-size: 38px; letter-spacing: 4px; }
+.eaves-section .dim { stroke: var(--ink-3); stroke-width: 2; fill: none; }
+.eaves-section .dim.strong { stroke: var(--insulation); }
+.eaves-section .dimtext { fill: var(--ink-3); font-size: 40px; }
+.eaves-section .dimtext.strong { fill: var(--insulation); }
+
+.ventnote{margin-top:8px;font-size:12.5px;color:var(--text-3)}
+.bgroup.nobracket{padding-left:0!important;padding-top:0!important}.bgroup.nobracket>.flayer{margin-right:0}
