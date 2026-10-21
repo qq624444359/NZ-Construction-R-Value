@@ -1,16 +1,31 @@
 # Construction R-value Calculator
 
-Construction R-values for New Zealand walls, roofs and floors, to **H1/AS1 6th edition** — NZS 4214 isothermal planes as modified by paragraph 2.1.3.2, and slab-on-ground R-values from H1/AS1 Appendix E.
+Free construction R-values for New Zealand walls, roofs and floors to **H1/AS1 6th edition** — every layer and every step shown, with a PDF report for the building consent.
 
-**Use it:** https://rvalue.ezbuild.co.nz/
+[![Open the calculator](https://img.shields.io/badge/Open_the_calculator-rvalue.ezbuild.co.nz-1978e5?style=for-the-badge)](https://rvalue.ezbuild.co.nz/)
+[![MIT licence](https://img.shields.io/badge/licence-MIT-555?style=for-the-badge)](LICENSE)
 
-- Build each construction layer by layer, outside to inside; framing layers are split into the path through the timber and the path beside it.
-- Checks every construction against the 2.1.2.11 minimums and the Table 2.1.2.12 heated minimums.
-- Section drawings for walls, truss and skillion roofs and suspended floors.
-- Project page with envelope areas and the rows to paste into the BRANZ H1/AS1 calculation tool.
-- Exports a PDF calculation report. Projects save to a file and stay in your browser — your project data is never sent anywhere. Page visits and a few actions (PDF download, save / open project) are counted anonymously with [GoatCounter](https://www.goatcounter.com/) — no cookies.
+[![The calculator: a skillion roof's build-up, layer by layer, with its section drawing](og-image.png)](https://rvalue.ezbuild.co.nz/)
 
-Guide: [Why R2.8 batts make an R1.67 wall](https://rvalue.ezbuild.co.nz/guides/wall-r-value-h1-as1.html) — the H1/AS1 wall method, worked through.
+Runs in your browser — no sign-up, no install.
+
+## What it does
+
+- **Walls** — timber frame (vented cavity, internal strapping, thermal break, insulated cladding, external insulation), double stud, intertenancy and concrete block walls
+- **Roofs** — truss roofs with a flat ceiling (including the heel and perimeter insulation), skillion and flat roofs, suspended grid and self-supporting insulated roofs
+- **Floors** — suspended and solid timber floors; slab-on-ground from the Appendix E tables, including rafts, perimeter parts and H1/VM1 values
+- **The method in full** — NZS 4214 isothermal planes as modified by H1/AS1 2.1.3.2: framing layers split into the path through the timber and the path beside it, with the bridged-portion maths shown
+- **Checks** against the 2.1.2.11 minimums and the Table 2.1.2.12 heated minimums
+- **Section drawings** for walls, roofs and suspended floors
+- **Project page** with envelope areas and the rows to paste into the BRANZ H1/AS1 calculation tool, plus optional windows, doors and skylights
+- **PDF calculation report**; save and open projects as files; undo and redo
+
+Your project data stays in your browser and is never sent anywhere. Page visits and a few actions (PDF download, save / open project) are counted anonymously with [GoatCounter](https://www.goatcounter.com/) — no cookies.
+
+## Guides
+
+- [Why R2.8 batts make an R1.67 wall](https://rvalue.ezbuild.co.nz/guides/wall-r-value-h1-as1.html) — the H1/AS1 wall method, worked through
+- [Slab-on-ground R-values: the Appendix E lookup, step by step](https://rvalue.ezbuild.co.nz/guides/slab-on-ground-r-value-h1-as1.html) — A/P, the 24 tables, rafts and the garage wall
 
 ## Request a feature or report a problem
 

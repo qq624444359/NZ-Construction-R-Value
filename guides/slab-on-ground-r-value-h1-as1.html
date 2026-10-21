@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slab-on-ground R-values under H1/AS1 6th edition: the Appendix E lookup, step by step</title>
+<meta name="description" content="How to find a slab-on-ground construction R-value for H1/AS1 6th edition from the Appendix E tables — area and perimeter, A/P, the 24 tables, rafts, edge and underslab insulation and the garage wall — with worked figures.">
+<link rel="canonical" href="https://rvalue.ezbuild.co.nz/guides/slab-on-ground-r-value-h1-as1.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Slab-on-ground R-values: the Appendix E lookup, step by step">
+<meta property="og:description" content="A/P, the 24 tables, rafts, edge insulation and the garage wall — with worked figures for a 140 m² slab.">
+<meta property="og:image" content="https://rvalue.ezbuild.co.nz/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/rvc.css?v=3">
+<style>
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif}
+.g-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 24px;border-bottom:1px solid var(--glass-br)}
+.g-nav a{color:var(--text-2);text-decoration:none;font:500 13.5px/1 Inter}.g-nav .logo{color:var(--text);font:900 22px/1 Inter;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}.g-nav .beta{font:800 10px/1 Inter;letter-spacing:.12em;text-transform:uppercase;padding:4px 7px;border-radius:6px;color:#1978e5;background:rgba(25,120,229,.15);border:1px solid rgba(25,120,229,.3)}.g-links{display:flex;gap:32px}.g-nav a.on{color:var(--text)}.nav-go{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:8px;background:#1978e5;color:#fff!important;font:700 13.5px/1 Inter!important;white-space:nowrap}.nav-go.soon{background:var(--surface-3);color:var(--text-3)!important;box-shadow:none;cursor:not-allowed}.nav-go.soon:hover{background:var(--surface-3)}@media(max-width:700px){.g-links{display:none}}
+.g{max-width:720px;margin:0 auto;padding:40px 16px 64px}
+.g .kicker{font:700 11px/1.4 Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--brand-on)}
+.g h1{font:800 32px/1.18 Inter;letter-spacing:-.02em;margin:10px 0 14px;text-wrap:balance}
+.g h2{font:800 21px/1.3 Inter;letter-spacing:-.01em;margin:40px 0 10px}
+.g p,.g li{font:400 16px/1.65 Inter;color:var(--text-2)}.g p b,.g li b{color:var(--text)}
+.g p{margin:0 0 14px}.g a{color:var(--brand-on)}
+.g .lead{font-size:18px;color:var(--text)}
+.g table{width:100%;border-collapse:collapse;margin:16px 0;font:500 14px/1.45 Inter}
+.g th,.g td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.g th{font:700 11px/1.3 Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.g td.n,.g th.n{text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.g tr.tot td{font-weight:800;color:var(--text);border-bottom:0}
+.g .eq{font:600 15px/1.6 'JetBrains Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;overflow-x:auto;color:var(--text)}
+.g .note{background:var(--review-soft);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin:28px 0 0}
+.btn{display:inline-flex;align-items:center;height:42px;padding:0 16px;border-radius:10px;font:700 14px/1 Inter;text-decoration:none}
+.btn.p{background:var(--brand);color:#fff}.btn.s{border:1px solid var(--border-strong);color:var(--text)}
+.tw{overflow-x:auto}
+</style>
+</head>
+<body data-theme="light">
+<script>/* theme: the same preference as ezbuild.co.nz — a cookie shared by every *.ezbuild.co.nz site, then this site's own storage; light when nothing is saved, as on the main site */(function(){var p=null;try{var m=document.cookie.match(/(?:^|;\s*)ezbuild-theme=(light|dark|system)/);p=m?m[1]:localStorage.getItem('ezbuild-theme')}catch(e){}if(p==='system')p=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.body.dataset.theme=p==='dark'?'dark':'light'})()</script>
+<nav class="g-nav"><a class="logo" href="https://ezbuild.co.nz/">EZbuild<span class="beta">Beta</span></a><span class="g-links"><a href="https://ezbuild.co.nz/">Home</a><a href="https://ezbuild.co.nz/for-revit.html">For Revit</a><a class="on" href="../index.html">Construction R-value</a></span><span class="nav-go soon" role="link" aria-disabled="true" title="Coming soon">Get Started →</span></nav>
+<article class="g">
+<p class="kicker">H1/AS1 6th edition · Slab on ground</p>
+<h1>Slab-on-ground R-values: the Appendix E lookup, step by step</h1>
+<p class="lead">There is no layer-by-layer calculation for a concrete slab on ground. H1/AS1 6th edition gives its construction R-value in <b>24 tables in Appendix E</b> — and which number you read depends on four things: the slab's shape, the foundation, the insulation and the external wall.</p>
+
+<h2>1. Measure the area and the perimeter</h2>
+<p>Use the internal dimensions of the heated slab: Equation E.1 is simply <b>A/P = area ÷ perimeter</b>. Two rules decide what goes in:</p>
+<ul>
+<li><b>Leave out</b> the garage, porch and any other unconditioned slab when measuring the area.</li>
+<li><b>Keep in the perimeter</b> the wall between the house and the garage (E.1.2.2) — heat still leaves the slab there.</li>
+</ul>
+<p>Measuring on external dimensions instead? Equation E.2 takes A/P − w/2, where w is the effective wall thickness in metres. For a 140 m² slab with a 52 m perimeter and a 100 mm wall, that is 2.69 − 0.05 = 2.64 — the same table row either way here.</p>
+<p>Two heated slabs that don't touch, with an unconditioned area between them, are calculated separately (E.1.2.2 Comment 3).</p>
+
+<h2>2. Find the row — the smaller one</h2>
+<p>The tables have rows for A/P from 0.6 up to 10.0 and above. Between two rows you use the <b>smaller</b> A/P — there is no interpolation. 140 ÷ 52 = 2.69, so you read the 2.6 row.</p>
+<p>Shape matters more than you might expect. For a conventional slab with no insulation and a light-clad wall:</p>
+<table>
+<tr><th>Slab</th><th class="n">A/P</th><th class="n">Row</th><th class="n">R</th></tr>
+<tr><td>90 m², 40 m perimeter</td><td class="n">2.25</td><td class="n">2.2</td><td class="n">R0.9</td></tr>
+<tr><td>140 m², 52 m perimeter</td><td class="n">2.69</td><td class="n">2.6</td><td class="n">R1.1</td></tr>
+<tr><td>200 m², 62 m perimeter</td><td class="n">3.23</td><td class="n">3.2</td><td class="n">R1.2</td></tr>
+</table>
+<p>A bigger, squarer slab has less edge per square metre, and most of a slab's heat loss is at the edge.</p>
+
+<h2>3. Pick the table</h2>
+<p>The 24 tables cover every combination of:</p>
+<ul>
+<li><b>Foundation</b> — a conventional slab with footings, or a concrete raft (waffle / pods)</li>
+<li><b>Vertical edge insulation</b> — none or R1.0</li>
+<li><b>Underslab insulation</b> — none, a 1.2 m perimeter strip of R1.2 or R2.4, or full cover R1.2 or R2.4 (slab floors only)</li>
+<li><b>External wall</b> — masonry veneer or other cladding</li>
+</ul>
+<p>Within the table, the column is the effective wall thickness band: 90–140, 140–180, 180–250, 250–300 or 300 mm and over — the horizontal distance from the outer edge of the slab to the inside face of the wall. It matters most on insulated slabs: with R1.0 edge and full R2.4 underslab, the slab below goes from R2.3 at 100 mm to R2.8 at 300 mm and over.</p>
+
+<h2>What each choice is worth</h2>
+<p>The same 140 m² slab, 52 m perimeter, internal dimensions, 100 mm effective wall, A/P row 2.6:</p>
+<table>
+<tr><th>Foundation and insulation</th><th>Table</th><th class="n">R</th></tr>
+<tr><td>Slab, no insulation</td><td>E.1.2.1F</td><td class="n">R1.1</td></tr>
+<tr><td>Slab, no insulation, masonry veneer</td><td>E.1.2.1E</td><td class="n">R1.2</td></tr>
+<tr><td>Slab, R1.0 edge</td><td>E.1.2.1H</td><td class="n">R1.3</td></tr>
+<tr><td>Slab, 1.2 m strip of R1.2 underslab</td><td>E.1.2.1J</td><td class="n">R1.3</td></tr>
+<tr><td>Slab, full R1.2 underslab</td><td>E.1.2.1N</td><td class="n">R1.5</td></tr>
+<tr><td>Slab, full R2.4 underslab</td><td>E.1.2.1P</td><td class="n">R1.8</td></tr>
+<tr><td>Slab, R1.0 edge + full R1.2 underslab</td><td>E.1.2.1V</td><td class="n">R1.9</td></tr>
+<tr><td>Slab, R1.0 edge + full R2.4 underslab</td><td>E.1.2.1X</td><td class="n">R2.3</td></tr>
+<tr><td>Raft, no added insulation</td><td>E.1.2.1B</td><td class="n">R1.4</td></tr>
+<tr><td>Raft, R1.0 edge</td><td>E.1.2.1D</td><td class="n">R1.7</td></tr>
+</table>
+<p>Two things stand out. Edge insulation and underslab insulation together do far more than either alone. And for this shape, an uninsulated raft reads higher than an uninsulated conventional slab — that is how the tables are published.</p>
+
+<h2>Where it catches people out</h2>
+<ul>
+<li><b>Pods are not insulation.</b> A raft without added insulation is read from the uninsulated raft tables.</li>
+<li><b>A raft with underslab insulation has no table.</b> Insulation under or within a raft, a raft on piles, insulation over the slab or a topping slab, and edge insulation other than R1.0 all need a value calculated to H1/VM1 Appendix E — usually from the slab system's manufacturer (E.1.1.1 b)).</li>
+<li><b>More than R1.0 at the edge adds little</b> (E.1.2.1 Comment 4).</li>
+<li><b>Old guide values don't count.</b> Slab values from the BRANZ House Insulation Guide 5th edition or earlier are not acceptable (E.1.1.1 Comment 1).</li>
+<li><b>Carpet and other floor coverings</b> are not counted (2.1.3.1 a) iii)).</li>
+<li><b>The tables assume soil conductivity λ = 2.0 W/(m·K)</b> (E.1.2.1 Comment 5).</li>
+</ul>
+
+<h2>When the edge isn't the same all the way round</h2>
+<p>Most houses have a stretch of perimeter without edge insulation — the wall to the garage, or a door or full-height window opening with nothing under it, which counts as "no edge insulation" perimeter (E.1.2.3 Comment). Equations E.3–E.5 combine the parts by perimeter length:</p>
+<p class="eq">R = 1 / Σ (P<sub>i</sub>/P ÷ R<sub>i</sub>)</p>
+<p>The 140 m² slab with R1.0 edge insulation, except 6 m of house–garage wall without it:</p>
+<p class="eq">1/R = (46/52) ÷ 1.3 + (6/52) ÷ 1.1 → R = 1.27</p>
+<p>Six metres of uninsulated edge takes the slab from R1.3 to R1.27. Thermally separating the garage slab with vertical edge insulation is recommended (E.1.2.1 Comment 1).</p>
+
+<h2>Is there a minimum?</h2>
+<p>Not for an ordinary slab: 2.1.2.11 sets no minimum for slab-on-ground, and its R-value goes into the heat-loss calculation with everything else. A <b>heated</b> slab — embedded heating — must reach the Table 2.1.2.12 minimum: R2.5 in zones 1–3, R2.8 in zone 4 and R3.0 in zones 5–6. For the slab above, the strongest table combination — R1.0 edge plus full R2.4 underslab — gives R2.3 with a 100 mm effective wall, short of R2.5. The same combination reads R2.5 in the 180–250 mm band and R2.8 at 300 mm and over. Where the tables fall short, a heated slab needs an H1/VM1 Appendix E calculation.</p>
+
+<p class="note">These figures are read from the Appendix E tables as transcribed in the calculator. Check them against your own copy of H1/AS1 before they go into a consent. The calculator does not decide compliance — the building consent authority does.</p>
+
+<h2>Look up your own slab</h2>
+<p>In the Construction R-value Calculator, enter the slab's area and perimeter on the Project page, then choose the foundation, insulation and cladding. It shows the A/P, the table, the row and the band it read, handles perimeter parts and the garage wall, and puts the result in the PDF report. Free, open source, in your browser.</p>
+<div class="cta"><a class="btn p" href="../index.html">Open the calculator</a><a class="btn s" href="wall-r-value-h1-as1.html">Read the wall guide</a></div>
+</article>
+<script data-goatcounter="https://ezbuild.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>
