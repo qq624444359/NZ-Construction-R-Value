@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wall R-value under H1/AS1 6th edition: why R2.8 batts make an R1.67 wall | EZbuild</title>
+<meta name="description" content="How a timber-framed wall's construction R-value is calculated for H1/AS1 6th edition — NZS 4214 isothermal planes, the 38% framing fraction and the vented cavity — with a worked example, layer by layer.">
+<link rel="canonical" href="https://qq624444359.github.io/NZ-Construction-R-Value/guides/wall-r-value-h1-as1.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Why R2.8 batts make an R1.67 wall — H1/AS1 6th edition">
+<meta property="og:description" content="The 38% framing fraction, the vented cavity and the bridged portion, worked through layer by layer.">
+<meta property="og:image" content="https://qq624444359.github.io/NZ-Construction-R-Value/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/rvc.css?v=3">
+<style>
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif}
+.g-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 24px;border-bottom:1px solid var(--glass-br)}
+.g-nav a{color:var(--text-2);text-decoration:none;font:600 13.5px/1 Inter}.g-nav .logo{color:var(--text);font-weight:800;font-size:17px}
+.g{max-width:720px;margin:0 auto;padding:40px 16px 64px}
+.g .kicker{font:700 11px/1.4 Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--brand-on)}
+.g h1{font:800 32px/1.18 Inter;letter-spacing:-.02em;margin:10px 0 14px;text-wrap:balance}
+.g h2{font:800 21px/1.3 Inter;letter-spacing:-.01em;margin:40px 0 10px}
+.g p,.g li{font:400 16px/1.65 Inter;color:var(--text-2)}.g p b,.g li b{color:var(--text)}
+.g p{margin:0 0 14px}.g a{color:var(--brand-on)}
+.g .lead{font-size:18px;color:var(--text)}
+.g table{width:100%;border-collapse:collapse;margin:16px 0;font:500 14px/1.45 Inter}
+.g th,.g td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.g th{font:700 11px/1.3 Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.g td.n,.g th.n{text-align:right;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.g tr.tot td{font-weight:800;color:var(--text);border-bottom:0}
+.g .eq{font:600 15px/1.6 'JetBrains Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;overflow-x:auto;color:var(--text)}
+.g .note{background:var(--review-soft);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin:28px 0 0}
+.btn{display:inline-flex;align-items:center;height:42px;padding:0 16px;border-radius:10px;font:700 14px/1 Inter;text-decoration:none}
+.btn.p{background:var(--brand);color:#fff}.btn.s{border:1px solid var(--border-strong);color:var(--text)}
+.tw{overflow-x:auto}
+</style>
+</head>
+<body data-theme="dark">
+<script>try{var t=localStorage.getItem('ezbuild-theme');if(t)document.body.dataset.theme=t}catch(e){}</script>
+<nav class="g-nav"><a class="logo" href="https://ezbuild.co.nz/?utm_source=rvalue-calculator&utm_medium=referral&utm_campaign=guide-wall">EZbuild</a><a href="../index.html">Construction R-value Calculator →</a></nav>
+<article class="g">
+<p class="kicker">H1/AS1 6th edition · Walls</p>
+<h1>Why R2.8 batts make an R1.67 wall</h1>
+<p class="lead">The R-value on the batt packet is the insulation's. The number H1/AS1 asks for is the <b>construction R-value</b> — the whole wall, surface to surface, with the timber that bridges the insulation. For a standard 90 mm wall they are not close.</p>
+
+<h2>The method</h2>
+<p>H1/AS1 6th edition, paragraph 2.1.3.1 a), says construction R-values for walls, roofs and floors other than slabs are determined by NZS 4214 as modified by paragraph 2.1.3.2. NZS 4214 uses <b>isothermal planes</b>: layers that run unbroken across the wall add up in series, and where framing interrupts the insulation, that part of the wall — the <b>bridged portion</b> — has two heat paths side by side, one through the timber and one through the insulation, averaged by area:</p>
+<p class="eq">1/Rb = f<sub>timber</sub> / R<sub>timber path</sub> + f<sub>insulation</sub> / R<sub>insulation path</sub></p>
+<p>Two numbers decide most of the answer: how much of the wall is timber, and what the timber path is worth.</p>
+
+<h2>The 38% framing fraction</h2>
+<p>For framed walls H1/AS1 2.1.3.1 a) i) uses a framing fraction of <b>38%</b> unless a lower fraction is demonstrated for the building. Studs alone at 600 centres are 45 ÷ 600 = 7.5% — the default covers everything else in a real wall too. So 38% of the bridged portion is the timber path, and 62% is the insulation path.</p>
+<p>A 90 mm stud is worth about R0.75 (0.090 m ÷ k 0.12 W/m·K for timber). Next to R2.8 insulation it is a thermal short circuit across more than a third of the wall.</p>
+
+<h2>Worked example: 90 × 45 @ 600, R2.8 batts</h2>
+<p>James Hardie Oblique weatherboard 14 mm on a drained and vented cavity, building wrap, 90 × 45 studs at 600 with Pink® Batts® R2.8 (90 mm), 10 mm plasterboard. Outside to inside:</p>
+<div class="tw"><table>
+<tr><th>Layer</th><th class="n">Own R</th><th class="n">Counted</th><th>Why</th></tr>
+<tr><td>Outside surface</td><td class="n">0.03</td><td class="n">0.015</td><td>Counted at half — outside the vented cavity</td></tr>
+<tr><td>Cladding (Oblique 14 mm)</td><td class="n">0.056</td><td class="n">0.028</td><td>Counted at half — outside the vented cavity</td></tr>
+<tr><td>Vented cavity</td><td class="n">0.08</td><td class="n">in Rb</td><td>Sits against the framing — part of the bridged portion</td></tr>
+<tr><td>Building wrap</td><td class="n">0.01</td><td class="n">0.01</td><td></td></tr>
+<tr><td>Studs + insulation (bridged portion)</td><td class="n">2.80</td><td class="n">1.49</td><td>Rb below</td></tr>
+<tr><td>Plasterboard 10 mm</td><td class="n">0.04</td><td class="n">0.04</td><td></td></tr>
+<tr><td>Inside surface</td><td class="n">0.09</td><td class="n">0.09</td><td></td></tr>
+<tr class="tot"><td>Construction R-value</td><td class="n"></td><td class="n">R1.67</td><td></td></tr>
+</table></div>
+<p>The bridged portion, with the vented cavity on both paths:</p>
+<p class="eq">timber path = 0.75 + 0.08 = 0.83<br>insulation path = 2.80 + 0.08 = 2.88<br>1/Rb = 0.38 / 0.83 + 0.62 / 2.88 → Rb = 1.49</p>
+<p>That clears the 2.1.2.11 b) minimum for walls (R1.0) — but the number that goes into the calculation method is R1.67, not R2.8. Use R2.8 and the heat loss of every wall is understated by 40%.</p>
+
+<h2>Thicker batts help less than you think</h2>
+<table>
+<tr><th>Wall</th><th class="n">Batts</th><th class="n">Construction R</th></tr>
+<tr><td>90 × 45 @ 600</td><td class="n">R2.8</td><td class="n">R1.67</td></tr>
+<tr><td>140 × 45 @ 600</td><td class="n">R3.6</td><td class="n">R2.30</td></tr>
+<tr><td>140 × 45 @ 600</td><td class="n">R4.3</td><td class="n">R2.42</td></tr>
+</table>
+<p>Going from R3.6 to R4.3 batts in a 140 mm wall adds R0.7 of insulation and R0.13 of wall. The timber path doesn't change, and with 38% of the area on it, it sets the ceiling. To move the number meaningfully you change the timber path — a thermal break over the framing, internal strapping with a second layer of insulation, external insulation — or demonstrate a lower framing fraction.</p>
+<p>Stud spacing on its own does not move it: at 400 centres the wall is still R1.67, because the 38% default already stands in for the timber.</p>
+
+<p class="note">The figures here use the calculator's default material values, which are provisional: confirm them against your own copy of NZS 4214 and the manufacturers' data before they go into a consent. The calculator does not decide compliance — the building consent authority does.</p>
+
+<h2>Check your own walls</h2>
+<p>The Construction R-value Calculator does this for walls, truss and skillion roofs, suspended floors and slabs on ground (Appendix E), shows every step, draws the section and exports a PDF calculation. It is free, open source and runs in your browser.</p>
+<div class="cta"><a class="btn p" href="../index.html">Open the calculator</a><a class="btn s" href="https://ezbuild.co.nz/?utm_source=rvalue-calculator&utm_medium=referral&utm_campaign=guide-wall">Check a whole drawing set with EZbuild</a></div>
+</article>
+</body>
+</html>

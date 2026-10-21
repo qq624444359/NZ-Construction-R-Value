@@ -10,6 +10,8 @@ Construction R-values for New Zealand walls, roofs and floors, to **H1/AS1 6th e
 - Project page with envelope areas and the rows to paste into the BRANZ H1/AS1 calculation tool.
 - Exports a PDF calculation report. Projects save to a file and stay in your browser — nothing is sent to a server.
 
+Guide: [Why R2.8 batts make an R1.67 wall](https://qq624444359.github.io/NZ-Construction-R-Value/guides/wall-r-value-h1-as1.html) — the H1/AS1 wall method, worked through.
+
 ## Request a feature or report a problem
 
 - **GitHub:** [open an issue](https://github.com/qq624444359/NZ-Construction-R-Value/issues/new/choose) — there is a form for feature requests and one for wrong results.
