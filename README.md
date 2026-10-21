@@ -32,6 +32,10 @@ Your project data stays in your browser and is never sent anywhere. Page visits 
 - **GitHub:** [open an issue](https://github.com/qq624444359/NZ-Construction-R-Value/issues/new/choose) — there is a form for feature requests and one for wrong results.
 - **No GitHub account?** Email [pitayadesign.ezbuild@gmail.com](mailto:pitayadesign.ezbuild@gmail.com?subject=Construction%20R-value%20calculator%20%E2%80%94%20feature%20request).
 
+## For manufacturers
+
+Insulation and cladding manufacturers can have their products listed in the calculator — free for founding partners until 31 October 2027. See [rvalue.ezbuild.co.nz/for-manufacturers.html](https://rvalue.ezbuild.co.nz/for-manufacturers.html). Product data lives in [`js/products.js`](js/products.js).
+
 ## Run it locally
 
 It is a static site — no build step, no dependencies.
