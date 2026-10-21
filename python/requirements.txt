@@ -1,0 +1,10 @@
+pyyaml
+openpyxl
+pymupdf
+# api.py only
+fastapi
+pydantic
+uvicorn
+# tests
+pytest
+httpx

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eaves Section Preview</title>
+<style>
+  :root {
+    --bg: #0f1522; --surface: #151d2e; --ink: #e6ebf5; --ink-3: #8a96ad; --hairline: #2a3550;
+    --brand: #3b82f6; --timber: #b98a56; --timber-beyond: #6e5638; --insulation: #d9a63a;
+    --lining: #c9d1df; --air: #5fb3ff;
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f7fb; --surface: #ffffff; --ink: #1b2333; --ink-3: #5d6880; --hairline: #d5dbe6;
+    --timber: #b07c45; --timber-beyond: #dcc4a3; --insulation: #e0a92c; --lining: #7d8799; --air: #1f7ae0;
+  }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, sans-serif; }
+  main { max-width: 1200px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+  .panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 12px; }
+  .panel h2 { margin: 0 0 8px; font-size: 14px; }
+  form { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  label { color: var(--ink-3); } input[type=number] { width: 70px; }
+
+  .eaves-section { width: 100%; height: auto; display: block; }
+  .eaves-section .cut { stroke: var(--ink); stroke-width: 3; }
+  .eaves-section .timber { fill: var(--timber); }
+  .eaves-section .cut.x { fill: var(--timber); }
+  .eaves-section .beyond { fill: var(--timber-beyond); stroke: var(--timber); stroke-width: 2; stroke-dasharray: 10 8; }
+  .eaves-section .cut.lining, .eaves-section .cut.ply { fill: var(--lining); stroke-width: 2; }
+  .eaves-section .cut.ply { fill: var(--timber); }
+  .eaves-section .insulation { stroke: var(--insulation); stroke-width: 3; }
+  .eaves-section .batt { fill: none; stroke: var(--insulation); stroke-width: 4; }
+  .eaves-section .beyond-outline { fill: none; stroke: var(--timber); stroke-width: 3; stroke-dasharray: 14 10; }
+  .eaves-section .strong-heel { stroke: var(--ink-3); }
+  .eaves-section .roofspace-fill { fill: var(--air); fill-opacity: .05; stroke: none; }
+  .eaves-section .squashed { fill: #ff6b3d; fill-opacity: .18; stroke: none; }
+  .eaves-section .sheet { fill: none; stroke: var(--lining); stroke-width: 7; }
+  .eaves-section .sheet-rib { fill: none; stroke: var(--lining); stroke-width: 2.5; stroke-dasharray: 6 10; }
+  .eaves-section .underlay { fill: none; stroke: var(--ink); stroke-width: 3; stroke-dasharray: 18 10; }
+  .eaves-section .underlay.solid { stroke-dasharray: none; stroke-width: 3; }
+  .eaves-section .shingles { fill: none; stroke: var(--ink-3); stroke-width: 4; }
+  .eaves-section .gutter { fill: none; stroke: var(--lining); stroke-width: 5; }
+  .eaves-section .edge { stroke: var(--ink-3); stroke-width: 2; }
+  .eaves-section .leader { fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
+  .eaves-section .leader-dot { fill: var(--ink-3); }
+  .eaves-section .label { fill: var(--ink); font-size: 44px; }
+  .eaves-section .note { fill: var(--ink-3); font-size: 44px; font-style: italic; }
+  .eaves-section .caption { fill: var(--ink-3); font-size: 38px; letter-spacing: 4px; }
+  .eaves-section .dim { stroke: var(--ink-3); stroke-width: 2; fill: none; }
+  .eaves-section .dim.strong { stroke: var(--insulation); }
+  .eaves-section .dimtext { fill: var(--ink-3); font-size: 40px; }
+  .eaves-section .dimtext.strong { fill: var(--insulation); }
+</style>
+</head>
+<body>
+<main>
+  <div class="panel">
+    <form id="f">
+      <label><input type="radio" name="roofing" value="longrun" checked> Longrun</label>
+      <label><input type="radio" name="roofing" value="shingle"> Shingle</label>
+      <label><input type="radio" name="structure" value="truss" checked> Truss</label>
+      <label><input type="radio" name="structure" value="rafter"> Rafter</label>
+      <label>Rafter depth <input type="number" name="rd" value="190"></label>
+      <label>Pitch <input type="number" name="pitch" value="20"></label>
+      <label>Heel <input type="number" name="heel" placeholder="standard"></label>
+      <label>Between <input type="number" name="t1" value="110"></label>
+      <label>Over <input type="number" name="t2" value="0"></label>
+      <label><input type="checkbox" name="cav"> Batten cavity</label>
+      <label><input type="checkbox" name="per" checked> Perimeter</label>
+      <label><input type="checkbox" name="light"> Light</label>
+      <label><input type="checkbox" name="lab"> Labels</label>
+    </form>
+  </div>
+  <div class="panel"><h2>Section · eaves</h2><div id="out"></div></div>
+</main>
+<script src="eaves-section.js"></script>
+<script>
+  var form = document.getElementById('f');
+  function draw() {
+    var v = function (n) { return form.elements[n].value; };
+    var ins = [{ layer: 'between', label: 'R2.6 · ' + v('t1') + ' mm', thickness: +v('t1') }];
+    if (+v('t2') > 0) ins.push({ layer: 'over', label: 'R3.6 · ' + v('t2') + ' mm', thickness: +v('t2') });
+    document.documentElement.dataset.theme = form.elements.light.checked ? 'light' : 'dark';
+    document.getElementById('out').innerHTML = eavesSection({
+      roofing: form.querySelector('[name=roofing]:checked').value,
+      structure: form.querySelector('[name=structure]:checked').value,
+      rafter: { depth: +v('rd') },
+      pitch: +v('pitch'),
+      heelHeight: v('heel') ? +v('heel') : null,
+      insulation: ins,
+      battenCavity: form.elements.cav.checked ? { label: 'R— · 35 mm', thickness: 35 } : null,
+      perimeter: form.elements.per.checked,
+      labels: form.elements.lab.checked
+    });
+  }
+  form.addEventListener('input', draw);
+  draw();
+</script>
+</body>
+</html>

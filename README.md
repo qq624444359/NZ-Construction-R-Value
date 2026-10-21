@@ -37,6 +37,31 @@ python3 -m http.server 8080
 | `js/*-section.js` | Section drawings (SVG) |
 | `js/project-file.js`, `js/export-name.js` | Save / open project files, file names |
 
+## Python package (`python/`)
+
+The same H1 calculations in Python, with tests — not needed by the website, which runs entirely in the browser.
+
+| Module | What it does |
+|---|---|
+| `h1/rvalue/engine.py` | NZS 4214 isothermal planes as modified by H1/AS1 2.1.3.2 (method only — see below) |
+| `h1/engine.py` | Calculation method: reference building vs proposed heat loss |
+| `h1/slab.py` | Appendix E slab-on-ground lookup |
+| `h1/optimise.py`, `h1/catalogue.py` | Lowest-cost combination that complies (example catalogue, not priced) |
+| `h1/branz_export.py` | Rows for the BRANZ H1/AS1 calculation workbook |
+| `h1/report.py` | PDF report |
+| `api.py` | Optional FastAPI app over all of the above |
+
+```bash
+cd python
+pip install -r requirements.txt
+pytest                         # unit tests
+uvicorn api:app --port 10000   # optional HTTP API
+```
+
+**NZS 4214 Appendix E values are not included.** Standards New Zealand's notice forbids reproducing the standard without permission, so `h1/rvalue/data/nzs4214.schema.yaml` has the shape and no numbers. Fill a copy (`nzs4214.local.yaml`, gitignored) from your own copy of the standard. The BRANZ workbook is not included either — set `H1_BRANZ_TEMPLATE` to your own copy to enable `/api/h1/export`.
+
+Design notes from the calculator's development are in `docs/design-briefs/`.
+
 ## Disclaimer
 
 Material, air-gap and surface values are provisional defaults you can overwrite on every row. Confirm each against your own copy of NZS 4214 and the manufacturers' data before a figure goes into a building consent. The calculator does not decide compliance: the building consent authority does. Provided under the MIT License, without warranty.

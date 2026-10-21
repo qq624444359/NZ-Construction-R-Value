@@ -1,0 +1,124 @@
+# Construction options catalogue — the search space the optimiser picks from.
+#
+# THE R-VALUES AND COSTS BELOW ARE EXAMPLES SHOWING THE SHAPE OF THE FILE.
+# They are not a priced, verified catalogue and must be replaced before any
+# result is shown to a designer. `verified: false` keeps every optimiser result
+# flagged provisional until someone owns these numbers.
+#
+# Two things make this file the actual product. Design Navigator and the free
+# NZGBC/BRANZ tools all know R-values; none of them know what a build-up costs,
+# and without cost there is nothing to rank. And `tags` is what separates "passes
+# H1" from "passes H1 and the builder will actually do it".
+#
+# `r_value` is the CONSTRUCTION R-value — after the framing derate, not the
+# nominal R printed on the batt. For framed walls that means a framing fraction
+# of no less than 38% unless a lower one has been demonstrated for the building
+# (H1/AS1 2.1.3.1 a) i)).
+#
+# Sources for construction R-values, per H1/AS1 2.1.3.1:
+#   walls, roofs, non-slab floors  NZS 4214 as modified by 2.1.3.2, or the
+#                                  BRANZ House Insulation Guide 6th edition
+#   vertical windows and glazing   Table D.1.1.1 (housing), keyed on glazing
+#     in doors                     type, Ug and frame material
+#   opaque doors                   H1/VM1 Appendix D.1.2 — no lookup table
+#   skylights                      ISO 10077-1 via Equation D.1 — no lookup table
+#   slab-on-ground floors          Appendix E
+#
+# RESERVED TAG — `foil-insulation` is not a preference like the other tags.
+# H1/AS1 does not apply at all to a building with foil insulation anywhere in it
+# (Paragraph 1.1.2.1), so choosing such a build-up ends this compliance pathway
+# rather than costing a little more. Tag those options and the optimiser will
+# say so; exclude the tag to keep them out of the search entirely.
+#
+# RESERVED TAG — `last-resort` marks an option that is offered but never
+# preferred, whatever it costs. Foundation insulation (edge, underslab or an
+# insulated raft) carries it: the optimiser searches without it first, and only
+# reaches for it when nothing else complies or to fill the remaining runner-up
+# slots — always ranked after every answer that avoids it.
+
+currency: NZD
+verified: false
+priced_by: null
+priced_on: null
+notes: >-
+  Replace every entry below with your own build-ups and rates. Costs are
+  installed cost per m² of element area, including labour, in the currency above.
+
+options:
+  wall:
+    - name: "EXAMPLE 90mm stud, R2.2 glasswool"
+      r_value: 1.8
+      cost_per_m2: null
+      tags: [standard-stud]
+    - name: "EXAMPLE 140mm stud, R3.6 glasswool"
+      r_value: 2.6
+      cost_per_m2: null
+      tags: [deep-stud]
+    - name: "EXAMPLE 90mm stud, R2.2 + 40mm external PIR"
+      r_value: 3.3
+      cost_per_m2: null
+      tags: [standard-stud, external-insulation]
+
+  roof:
+    - name: "EXAMPLE truss roof, R3.6 ceiling batts"
+      r_value: 3.6
+      cost_per_m2: null
+      tags: [truss]
+    - name: "EXAMPLE truss roof, R6.6 ceiling batts"
+      r_value: 6.6
+      cost_per_m2: null
+      tags: [truss]
+    - name: "EXAMPLE skillion, R5.0 between rafters"
+      r_value: 5.0
+      cost_per_m2: null
+      tags: [skillion, tight-cavity]
+
+  glazing:
+    - name: "EXAMPLE aluminium, standard double glazing"
+      r_value: 0.26
+      cost_per_m2: null
+      tags: [aluminium]
+    - name: "EXAMPLE thermally broken aluminium, double glazing"
+      r_value: 0.37
+      cost_per_m2: null
+      tags: [aluminium, thermally-broken]
+    - name: "EXAMPLE thermally broken, low-E argon"
+      r_value: 0.46
+      cost_per_m2: null
+      tags: [aluminium, thermally-broken, low-e]
+
+  slab_on_ground_floor:
+    - name: "EXAMPLE uninsulated slab"
+      r_value: 1.3
+      cost_per_m2: null
+      tags: [conventional-slab]
+    - name: "EXAMPLE slab with perimeter insulation"
+      r_value: 1.6
+      cost_per_m2: null
+      tags: [conventional-slab, perimeter-insulation, last-resort]
+    - name: "EXAMPLE slab with underslab EPS insulation"
+      r_value: 2.0
+      cost_per_m2: null
+      tags: [conventional-slab, underslab-insulation, last-resort]
+    - name: "EXAMPLE insulated raft slab"
+      r_value: 2.5
+      cost_per_m2: null
+      tags: [raft-slab, last-resort]
+
+  other_floor:
+    - name: "EXAMPLE suspended timber floor, R2.5 underfloor"
+      r_value: 2.5
+      cost_per_m2: null
+      tags: [suspended-timber]
+
+  opaque_door:
+    - name: "EXAMPLE solid core entry door"
+      r_value: 0.45
+      cost_per_m2: null
+      tags: []
+
+  skylight:
+    - name: "EXAMPLE double-glazed skylight"
+      r_value: 0.35
+      cost_per_m2: null
+      tags: []

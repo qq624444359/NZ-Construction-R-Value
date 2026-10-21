@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+# your own NZS 4214 Appendix E values — never commit them (see python/h1/rvalue/data/nzs4214.schema.yaml)
+nzs4214.local.yaml

@@ -1,0 +1,80 @@
+# Territorial authority -> H1 climate zone.
+#
+# Transcribed from the lookup table inside the BRANZ "Calculation Method
+# H1/AS1 6th Ed" workbook (Project Details!T:U), which is itself Appendix C of
+# H1/AS1. Users pick the council their project sits in; nobody should have to
+# know a zone number by heart.
+#
+# H1/AS1 Appendix C is the authority. Where a district straddles a boundary the
+# standard's map governs, not this table.
+
+territorial_authorities:
+  "Far North District": 1
+  "Whangarei District": 1
+  "Kaipara District": 1
+  "Auckland": 1
+  "Thames-Coromandel District": 1
+  "Hauraki District": 2
+  "Waikato District": 2
+  "Matamata-Piako District": 2
+  "Hamilton City": 2
+  "Waipa District": 2
+  "Ōtorohanga District": 2
+  "South Waikato District": 2
+  "Waitomo District": 2
+  "Taupo District": 4
+  "Western Bay of Plenty District": 1
+  "Tauranga City": 1
+  "Rotorua District": 4
+  "Whakatane District": 1
+  "Kawerau District": 1
+  "Ōpōtiki District": 1
+  "Gisborne District": 2
+  "Wairoa District": 2
+  "Hastings District": 2
+  "Napier City": 2
+  "Central Hawke’s Bay District": 2
+  "New Plymouth District": 2
+  "Stratford District": 2
+  "South Taranaki District": 2
+  "Ruapehu District": 4
+  "Whanganui District": 2
+  "Rangitikei District  (North of 39°50')": 4
+  "Rangitikei District (South of 39°50')": 3
+  "Manawatu District": 3
+  "Palmerston North City": 3
+  "Tararua District": 4
+  "Horowhenua District": 3
+  "Kapiti Coast District": 3
+  "Masterton District": 4
+  "Carterton District": 4
+  "South Wairarapa District": 4
+  "Porirua City": 3
+  "Upper Hutt City": 4
+  "Lower Hutt City": 3
+  "Wellington City": 3
+  "Chatham Islands": 3
+  "Tasman District": 3
+  "Nelson City": 3
+  "Marlborough District": 3
+  "Kaikoura District": 3
+  "Buller District": 4
+  "Grey District": 4
+  "Westland District": 4
+  "Hurunui District": 5
+  "Waimakariri District": 5
+  "Christchurch City": 5
+  "Selwyn District": 5
+  "Ashburton District": 5
+  "Timaru District": 5
+  "Mackenzie District": 6
+  "Waimate District": 5
+  "Waitaki District (Inland of Otekaieke River)": 6
+  "Waitaki District (Seaward of Otekaieke River)": 5
+  "Central Otago District": 6
+  "Queenstown-Lakes District": 6
+  "Dunedin City": 5
+  "Clutha District": 5
+  "Southland District": 6
+  "Gore District": 6
+  "Invercargill City": 6

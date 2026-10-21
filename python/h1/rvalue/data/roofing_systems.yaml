@@ -1,0 +1,58 @@
+# Which layers a roofing choice brings with it.
+#
+# Longrun metal roofing and shingle roofing are not the same build-up under a
+# different top sheet. Outside to inside, as the practice builds them:
+#
+#   longrun   longrun roofing → roof paper → purlins → truss
+#   shingle   shingles → D226+ roofing underlay → CHH Ecoply Roof Ply 15 mm DD T&G
+#
+# CHH Ply describes Ecoply Roofing as a plywood panel designed for rigid roofing
+# overlays such as asphalt roof tiles and shingles:
+# https://chhply.co.nz/ranges/ecoply/ecoply-structural-plywood/roofing/
+#
+# Picking the roofing therefore settles the layers under it, and the
+# configurator sets them rather than making the designer pick each one and hope
+# the combination is real.
+#
+# `allowed` constrains the choice; `default` is what gets filled in. A layer
+# with `confirmed: false` has no rule yet — the configurator must say so and let
+# the designer choose, never quietly fall back to another family's layers.
+#
+# Tile roofing is deliberately absent: concrete tile has barely appeared in the
+# practice's projects over the last five years. Add it here when it is needed.
+
+substrates:
+  purlins: "Purlins"
+  ecoply_roof_ply_15: "CHH Ecoply Roof Ply 15 mm DD T&G"
+
+underlays:
+  roof_paper: "Roof paper"
+  d226_plus: "D226+ roofing underlay"
+
+families:
+  longrun:
+    label: "Longrun metal roofing"
+    profiles:
+      corrugate: "Corrugate"
+      trapezoidal: "Trapezoidal"
+    substrate:
+      confirmed: true
+      default: purlins
+      allowed: [purlins]
+    underlay:
+      confirmed: true
+      default: roof_paper
+      allowed: [roof_paper]
+
+  shingle:
+    label: "Shingle roofing"
+    profiles:
+      asphalt_shingle: "Asphalt shingle"
+    substrate:
+      confirmed: true
+      default: ecoply_roof_ply_15
+      allowed: [ecoply_roof_ply_15]
+    underlay:
+      confirmed: true
+      default: d226_plus
+      allowed: [d226_plus]

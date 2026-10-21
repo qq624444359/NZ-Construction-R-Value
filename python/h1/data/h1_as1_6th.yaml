@@ -1,0 +1,72 @@
+# NZBC H1/AS1 6th edition — Calculation method reference data.
+#
+# Transcribed from the MBIE Acceptable Solution H1/AS1, 6th edition, dated
+# 27 November 2025. Paragraph references are given against each block so every
+# number can be traced back to the clause it came from.
+#
+# `verified: false` means no human has checked this transcription against the
+# published document. Results still carry a verdict — the numbers are real, not
+# placeholders — but they are flagged `provisional` and the calculator shows a
+# banner. Check the values, then set `verified: true` with your name and date.
+
+edition: "H1/AS1 6th edition"
+effective: "2025-11-27"
+verified: false
+verified_by: null
+verified_on: null
+source: >-
+  MBIE Acceptable Solution H1/AS1 6th edition, 27 November 2025.
+  Table 2.1.2.7 (reference heat loss equations); Paragraphs 2.1.2.5 (glazing
+  limit), 2.1.2.11 (minimum construction R-values), 2.1.2.13 (defaults when the
+  R-value is unknown), Table 2.1.2.12 (heated elements), 2.1.3.1 a) i)
+  (wall framing fraction).
+
+climate_zones: [1, 2, 3, 4, 5, 6]
+
+# Table 2.1.2.7 — reference building heat loss equations.
+#
+# The reference building borrows the proposed building's roof, skylight and
+# floor areas, but its walls are ALWAYS assumed 30% glazed regardless of how the
+# proposed building is glazed: 70% of gross wall area at the wall R-value and
+# 30% at the glazing R-value. Roof and skylight share one term at R6.6.
+reference_r_values:
+  roof_and_skylight: {1: 6.6, 2: 6.6, 3: 6.6, 4: 6.6, 5: 6.6, 6: 6.6}
+  wall:              {1: 1.6, 2: 1.6, 3: 1.6, 4: 1.6, 5: 1.6, 6: 1.6}
+  slab_on_ground:    {1: 1.5, 2: 1.5, 3: 1.5, 4: 1.5, 5: 1.6, 6: 1.7}
+  other_floor:       {1: 2.5, 2: 2.5, 3: 2.5, 4: 2.8, 5: 3.0, 6: 3.0}
+  glazing:           {1: 0.46, 2: 0.46, 3: 0.46, 4: 0.46, 5: 0.50, 6: 0.50}
+
+# The 70/30 split the reference equations apply to gross wall area.
+reference_wall_split:
+  wall_fraction: 0.70
+  glazing_fraction: 0.30
+
+# Paragraph 2.1.2.5 — the proposed building's wall glazing area shall be 40% or
+# less of its gross wall area. This is a gate, not a trade-off: no amount of
+# extra insulation elsewhere buys a way past it.
+max_wall_glazing_fraction: 0.40
+
+# Paragraph 2.1.2.11 — construction R-values in the proposed building shall be
+# no less than these, whatever the total-heat-loss comparison says. Note there
+# is no floor for slab-on-ground, glazing, opaque doors or skylights.
+minimum_r_values:
+  roof: 2.6
+  wall: 1.0
+  other_floor: 1.3
+
+# Table 2.1.2.12 — heated ceilings, heated walls and heated floors. Does not
+# apply where they serve only rooms containing a shower, bath or toilet.
+heated_minimum_r_values:
+  roof:  {1: 6.6, 2: 6.6, 3: 6.6, 4: 6.6, 5: 6.6, 6: 6.6}
+  wall:  {1: 2.9, 2: 2.9, 3: 2.9, 4: 2.9, 5: 2.9, 6: 2.9}
+  floor: {1: 2.5, 2: 2.5, 3: 2.5, 4: 2.8, 5: 3.0, 6: 3.0}
+
+# Paragraph 2.1.2.13 — where a construction R-value is not known.
+default_r_values:
+  opaque: 0.18
+  glazing: 0.15
+
+# Paragraph 2.1.3.1 a) i) — for framed walls, assume a wall framing fraction of
+# no less than this unless a lower one can be demonstrated appropriate for the
+# building. Demonstrating it needs wall and opening dimensions.
+minimum_wall_framing_fraction: 0.38

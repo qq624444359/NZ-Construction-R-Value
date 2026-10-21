@@ -1,0 +1,68 @@
+# Shape of the NZS 4214:2006 Appendix E data — WITHOUT the data.
+#
+# Every value here is null on purpose, and this file must stay that way.
+#
+# NZS 4214:2006 carries an explicit notice: access is sponsored by MBIE under
+# copyright licence LN001498, and reproducing or distributing any part of the
+# standard needs prior written permission from Standards New Zealand. Appendix E
+# is the tables. Committing them here would be reproducing part of the standard;
+# implementing the method in engine.py is not, which is why the method ships and
+# the numbers do not.
+#
+# HOW TO USE THIS
+#
+#   1. Get NZS 4214:2006. It is free to view and print, sponsored by MBIE:
+#      https://codehub.building.govt.nz/resources/42142006nzs
+#   2. Copy this file to `nzs4214.local.yaml` (gitignored) and fill it in from
+#      your own copy of Appendix E.
+#   3. Point NZS4214_DATA at it. With nothing configured the engine still runs —
+#      the caller passes R-values directly — but nothing can look a value up.
+#
+# Before shipping this in a hosted product, ask Standards New Zealand about a
+# licence to use Appendix E's values in software. They licence standards data,
+# and MBIE sponsored free access precisely to lower the barrier to applying it.
+# Worth asking in the same breath as the BRANZ workbook question.
+
+source: "NZS 4214:2006 Appendix E (Normative)"
+verified: false
+verified_by: null
+verified_on: null
+
+# Table E2 — surface resistance for air, by surface emittance and the direction
+# heat flows. Roofs are the reason direction matters: heat flows up in winter
+# and down in summer, and the two give different totals.
+surface_resistance:
+  outside:
+    # key: "<emittance>/<heat flow>", e.g. "0.90/horizontal"
+    {}
+  inside:
+    {}
+
+# Table E3 — air space resistance by width, total emittance and mean temperature,
+# for each heat flow direction. This is the value a roof space contributes, and
+# it is the one most often guessed wrong.
+air_space_resistance:
+  # key: "<width_mm>/<emittance>/<heat flow>"
+  {}
+
+# Table E4 — emittance of common surfaces, and effective emittance of air spaces
+# bounded by them. Needed before E2 and E3 can be indexed at all.
+emittance:
+  {}
+
+# Tables E1(a)-(d) — board and sheet, masonry, framing/floor/cladding, and other
+# common materials. Store conductivity; engine.Layer.of_material does the rest.
+materials:
+  # <name>: { conductivity: null, density: null, note: null }
+  {}
+
+# Table E5 — ground and sub-floor space under a suspended floor.
+subfloor_resistance:
+  {}
+
+# Tables E6 and E7 — un-insulated ground under a slab, and the multiplier for
+# edge-insulated slabs. Note H1/AS1 sends slab-on-ground to its own Appendix E
+# instead, so these are only for work outside H1.
+slab_on_ground:
+  ground_resistance: {}
+  edge_insulation_multiplier: {}

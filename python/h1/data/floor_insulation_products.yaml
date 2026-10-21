@@ -1,0 +1,31 @@
+# Floor insulation products, from manufacturers' published data.
+#
+# Product R-values are the manufacturer's declared values. For slab-on-ground
+# floors they do not feed a calculation directly: H1/AS1 Appendix E only has
+# tables for underslab R1.2 and R2.4, so a product earns the highest of those it
+# meets (h1/slab.py, underslab_credit). Thicknesses between tiers cost more
+# without earning anything under the tables.
+
+underslab:
+  - brand: EXPOL
+    product: SlabX200
+    source: "EXPOL SlabX200 Technical Data Sheet"
+    note: "EPS, 200 kPa compressive resistance at 10% deformation, 2400 x 1200 mm sheets, k = 0.034"
+    thicknesses:
+      - {thickness_mm: 40, r_value: 1.22}
+      - {thickness_mm: 50, r_value: 1.50}
+      - {thickness_mm: 60, r_value: 1.81}
+      - {thickness_mm: 75, r_value: 2.20}
+      - {thickness_mm: 100, r_value: 3.00}
+      - {thickness_mm: 150, r_value: 4.50}
+      - {thickness_mm: 200, r_value: 6.00}
+
+# Suspended timber floors (other_floor). Construction R-values come from the
+# BRANZ House Insulation Guide or NZS 4214, not from these product values.
+underfloor:
+  - brand: EXPOL
+    product: Underfloor Insulation
+    source: "BRANZ Appraisal No. 256 (2026), Table 1"
+    note: "EPS, compression fitted between joists; clips or joist saddles where exposed to wind wash"
+    thicknesses:
+      - {thickness_mm: 100, r_value: 2.5, widths_mm: [360, 410, 470, 560]}
