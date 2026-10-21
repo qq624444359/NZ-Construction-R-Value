@@ -8,7 +8,7 @@ Construction R-values for New Zealand walls, roofs and floors, to **H1/AS1 6th e
 - Checks every construction against the 2.1.2.11 minimums and the Table 2.1.2.12 heated minimums.
 - Section drawings for walls, truss and skillion roofs and suspended floors.
 - Project page with envelope areas and the rows to paste into the BRANZ H1/AS1 calculation tool.
-- Exports a PDF calculation report. Projects save to a file and stay in your browser — nothing is sent to a server.
+- Exports a PDF calculation report. Projects save to a file and stay in your browser — your project data is never sent anywhere. Page visits and a few actions (PDF download, save / open project) are counted anonymously with [GoatCounter](https://www.goatcounter.com/) — no cookies.
 
 Guide: [Why R2.8 batts make an R1.67 wall](https://qq624444359.github.io/NZ-Construction-R-Value/guides/wall-r-value-h1-as1.html) — the H1/AS1 wall method, worked through.
 
