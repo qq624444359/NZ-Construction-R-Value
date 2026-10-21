@@ -38,8 +38,8 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-seri
 .tw{overflow-x:auto}
 </style>
 </head>
-<body data-theme="dark">
-<script>try{var t=localStorage.getItem('ezbuild-theme');if(t)document.body.dataset.theme=t}catch(e){}</script>
+<body data-theme="light">
+<script>/* theme: the same preference as ezbuild.co.nz — a cookie shared by every *.ezbuild.co.nz site, then this site's own storage; light when nothing is saved, as on the main site */(function(){var p=null;try{var m=document.cookie.match(/(?:^|;\s*)ezbuild-theme=(light|dark|system)/);p=m?m[1]:localStorage.getItem('ezbuild-theme')}catch(e){}if(p==='system')p=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.body.dataset.theme=p==='dark'?'dark':'light'})()</script>
 <nav class="g-nav"><a class="logo" href="https://ezbuild.co.nz/">EZbuild<span class="beta">Beta</span></a><span class="g-links"><a href="https://ezbuild.co.nz/">Home</a><a href="https://ezbuild.co.nz/for-revit.html">For Revit</a><a class="on" href="../index.html">Construction R-value</a></span><span class="nav-go soon" role="link" aria-disabled="true" title="Coming soon">Get Started →</span></nav>
 <article class="g">
 <p class="kicker">H1/AS1 6th edition · Walls</p>

@@ -56,7 +56,7 @@ const XP=window.RVP||null;
 function reload(sv){if(!sv||!sv.list)return;S.list=sv.list;n=sv.list.reduce((m,c)=>Math.max(m,+String(c.id).slice(1)||0),n);S.guide=sv.guide||{};if(sv.proj)Object.assign(S.pdf.proj,sv.proj);S.list.forEach(ensure);if(S.cur!=='project'&&S.cur!=='openings'&&!S.list.some(c=>c.id===S.cur))S.cur='project';render()}
 /* the left-column line: the real address only — never the placeholder sample name */
 function hdrTxt(){const ad=((S.pdf&&S.pdf.proj)||{}).address||'',P=XP&&XP.state?XP.state():{};return (ad||'No address yet')+(P.ta?' · '+P.ta:'')+(S.zone?' · Zone '+S.zone:'')}
-window.addEventListener('storage',e=>{if(e.key==='ezbuild-theme'&&e.newValue)document.body.dataset.theme=e.newValue});   /* theme shared with the 3D house */
+window.addEventListener('storage',e=>{if(e.key==='ezbuild-theme'&&e.newValue)document.body.dataset.theme=e.newValue==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):e.newValue});   /* theme shared with the 3D house */
 window.RVC={get S(){return S},reload:sv=>reload(sv),render:()=>render(),ib:(...a)=>ib(...a),selF:(...a)=>selF(...a),grpF:(...a)=>grpF(...a),block:(c,k)=>block(c,k),nameHint:c=>nameHint(c),slabWarn:c=>slabWarn(c)};
 /* "New project": the page reloads blank — no sample areas, no slab size */
 let NEWP=false;try{NEWP=sessionStorage.getItem('ezbuild-newproj')==='1'}catch(e){}
@@ -512,7 +512,8 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   else if(a==='pdfclose'){closePdf();return}
   else if(a==='pdfdl'){download();return}
   else if(XP&&/^p(seg|sugg|suggall|copy|glz|wadd|wdel|dadd|ddel|sadd|sdel|wown|sideok)$/.test(a)){if(XP.act(a,v,b)===false)return}
-  else if(a==='theme'){document.body.dataset.theme=document.body.dataset.theme==='light'?'dark':'light';try{localStorage.setItem('ezbuild-theme',document.body.dataset.theme)}catch(e){}return}
+  else if(a==='theme'){const t=document.body.dataset.theme==='light'?'dark':'light';document.body.dataset.theme=t;try{localStorage.setItem('ezbuild-theme',t)}catch(e){}
+    /* shared with ezbuild.co.nz and its other subdomains */if(/(^|\.)ezbuild\.co\.nz$/.test(location.hostname))document.cookie='ezbuild-theme='+t+';domain=.ezbuild.co.nz;path=/;max-age=31536000;samesite=lax';return}
   else if(a==='startx'){FROMG=false;history.replaceState(null,'',location.pathname+(TQ?'?'+TQ:''))}
   else return;
   render()});
