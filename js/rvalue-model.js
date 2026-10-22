@@ -107,8 +107,8 @@ function fromSaved0(list,fmt){return(list||[]).map(c=>{if(c&&c.el==='roof'&&c.v&
 const PROD=Object.fromEntries(Object.entries(RP.insulation.byMember).filter(([k])=>k!=='brand').map(([k,L])=>[k,L.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1])]));   /* by R, then thickness */
 const MEMBER={stud:{d:90,w:45,s:600,dw:800,name:'Studs'},chord:{d:90,w:45,s:900,name:'Truss bottom chords'},rafter:{d:190,w:45,s:600,name:'Rafters'},
   joist:{d:190,w:45,s:400,name:'Joists'},batten:{d:35,w:45,s:600,name:'Battens'}};
-/* internal strapping on a concrete block wall: 90 × 45 by default — deep enough for wall batts */
-const BLOCK_ST={d:90,w:45,s:600};
+/* internal strapping on any wall: 90 × 45 @ 600 by default — deep enough for wall batts */
+const WALL_ST={d:90,w:45,s:600};
 /* products offered for a framing member: battens 90 mm deep or more take the wall (stud) batts */
 const prodList=(member,depth)=>member==='batten'&&+depth>=90?PROD.stud:(PROD[member]||[]);
 

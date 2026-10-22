@@ -75,8 +75,19 @@ function cur(){return S.list.find(c=>c.id===S.cur)||(XP&&(S.cur==='project'||S.c
 function ensure(c){c.o=c.o||{};const t=tpl(c);if(t.manual)return;ffMig(c);batMig(c);gapMig(c);
   if(c.el==='roof'){['fr','st'].forEach(id=>{const v=c.v[id];if(v&&v.p38){v.mode='std';v.p38=false;delete v.pct}})}   /* 38% is the wall default only (2.1.3.1 a)) */(t.slots||[]).forEach(s=>{if(c.v[s.id])return;
   if(s.k==='mat')c.v[s.id]={m:s.lib==='itBoard'?0:DEFM[s.id]||0};
-  else if(s.k==='frame'){const d=MEMBER[s.member];c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:null,insT:null,gap:0,cover:false},d.dw?{dw:d.dw}:{},c.kind==='block'&&s.id==='st'?BLOCK_ST:{})}
+  else if(s.k==='frame'){const d=MEMBER[s.member];c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:null,insT:null,gap:0,cover:false},d.dw?{dw:d.dw}:{},c.el==='wall'&&s.id==='st'?Object.assign({},WALL_ST,fitIns(s.member,WALL_ST.d)):{})}
   else c.v[s.id]={}})}
+/* the note on every wall's internal strapping */
+const STHINT='<p class="lsub v6sth"><span class="ms s16">info</span> Internal strapping starts at 90 × 45 @ 600 with the best-fitting wall batts — change the batten size and the insulation to match your drawings. It is non-structural (no lintels), so its framing fraction is batten width ÷ spacing, not the 38% framed-wall default.</p>';
+/* the highest-R product that fits a member of this depth, as {insR, insT, prod} */
+function fitIns(member,depth){const L=prodList(member,depth).filter(([,t])=>t<=depth),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;return b?{insR:b[0],insT:b[1],prod:window.RVC_PRODUCTS.insulation.byMember.brand}:{}}   /* runs at load too: no RPI here */
+/* names the calculator gave (not typed by the designer) follow the construction type when it changes */
+const KN={wall:{double:'double stud',it:'intertenancy',block:'concrete block',custom:'custom R-value',exist:'existing wall'},
+  roof:{truss:'truss',skillion:'skillion',grid:'suspended grid',self:'self-supporting',custom:'custom R-value',exist:'existing roof'},
+  floor:{solid:'solid timber',slab:'concrete slab',custom:'custom R-value',exist:'existing floor'}};
+function autoName(c){const fr=c.v.fr||{},lab=KN[c.el][c.kind]||(fr.d&&fr.s?fr.d+'@'+fr.s:tpl(c).name.toLowerCase());return ELW[c.el]+' – '+lab}
+function isAutoName(c){const n=String(c.name||'').trim(),p=ELW[c.el]+' – ';if(!n)return true;if(!n.startsWith(p))return false;const r=n.slice(p.length);
+  return /^\d+@\d+$/.test(r)||Object.values(KN[c.el]).includes(r)||KINDS[c.el].some(k=>k.id===r)}
 function firstFrame(c){const t=tpl(c);const f=(t.slots||[]).find(s=>s.k==='frame'&&prodList(s.member,(c.v[s.id]||{}).d||MEMBER[s.member].d).length);return f?f.id:null}
 S.list.forEach(ensure);S.af=cur()?firstFrame(cur()):null;
 
@@ -296,7 +307,7 @@ function frameCard(c,t,s,i,v,x,num){
       ${noEv?`<p class="v6ffwarn"><span class="ms s16">warning</span>${esc(FFEV)}</p>`:''}</div>`:'<p class="lsub">Framed walls: 38% framing unless a lower fraction is demonstrated for this building (2.1.3.1 a) i)).</p>'}`}
   /* roofs and floors: width ÷ centres, shown locked; unlock to enter a percentage (this visit only) */
   const fLock=!isWall&&(v.mode||'std')==='std'&&!isUnl(c,s.id+'.ff');
-  const fracRow=isWall?wallFF:fLock?`<div class="lctl v6frac"><span class="glbl">Framing fraction</span><div class="lockrow"><span class="lockval"><span class="ms s16">lock</span>${esc(F.how)} = ${p1(F.f)}</span>${lockBtn(s.id+'.ff','unl')}<span class="v6dv">${W[0]} width ÷ ${W[0].toLowerCase()} spacing — unlock to enter a percentage</span></div></div>`:`<div class="lctl v6frac"><span class="glbl">Framing fraction</span>${selF(f+'.mode',modes,v.mode||'std','230px')}${(v.mode||'std')==='pct'?ib(f+'.pct',v.pct,'%',{w:'64px'}):''}<b class="mono v6fv">${p1(F.f)}</b><span class="fcalc">${(v.mode||'std')==='std'&&!isWall?'Framing fraction '+esc(F.how)+' = '+p1(F.f)+' ('+W[0].toLowerCase()+' width ÷ '+W[0].toLowerCase()+' spacing)':esc(F.how)}</span></div>`;
+  const fracRow=(isWall?wallFF:fLock?`<div class="lctl v6frac"><span class="glbl">Framing fraction</span><div class="lockrow"><span class="lockval"><span class="ms s16">lock</span>${esc(F.how)} = ${p1(F.f)}</span>${lockBtn(s.id+'.ff','unl')}<span class="v6dv">${W[0]} width ÷ ${W[0].toLowerCase()} spacing — unlock to enter a percentage</span></div></div>`:`<div class="lctl v6frac"><span class="glbl">Framing fraction</span>${selF(f+'.mode',modes,v.mode||'std','230px')}${(v.mode||'std')==='pct'?ib(f+'.pct',v.pct,'%',{w:'64px'}):''}<b class="mono v6fv">${p1(F.f)}</b><span class="fcalc">${(v.mode||'std')==='std'&&!isWall?'Framing fraction '+esc(F.how)+' = '+p1(F.f)+' ('+W[0].toLowerCase()+' width ÷ '+W[0].toLowerCase()+' spacing)':esc(F.how)}</span></div>`)+(c.el==='wall'&&s.id==='st'?STHINT:'');
   const tl=`<div class="v6pp tim"><div class="v6pph"><span>Through the timber</span><span class="mono">${p1(F.f)}${pathR(0)}</span></div>${s.brk?`<div class="frow">${grpF('Thermal break strip R',ib(f+'.brkR',v.brkR,'R',{bad:!(+v.brkR>0)}))}${grpF('Thickness (shown only)',ib(f+'.brkT',v.brkT,'mm'))}</div><p class="lsub">From the strip manufacturer, e.g. a polystyrene or PIR strip fixed along the ${W[1]}. Only the timber path gets it.</p>`:''}${pfoot(0)}</div>`;
   const tr=`<div class="v6pp cav"><div class="v6pph"><span>Through the cavity</span><span class="mono">${p1(1-F.f)}${pathR(1)}</span></div>
   ${c.fkey&&s.id==='fr'?`<div class="v6lock"><span class="lockval"><span class="ms s16">lock</span>R${(+v.insR).toFixed(1)} · ${v.insT} mm · ${esc(v.prod||'')}</span><span class="chip-set"><span class="ms">link</span>Set by Insulation strategy</span></div>`:`<div class="frow">${grpF('Insulation R',ib(f+'.insR',v.insR,'R'))}${grpF('Thickness',ib(f+'.insT',v.insT,'mm'))}</div>`}
@@ -424,13 +435,14 @@ function nameHint(c){if(!c||c.el!=='wall')return;const s=c.name||'',k=/\bIT\b|\b
     setF('v.clad.m',String(LIB.cladding.findIndex(m=>m.still&&/^None/.test(m.n))),false,c);setF('v.ab.m','0',false,c)}
   if(!mine){S.af=af;S.pin=pin}}   /* renamed on the Project page: the open construction keeps its state */
 function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.replace(/^p\./,''),raw);return}const c=cc||cur();if(!c)return;const val0=isNum?(raw===''?null:(isNaN(parseFloat(raw))?null:parseFloat(raw))):raw;
-  if(path==='kind'){const nm=k=>ELW[c.el]+' – '+k;if(!c.name||c.name===nm(c.kind))c.name=nm(raw);
+  if(path==='kind'){const wasAuto=isAutoName(c);
     const frs=k=>{try{return(tpl(Object.assign({},c,{kind:k})).slots||[]).filter(s=>s.k==='frame')}catch(e){return[]}};
     c.vk=c.vk||{};const keep={};frs(c.kind).forEach(s=>{if(c.v[s.id])keep[s.id]=JSON.parse(JSON.stringify(c.v[s.id]))});c.vk[c.kind]=keep;
     c.kind=raw;const back=c.vk[raw];
     frs(raw).forEach(s=>{if(back&&back[s.id]){c.v[s.id]=JSON.parse(JSON.stringify(back[s.id]));return}
-      const d=MEMBER[s.member],bst=raw==='block'&&s.id==='st',dd=bst?BLOCK_ST.d:d.d,SK=s.member==='rafter'?PB_SKILL.filter(p=>/Skillion/.test(p[0])&&p[2]<=d.d).map(p=>[p[1],p[2],p[0]]):null,L=SK||prodList(s.member,dd).filter(([,t])=>t<=dd),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;   /* skillion: the highest-R Pink® Batts® Skillion that fits */
-      c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:b?b[0]:null,insT:b?b[1]:null,gap:0,cover:false,prod:b?(b[2]||RPI.byMember.brand):''},d.dw?{dw:d.dw}:{},c.el==='roof'&&s.id==='st'?{d:35,w:70,s:450,lock:true}:{},bst?BLOCK_ST:{})});
+      const d=MEMBER[s.member],bst=c.el==='wall'&&s.id==='st',dd=bst?WALL_ST.d:d.d,SK=s.member==='rafter'?PB_SKILL.filter(p=>/Skillion/.test(p[0])&&p[2]<=d.d).map(p=>[p[1],p[2],p[0]]):null,L=SK||prodList(s.member,dd).filter(([,t])=>t<=dd),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;   /* skillion: the highest-R Pink® Batts® Skillion that fits */
+      c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:b?b[0]:null,insT:b?b[1]:null,gap:0,cover:false,prod:b?(b[2]||RPI.byMember.brand):''},d.dw?{dw:d.dw}:{},c.el==='roof'&&s.id==='st'?{d:35,w:70,s:450,lock:true}:{},bst?WALL_ST:{})});
+    if(wasAuto)c.name=autoName(c);
     retype(c);return}
   if(path==='v.slab.sF'){const sv=c.v.slab=c.v.slab||{};sv.sF=raw;if(raw==='raft')sv.sU='none';return}
   if(path.startsWith('v.slab.parts.')){const [,,,i,k]=path.split('.'),sv=c.v.slab=c.v.slab||{};sv.parts=sv.parts||[];const pt=sv.parts[+i]=sv.parts[+i]||{};pt[k]=k==='len'?(raw===''?'':parseFloat(raw)):raw;return}
