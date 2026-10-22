@@ -126,7 +126,7 @@ function optEval(c){const key=JSON.stringify([c.id,c.kind,c.o,c.v,c.heated,c.are
   MEMO.set(key,out);if(MEMO.size>400)MEMO.clear();return out}
 let SUG=null;
 function solve(){const E=envelope(),ref=refHL(E);
-  const miss=[];if(!zone())miss.push('choose the council on the Project page');if(!E.roof)miss.push('enter the roof area');if(!E.wall)miss.push('enter the wall areas');if(E.bad.length)miss.push('fix '+E.bad.map(c=>'“'+c.name+'”').join(', ')+' (an insulation R-value and thickness that is not physically possible)');if(E.sky&&!skyR())miss.push('enter the skylight R');E.L.filter(isSlab).forEach(c=>{const L=calc(c).slab;if(L&&!L.ok)miss.push('“'+c.name+'”: '+(L.none?L.why:slabMsg(L)))});
+  const miss=[];if(!zone())miss.push('choose the council on the Project page');if(!E.roof)miss.push('enter the roof area');if(!E.wall)miss.push('enter the wall areas');if(E.bad.length)miss.push('fix '+E.bad.map(c=>'“'+c.name+'”').join(', ')+' (see the message on '+(E.bad.length>1?'each':'it')+')');if(E.sky&&!skyR())miss.push('enter the skylight R');E.L.filter(isSlab).forEach(c=>{const L=calc(c).slab;if(L&&!L.ok)miss.push('“'+c.name+'”: '+(L.none?L.why:slabMsg(L)))});
   if(miss.length)return SUG={state:'need',miss};
   const units=E.L.map(c=>({c,opts:optEval(c),fixed:!optionsOf(c).length}));
   const fixedU=units.filter(u=>u.fixed||!u.opts.length);const varU=units.filter(u=>!u.fixed&&u.opts.length);

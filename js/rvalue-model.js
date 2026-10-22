@@ -54,7 +54,11 @@ const LIB={
   block:[M('Concrete block 20 series (190 mm), all cells filled',0.14,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
     M('Concrete block 20 series (190 mm), 1 in 3 cells filled',0.15,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
     M('Concrete block 20 series (190 mm), 1 in 5 cells filled',0.16,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
-    M('Concrete block 20 series (190 mm), no cells filled',0.19,{t:190,vsrc:'Generic value — confirm with the block manufacturer'})],   /* 15 series (140 mm) removed: not used for house walls. A project saved with one keeps its saved value */
+    M('Concrete block 20 series (190 mm), no cells filled',0.19,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
+    M('Concrete block 25 series (240 mm), all cells filled',0,{t:240,need:1,vsrc:'No generic value — enter the block manufacturer’s R-value'}),
+    M('Concrete block 25 series (240 mm), 1 in 3 cells filled',0,{t:240,need:1,vsrc:'No generic value — enter the block manufacturer’s R-value'}),
+    M('Concrete block 25 series (240 mm), 1 in 5 cells filled',0,{t:240,need:1,vsrc:'No generic value — enter the block manufacturer’s R-value'}),
+    M('Concrete block 25 series (240 mm), no cells filled',0,{t:240,need:1,vsrc:'No generic value — enter the block manufacturer’s R-value'})],   /* 15 series (140 mm) removed: not used for house walls. A project saved with one keeps its saved value */
   brk:[M('None',0)],
   gap:[M('None',0),M('Still air gap 12 mm, non-reflective',.15),M('Still air gap 20–90 mm, non-reflective',.16)]
 };
@@ -251,6 +255,7 @@ function frac(slot,v,c){
 }
 /* an insulation layer whose R per mm is above 0.05 (conductivity below 0.02 W/m·K) is not a real loose or blanket product */
 function phys(c){const t=tpl(c);if(t.manual)return[];const out=[];(t.slots||[]).forEach(s=>{const v=c.v[s.id]||{};let r=0,th=0;
+  if(s.k==='mat'){const m=v.m===-1&&v.lm?v.lm:(LIB[s.lib]||[])[v.m||0];if(m&&m.need&&(v.r==null||v.r===''||!(+v.r>0)))out.push({slot:s.id,label:s.label,need:1,msg:'no generic value for '+m.n+' — enter the manufacturer’s R-value'});return}
   if(s.k==='ins'){if(s.opt&&!ovOn(v))return;r=+v.r||0;th=+v.t||0}else if(s.k==='frame'){r=+v.insR||0;th=+v.insT||0}
   if(r>0&&th>0&&r/th>0.05)out.push({slot:s.id,label:s.label,R:r,T:th,msg:'R'+r.toFixed(1)+' in '+th+' mm is not physically possible — check the R-value and thickness'})});return out}
 function calc(c,opt){
@@ -526,6 +531,7 @@ function toSheet(c,list){
     total:f(r.total),min,manual:!!t.manual,layers:[],portions:[],notes:r.notes,
     checks:[{ok:r.total>=min,text:(r.total>=min?'Meets':'Below')+' H1/AS1 2.1.2.11('+{roof:'a',wall:'b',floor:'c'}[c.el]+') minimum R'+min.toFixed(1)}]};
   if(c.el==='wall'&&!t.manual&&t.kind!=='block')s.checks.push({ok:r.total>=1.5,text:(r.total>=1.5?'Meets':'Below')+' E3/AS1 R1.5'});
+  phys(c).forEach(p=>s.checks.unshift({ok:false,text:p.label+': '+p.msg,sev:'fail'}));
   s.ff=ffLines(c);
   if(c.el==='roof'&&c.heated&&!c.heatWet&&!c.part&&!t.manual){s.min=6.6;s.checks[0]={ok:r.total>=6.6,text:(r.total>=6.6?'Meets':'Below')+' Table 2.1.2.12 minimum R6.6 (heated ceiling)'}}
   if(t.slab){const L=r.slab;s.checks=[];s.slab=L;s.element='Slab-on-ground floor';return s}
