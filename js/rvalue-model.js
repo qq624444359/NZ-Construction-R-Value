@@ -55,10 +55,10 @@ const LIB={
     M('Concrete block 20 series (190 mm), 1 in 3 cells filled',0.15,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
     M('Concrete block 20 series (190 mm), 1 in 5 cells filled',0.16,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
     M('Concrete block 20 series (190 mm), no cells filled',0.19,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
-    M('Concrete block 25 series (240 mm), all cells filled',0,{t:240,need:1,vsrc:'No generic value — enter the block manufacturer’s R-value'}),
-    M('Concrete block 25 series (240 mm), 1 in 3 cells filled',0,{t:240,need:1,vsrc:'No generic value — enter the block manufacturer’s R-value'}),
-    M('Concrete block 25 series (240 mm), 1 in 5 cells filled',0,{t:240,need:1,vsrc:'No generic value — enter the block manufacturer’s R-value'}),
-    M('Concrete block 25 series (240 mm), no cells filled',0,{t:240,need:1,vsrc:'No generic value — enter the block manufacturer’s R-value'})],   /* 15 series (140 mm) removed: not used for house walls. A project saved with one keeps its saved value */
+    M('Concrete block 25 series (240 mm), all cells filled',0.15,{t:240,vsrc:'Generic value — confirm with the block manufacturer'}),
+    M('Concrete block 25 series (240 mm), 1 in 3 cells filled',0.16,{t:240,vsrc:'Generic value — confirm with the block manufacturer'}),
+    M('Concrete block 25 series (240 mm), 1 in 5 cells filled',0.17,{t:240,vsrc:'Generic value — confirm with the block manufacturer'}),
+    M('Concrete block 25 series (240 mm), no cells filled',0.20,{t:240,vsrc:'Generic value — confirm with the block manufacturer'})],   /* 15 series (140 mm) removed: not used for house walls. A project saved with one keeps its saved value */
   brk:[M('None',0)],
   gap:[M('None',0),M('Still air gap 12 mm, non-reflective',.15),M('Still air gap 20–90 mm, non-reflective',.16)]
 };
