@@ -75,9 +75,9 @@ function cur(){return S.list.find(c=>c.id===S.cur)||(XP&&(S.cur==='project'||S.c
 function ensure(c){c.o=c.o||{};const t=tpl(c);if(t.manual)return;ffMig(c);batMig(c);gapMig(c);
   if(c.el==='roof'){['fr','st'].forEach(id=>{const v=c.v[id];if(v&&v.p38){v.mode='std';v.p38=false;delete v.pct}})}   /* 38% is the wall default only (2.1.3.1 a)) */(t.slots||[]).forEach(s=>{if(c.v[s.id])return;
   if(s.k==='mat')c.v[s.id]={m:s.lib==='itBoard'?0:DEFM[s.id]||0};
-  else if(s.k==='frame'){const d=MEMBER[s.member];c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:null,insT:null,gap:0,cover:false},d.dw?{dw:d.dw}:{})}
+  else if(s.k==='frame'){const d=MEMBER[s.member];c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:null,insT:null,gap:0,cover:false},d.dw?{dw:d.dw}:{},c.kind==='block'&&s.id==='st'?BLOCK_ST:{})}
   else c.v[s.id]={}})}
-function firstFrame(c){const t=tpl(c);const f=(t.slots||[]).find(s=>s.k==='frame'&&PROD[s.member]&&PROD[s.member].length);return f?f.id:null}
+function firstFrame(c){const t=tpl(c);const f=(t.slots||[]).find(s=>s.k==='frame'&&prodList(s.member,(c.v[s.id]||{}).d||MEMBER[s.member].d).length);return f?f.id:null}
 S.list.forEach(ensure);S.af=cur()?firstFrame(cur()):null;
 
 /* ---------- checks ---------- */
@@ -343,7 +343,7 @@ function prodCard(c){const t=tpl(c),ovr=isStrat(c)&&S.af==='over'&&(t.slots||[])
     return `<div class="card prodcard"><div class="prod-hd"><h2>${esc(pbHead(PB_CEIL))}</h2><p>Click a product to fill ${esc(ovr.label.toLowerCase())} — R-value and thickness together.</p></div><div class="prodscroll">${rows}</div><div class="prodsrc">${esc(pbSrc(PB_CEIL))} Fills the selected layer only.</div></div>`}
   const PLh=s?pbList(s.member):null,hd=`<div class="prod-hd"><h2>${esc(PLh?pbHead(PLh):'Insulation · '+RPI.byMember.brand)}</h2><p>${s?`Click a product to fill ${esc(s.label.toLowerCase())} — R-value and thickness together.`:'Select a framing layer to fill it from this list.'}</p></div>`;
   if(!s)return `<div class="card prodcard">${hd}</div>`;
-  const v=c.v[s.id]||{},depth=+v.d||MEMBER[s.member].d,L=PROD[s.member]||[];
+  const v=c.v[s.id]||{},depth=+v.d||MEMBER[s.member].d,L=prodList(s.member,depth);
   const sk=XP&&s.id==='fr'?XP.suggKey(c):null,PL=pbList(s.member);
   if(PL){const cov=s.member==='chord'&&!!v.cover;const rows=PL.map(p=>{const r=p[1],th=p[2],chips=[];if(Math.abs((+v.insR||0)-r)<1e-9&&+v.insT===th)chips.push('<i class="pchip on">Selected</i>');if(sk===r+'@'+th)chips.push('<i class="pchip sugg">Suggested</i>');
       if(th===depth)chips.push(`<i class="pchip fit">Fills a ${depth} mm ${MEMBER[s.member].name.toLowerCase().replace(/s$/,'')}</i>`);else if(th>depth&&!s.cover)chips.push('<i class="pchip squash">Compressed in this depth</i>');
@@ -429,8 +429,8 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
     c.vk=c.vk||{};const keep={};frs(c.kind).forEach(s=>{if(c.v[s.id])keep[s.id]=JSON.parse(JSON.stringify(c.v[s.id]))});c.vk[c.kind]=keep;
     c.kind=raw;const back=c.vk[raw];
     frs(raw).forEach(s=>{if(back&&back[s.id]){c.v[s.id]=JSON.parse(JSON.stringify(back[s.id]));return}
-      const d=MEMBER[s.member],SK=s.member==='rafter'?PB_SKILL.filter(p=>/Skillion/.test(p[0])&&p[2]<=d.d).map(p=>[p[1],p[2],p[0]]):null,L=SK||(PROD[s.member]||[]).filter(([,t])=>t<=d.d),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;   /* skillion: the highest-R Pink® Batts® Skillion that fits */
-      c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:b?b[0]:null,insT:b?b[1]:null,gap:0,cover:false,prod:b?(b[2]||RPI.byMember.brand):''},d.dw?{dw:d.dw}:{},c.el==='roof'&&s.id==='st'?{d:35,w:70,s:450,lock:true}:{})});
+      const d=MEMBER[s.member],bst=raw==='block'&&s.id==='st',dd=bst?BLOCK_ST.d:d.d,SK=s.member==='rafter'?PB_SKILL.filter(p=>/Skillion/.test(p[0])&&p[2]<=d.d).map(p=>[p[1],p[2],p[0]]):null,L=SK||prodList(s.member,dd).filter(([,t])=>t<=dd),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;   /* skillion: the highest-R Pink® Batts® Skillion that fits */
+      c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:b?b[0]:null,insT:b?b[1]:null,gap:0,cover:false,prod:b?(b[2]||RPI.byMember.brand):''},d.dw?{dw:d.dw}:{},c.el==='roof'&&s.id==='st'?{d:35,w:70,s:450,lock:true}:{},bst?BLOCK_ST:{})});
     retype(c);return}
   if(path==='v.slab.sF'){const sv=c.v.slab=c.v.slab||{};sv.sF=raw;if(raw==='raft')sv.sU='none';return}
   if(path.startsWith('v.slab.parts.')){const [,,,i,k]=path.split('.'),sv=c.v.slab=c.v.slab||{};sv.parts=sv.parts||[];const pt=sv.parts[+i]=sv.parts[+i]||{};pt[k]=k==='len'?(raw===''?'':parseFloat(raw)):raw;return}

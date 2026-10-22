@@ -54,11 +54,7 @@ const LIB={
   block:[M('Concrete block 20 series (190 mm), all cells filled',0.14,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
     M('Concrete block 20 series (190 mm), 1 in 3 cells filled',0.15,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
     M('Concrete block 20 series (190 mm), 1 in 5 cells filled',0.16,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
-    M('Concrete block 20 series (190 mm), no cells filled',0.19,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
-    M('Concrete block 15 series (140 mm), all cells filled',0.12,{t:140,vsrc:'Generic value — confirm with the block manufacturer'}),
-    M('Concrete block 15 series (140 mm), 1 in 3 cells filled',0.14,{t:140,vsrc:'Generic value — confirm with the block manufacturer'}),
-    M('Concrete block 15 series (140 mm), 1 in 5 cells filled',0.15,{t:140,vsrc:'Generic value — confirm with the block manufacturer'}),
-    M('Concrete block 15 series (140 mm), no cells filled',0.16,{t:140,vsrc:'Generic value — confirm with the block manufacturer'})],
+    M('Concrete block 20 series (190 mm), no cells filled',0.19,{t:190,vsrc:'Generic value — confirm with the block manufacturer'})],   /* 15 series (140 mm) removed: not used for house walls. A project saved with one keeps its saved value */
   brk:[M('None',0)],
   gap:[M('None',0),M('Still air gap 12 mm, non-reflective',.15),M('Still air gap 20–90 mm, non-reflective',.16)]
 };
@@ -111,6 +107,10 @@ function fromSaved0(list,fmt){return(list||[]).map(c=>{if(c&&c.el==='roof'&&c.v&
 const PROD=Object.fromEntries(Object.entries(RP.insulation.byMember).filter(([k])=>k!=='brand').map(([k,L])=>[k,L.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1])]));   /* by R, then thickness */
 const MEMBER={stud:{d:90,w:45,s:600,dw:800,name:'Studs'},chord:{d:90,w:45,s:900,name:'Truss bottom chords'},rafter:{d:190,w:45,s:600,name:'Rafters'},
   joist:{d:190,w:45,s:400,name:'Joists'},batten:{d:35,w:45,s:600,name:'Battens'}};
+/* internal strapping on a concrete block wall: 90 × 45 by default — deep enough for wall batts */
+const BLOCK_ST={d:90,w:45,s:600};
+/* products offered for a framing member: battens 90 mm deep or more take the wall (stud) batts */
+const prodList=(member,depth)=>member==='batten'&&+depth>=90?PROD.stud:(PROD[member]||[]);
 
 /* ---------- templates: every construction type is the same grammar of slots ---------- */
 const mat=(id,label,lib,x)=>Object.assign({k:'mat',id,label,lib},x||{}), ins=(id,label,x)=>Object.assign({k:'ins',id,label},x||{}),
