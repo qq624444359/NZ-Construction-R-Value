@@ -538,7 +538,7 @@ const dash=x=>esc(x!=null&&String(x).trim()?x:'—');
 const n2=x=>x==null?'—':(+x).toFixed(2);
 function uniq(svg,k){[...new Set([...svg.matchAll(/id="([^"]+)"/g)].map(m=>m[1]))].forEach(id=>{svg=svg.split('id="'+id+'"').join('id="'+id+'-p'+k+'"').split('url(#'+id+')').join('url(#'+id+'-p'+k+')')});return svg}
 /* page foot: the disclaimer on every page, then the page number — the project details are on the first page */
-const DISCLAIMER='Disclaimer: produced by the EZbuild Construction R-value calculator from the user’s inputs. Default material, air-gap and surface values are provisional — check every value against NZS 4214:2006, H1/AS1 6th edition and current manufacturer data. Construction R-values only: H1 compliance is shown by the user’s own H1/AS1 calculation (e.g. the BRANZ tool) and is for the building consent authority to accept. EZbuild accepts no liability for decisions made on the basis of this report.';
+const DISCLAIMER='Disclaimer: produced by the EZbuild Construction R-value calculator (rvalue.ezbuild.co.nz) from the user’s inputs. Default material, air-gap and surface values are provisional — check every value against NZS 4214:2006, H1/AS1 6th edition and current manufacturer data. Construction R-values only: H1 compliance is shown by the user’s own H1/AS1 calculation (e.g. the BRANZ tool) and is for the building consent authority to accept. EZbuild accepts no liability for decisions made on the basis of this report.';
 const pageFoot=(k,N)=>`<div class="pg-ft"><span class="disc">${esc(DISCLAIMER)}</span><span class="pno">Page ${k} of ${N}</span></div>`;
 
 /* summary sheet */
