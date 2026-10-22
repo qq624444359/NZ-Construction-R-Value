@@ -75,7 +75,7 @@ function cur(){return S.list.find(c=>c.id===S.cur)||(XP&&(S.cur==='project'||S.c
 function ensure(c){c.o=c.o||{};const t=tpl(c);if(t.manual)return;ffMig(c);batMig(c);gapMig(c);
   if(c.el==='roof'){['fr','st'].forEach(id=>{const v=c.v[id];if(v&&v.p38){v.mode='std';v.p38=false;delete v.pct}})}   /* 38% is the wall default only (2.1.3.1 a)) */(t.slots||[]).forEach(s=>{if(c.v[s.id])return;
   if(s.k==='mat')c.v[s.id]={m:s.lib==='itBoard'?0:DEFM[s.id]||0};
-  else if(s.k==='frame'){const d=MEMBER[s.member];c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:null,insT:null,gap:0,cover:false},d.dw?{dw:d.dw}:{},c.el==='wall'&&s.id==='st'?Object.assign({},WALL_ST,fitIns(s.member,WALL_ST.d)):{})}
+  else if(s.k==='frame'){const d=MEMBER[s.member];c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:null,insT:null,gap:0,cover:s.member==='chord'},d.dw?{dw:d.dw}:{},c.el==='wall'&&s.id==='st'?Object.assign({},WALL_ST,fitIns(s.member,WALL_ST.d)):{})}
   else c.v[s.id]={}})}
 /* the note on every wall's internal strapping */
 const STHINT='<p class="lsub v6sth"><span class="ms s16">info</span> Internal strapping starts at 90 × 45 @ 600 with the best-fitting wall batts — change the batten size and the insulation to match your drawings. It is non-structural (no lintels), so its framing fraction is batten width ÷ spacing, not the 38% framed-wall default.</p>';
@@ -222,7 +222,7 @@ function midCol(c,x){const hd=header(c,tpl(c),x),SG=isStrat(c)?strategy(c):null;
     else if(s.k==='fix')rows.push(lrow(num[i],null,s.label,`<div class="lctl">${ib('v.'+s.id+'.r',v.r!=null?v.r:s.r,'R',{w:'74px'})}</div>`,row?r2(row.r):r2(v.r!=null?v.r:s.r),'',cnt));
     else if(s.k==='gap')rows.push(lrow(num[i],s.id,s.label,`<div class="lctl v6mat">${selF('v.'+s.id+'.m',LIB.gap.map((o,j)=>[j,o.n]),v.m||0)}</div>`,row?r2(row.r):r2(LIB.gap[v.m||0].r),'',cnt));
     else if(c.el==='roof'&&s.id==='st'&&!isUnl(c,'st')){const bw=+v.w||BAT0.w,bd=+v.d||BAT0.d,bs=+v.s||BAT0.s,bi=+v.insR;
-      rows.push(lrow(num[i],'st',s.label,`<div class="lockrow"><span class="lockval"><span class="ms s16">lock</span>${bw} × ${bd} @ ${bs} mm</span>${lockBtn('st','unl')}<span class="v6dv">Default value — unlock to change</span></div><div class="lsub">${BATTXT}${bi?' · insulation R'+r2(bi)+' between the battens':''} → layer R ${r2(layerR(c,s))} on its own.</div>`,r2(layerR(c,s)),'',''))}
+      rows.push(lrow(num[i],'st',s.label,`<div class="lockrow"><span class="lockval"><span class="ms s16">lock</span>${bw} × ${bd} @ ${bs} mm</span>${lockBtn('st','unl')}<span class="v6dv">Default value — unlock to change</span></div><div class="lsub">${BATTXT}${bi?' · insulation R'+r2(bi)+' between the battens':' · air between the battens not counted'} → layer R ${r2(layerR(c,s))} on its own.</div>`,r2(layerR(c,s)),'',''))}
     else rows.push(SG&&(s.member==='chord'||s.member==='batten')?trussCard(c,t,s,i,v,x,num):frameCard(c,t,s,i,v,x,num));
   });
   if(last.name==='Subfloor space')rows.push(lrow('·',null,'Subfloor space',`<div class="lctl">${ib('subR',c.subR,'R',{w:'74px'})}</div><div class="lsub">From NZS 4214 Table E5 for your subfloor.</div>`,r2(last.r)));
@@ -247,11 +247,11 @@ function trussCard(c,t,s,i,v,x,num){
   const left=`<div class="v6col"><div class="v6colh">Framing</div><div class="frow">${grpF('Depth',ib(f+'.d',ov0.d,'mm'))}${grpF('Width',ib(f+'.w',ov0.w,'mm'))}${grpF('Centres',ib(f+'.s',ov0.s,'mm'))}</div>
     <div class="frow">${grpF('Framing fraction',selF(f+'.mode',[['std','Width ÷ centres'],['pct','Enter a percentage']],mv==='p38'?'pct':mv,'190px'))}${mv==='pct'?grpF('Percentage',ib(f+'.pct',ov0.pct,'%')):''}</div>
     <div class="v6calc"><div><span>Framing fraction</span><b class="mono">${p1(F.f)}</b><i>${mv==='std'?esc(F.how)+' = '+p1(F.f):mv==='p38'?'38% default':'entered'}</i></div><div><span>Timber R</span><b class="mono">${r2(tR)}</b><i>${(depth/1000).toFixed(3)} ÷ ${k.toFixed(2)} = ${r2(tR)}</i></div></div></div>`;
-  if(s.member==='batten'){const on=!!(ov0.addIns||+ov0.insR),Rc=on&&+ov0.insR?+ov0.insR:D.emptyGap,Rl=1/(F.f/tR+(1-F.f)/Rc);
+  if(s.member==='batten'){const on=!!(ov0.addIns||+ov0.insR),Rc=on&&+ov0.insR?+ov0.insR:airOf(c,s),Rl=Rc>0?1/(F.f/tR+(1-F.f)/Rc):0;
     return `<div class="lrow v6bat" data-layer="${s.id}" tabindex="0"><span class="lnum">${num[i]}</span><div><div class="lname">${esc(s.label)}</div>
     <div class="frow">${grpF('Depth',ib(f+'.d',ov0.d,'mm'))}${grpF('Width',ib(f+'.w',ov0.w,'mm'))}${grpF('Centres',ib(f+'.s',ov0.s,'mm'))}<label class="tgl"><input type="checkbox" data-f="${f}.addIns"${on?' checked':''}>Add insulation between the battens</label></div>
     ${on?`<div class="frow">${grpF('Insulation R',ib(f+'.insR',ov0.insR,'R'))}${grpF('Thickness',ib(f+'.insT',ov0.insT,'mm'))}</div>`:''}
-    <div class="lsub">${p1(F.f)} timber (${esc(F.how)}) R${r2(tR)} · ${on&&+ov0.insR?'insulation R'+r2(Rc):'still air R'+r2(D.emptyGap)} → layer R ${r2(Rl)} on its own; counted in the bridged portion with the chords (2.1.3.2).</div></div><div class="lr">${r2(Rl)}</div></div>`}
+    <div class="lsub">${p1(F.f)} timber (${esc(F.how)}) R${r2(tR)} · ${on&&+ov0.insR?'insulation R'+r2(Rc):Rc>0?'still air R'+r2(Rc):'air between the battens not counted'} → layer R ${r2(Rl)} on its own; counted in the bridged portion with the chords (2.1.3.2).</div></div><div class="lr">${r2(Rl)}</div></div>`}
   const on=S.af===s.id,fr=ov0;
   const thick=+fr.insT>depth&&+fr.insR>0,cvr=`<label class="tgl v6cvr${thick?'':' dis'}"><input type="checkbox" data-f="${f}.cover"${thick&&fr.cover?' checked':''}${thick?'':' disabled'}>Insulation covering bottom chord</label><div class="lsub v6cvn">${thick?"When using this option make sure that the insulation product is suitable - typically manufactured at 460mm width":'The insulation is not thicker than the bottom chord — there is nothing to cover the chord.'}</div>`;
   const right=`<div class="v6col"><div class="v6colh">Insulation</div><div class="frow">${grpF('Insulation R',ib(f+'.insR',fr.insR,'R'))}${grpF('Thickness',ib(f+'.insT',fr.insT,'mm'))}</div>${cvr}
@@ -441,7 +441,7 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
     c.kind=raw;const back=c.vk[raw];
     frs(raw).forEach(s=>{if(back&&back[s.id]){c.v[s.id]=JSON.parse(JSON.stringify(back[s.id]));return}
       const d=MEMBER[s.member],bst=c.el==='wall'&&s.id==='st',dd=bst?WALL_ST.d:d.d,SK=s.member==='rafter'?PB_SKILL.filter(p=>/Skillion/.test(p[0])&&p[2]<=d.d).map(p=>[p[1],p[2],p[0]]):null,L=SK||prodList(s.member,dd).filter(([,t])=>t<=dd),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;   /* skillion: the highest-R Pink® Batts® Skillion that fits */
-      c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:b?b[0]:null,insT:b?b[1]:null,gap:0,cover:false,prod:b?(b[2]||RPI.byMember.brand):''},d.dw?{dw:d.dw}:{},c.el==='roof'&&s.id==='st'?{d:35,w:70,s:450,lock:true}:{},bst?WALL_ST:{})});
+      c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:b?b[0]:null,insT:b?b[1]:null,gap:0,cover:s.member==='chord',prod:b?(b[2]||RPI.byMember.brand):''},d.dw?{dw:d.dw}:{},c.el==='roof'&&s.id==='st'?{d:35,w:70,s:450,lock:true}:{},bst?WALL_ST:{})});
     if(wasAuto)c.name=autoName(c);
     retype(c);return}
   if(path==='v.slab.sF'){const sv=c.v.slab=c.v.slab||{};sv.sF=raw;if(raw==='raft')sv.sU='none';return}

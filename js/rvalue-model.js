@@ -18,7 +18,9 @@
  *   (edge / perimC / perimR / perimRect are the earlier single-route versions, kept but no longer called)
  */
 /* ---------- data: provisional defaults, every one editable in the UI ---------- */
-const D={se:0.03,si:0.09,vent:0.08,roofSpace:0.11,kTimber:0.12,wallH:2400,plate:45,emptyGap:0.16,
+/* air between ceiling battens in a roof (no insulation in it): not counted, as in the BRANZ House Insulation Guide 6th edition calculator. An empty wall or floor cavity keeps D.emptyGap */
+const airOf=(c,slot)=>c&&c.el==='roof'&&slot&&slot.member==='batten'?0:D.emptyGap;
+const D={se:0.03,si:0.09,vent:0.08,roofSpace:0.11,kTimber:0.13,wallH:2400,plate:45,emptyGap:0.16,
   ventGap:25,purlin:45,topChord:90,wallDepth:90};   // eaves geometry: the same defaults eaves-section.js draws with
 /* plasterboard: a product R, not thickness ÷ k */
 const PBSRC="Convention value — to be confirmed with Winstone GIB data";
@@ -33,23 +35,23 @@ const LIB={
     K('Timber weatherboard 18 mm',18,.12),K('Plywood 9 mm',9,.13),K('Plywood 12 mm',12,.13),
     K('Brick veneer 70 mm',70,1.2),K('Brick veneer 90 mm',90,1.2),K('AAC panel 50 mm',50,.16),K('AAC panel 75 mm',75,.16),
     M('Metal sheet or aluminium weatherboard',0),K('Plaster / stucco 20 mm',20,.9),
-    PB('Plasterboard 10 mm into still air (garage)',10,0.04,{still:1}),PB('Plasterboard 13 mm into still air (garage)',13,0.06,{still:1}),K('Vertical timber board 18 mm',18,.12),
+    PB('Plasterboard 10 mm into still air (garage)',10,0.045,{still:1}),PB('Plasterboard 13 mm into still air (garage)',13,0.06,{still:1}),K('Vertical timber board 18 mm',18,.12),
     /* named products: js/products.js */
     ...RP.cladding.map(p=>K(p.n,p.t,p.k,p.src?{vsrc:p.src}:{})),
     /* profiles without their own data: same material and generic thickness, k as above */
     K('Timber bevelback weatherboard 18 mm',18,.12,{vsrc:'Value to be confirmed with the manufacturer'}),K('Fibre cement weatherboard horizontal 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'}),
     K('Fibre cement vertical 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'}),K('Fibre cement bevelback 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'})],
   airBarrier:[M('None',0),M('Building paper / wrap',.01,{pliable:1}),K('Fibre cement RAB 6 mm',6,.25),K('Plywood 7 mm',7,.13),K('Plywood 9 mm',9,.13),
-    K('Plywood 12 mm',12,.13),K('Plywood 21 mm',21,.13),PB('Plasterboard RAB 10 mm',10,0.04),PB('Plasterboard RAB 13 mm',13,0.06)],
-  lining:[M('None',0),PB('Plasterboard 10 mm',10,0.04),PB('Plasterboard 13 mm',13,0.06),PB('Plasterboard 2 × 10 mm',20,0.08),PB('Plasterboard 2 × 13 mm',26,0.12),
+    K('Plywood 12 mm',12,.13),K('Plywood 21 mm',21,.13),PB('Plasterboard RAB 10 mm',10,0.045),PB('Plasterboard RAB 13 mm',13,0.06)],
+  lining:[M('None',0),PB('Plasterboard 10 mm',10,0.045),PB('Plasterboard 13 mm',13,0.06),PB('Plasterboard 2 × 10 mm',20,0.09),PB('Plasterboard 2 × 13 mm',26,0.12),
     K('Plywood 9 mm',9,.13),K('Plywood 12 mm',12,.13),K('MDF 12 mm',12,.14),K('Fibre cement 6 mm',6,.25),K('T&G timber 12 mm',12,.12),K('T&G timber 19 mm',19,.12)],
   /* display order; saved projects store the id, so the order can change. Metal tile: no R of its own, like metal sheet */
   roofing:[M('Metal sheet (any profile)',0),K('Shingles on 15 mm plywood',15,.13),K('Membrane on 17 mm plywood',17,.13),M('Metal tile',0),
     M('Concrete or clay tiles',.02),M('None — faces an unconditioned indoor space',0,{still:1})],
   flooring:[K('Particleboard 20 mm',20,.12),K('Plywood 15 mm',15,.13),K('Plywood 19 mm',19,.13),K('T&G timber 19 mm',19,.12),K('T&G timber 25 mm',25,.12),M('None',0)],
   /* intertenancy wall, central board: plain plasterboard and fire-rated board only */
-  itBoard:[PB('Plasterboard 10 mm',10,0.04),PB('Plasterboard 13 mm',13,0.06),PB('Plasterboard 15 mm',15,0.07),PB('Fire-rated plasterboard 13 mm',13,0.06),PB('Fire-rated plasterboard 16 mm',16,0.07)],
-  floorLining:[M('None',0),K('Fibre cement 6 mm',6,.25),K('Plywood 9 mm',9,.13),PB('Plasterboard 10 mm',10,0.04),PB('Plasterboard 13 mm',13,0.06),PB('Plasterboard 2 × 13 mm',26,0.12),K('James Hardie fibre cement 6.5 mm',6.5,.25,{vsrc:'Value to be confirmed with the manufacturer'})],
+  itBoard:[PB('Plasterboard 10 mm',10,0.045),PB('Plasterboard 13 mm',13,0.06),PB('Plasterboard 15 mm',15,0.07),PB('Fire-rated plasterboard 13 mm',13,0.06),PB('Fire-rated plasterboard 16 mm',16,0.07)],
+  floorLining:[M('None',0),K('Fibre cement 6 mm',6,.25),K('Plywood 9 mm',9,.13),PB('Plasterboard 10 mm',10,0.045),PB('Plasterboard 13 mm',13,0.06),PB('Plasterboard 2 × 13 mm',26,0.12),K('James Hardie fibre cement 6.5 mm',6.5,.25,{vsrc:'Value to be confirmed with the manufacturer'})],
   /* concrete block wall: generic block R-values (block only, no surface resistances); the designer can enter the manufacturer's own */
   block:[M('Concrete block 20 series (190 mm), all cells filled',0.14,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
     M('Concrete block 20 series (190 mm), 1 in 3 cells filled',0.15,{t:190,vsrc:'Generic value — confirm with the block manufacturer'}),
@@ -177,7 +179,7 @@ function tpl(c){
 /* What a new construction starts as: the build-ups this practice draws most. */
 const DEFAULTS={
  wall:{kind:'frame',name:'Wall – 90@600',v:{clad:{m:5},ab:{m:1},fr:{d:90,w:45,s:600,dw:800,insR:2.8,insT:90,prod:'Pink® Batts®'},lin:{m:1}}},
- roof:{kind:'truss',name:'Roof – truss',v:{roof:{m:0},over:{on:false,r:3.6,t:180,prod:'Pink® Batts® Ceiling'},fr:{d:90,w:45,s:900,insR:3.6,insT:180,cover:false,prod:'Pink® Batts® Ceiling'},st:{d:35,w:70,s:450,s450:1},ceil:{m:1},
+ roof:{kind:'truss',name:'Roof – truss',v:{roof:{m:0},over:{on:false,r:3.6,t:180,prod:'Pink® Batts® Ceiling'},fr:{d:90,w:45,s:900,insR:3.6,insT:180,cover:true,prod:'Pink® Batts® Ceiling'},st:{d:35,w:70,s:450,s450:1},ceil:{m:1},
    edge:{pitch:20,heel:null,width:500,fsel:'auto',psel:'auto',pprod:'Pink® Batts® Perimeter',pR:2.7,pT:100,pW:560,cpName:'Pink® Superbatts®',cpR:7.0,cpT:275,n:0.24,rOver:null,area:null,perim:null}}},
  floor:{kind:'susp',name:'Floor – 240@400',v:{floor:{m:0},fr:{d:240,w:45,s:400,insR:3.6,insT:180,prod:'Pink® Batts®'},flin:{m:3}}}};
 const newC=el=>JSON.parse(JSON.stringify(Object.assign({el,o:{}},DEFAULTS[el])));
@@ -194,8 +196,8 @@ const OV=c=>{const v=c&&c.v&&c.v.over;return ovOn(v)?v:{}};
    Display only: the construction R always uses the joined bridged portion. */
 function layerR(c,slot){const v=c.v[slot.id]||{},d=MEMBER[slot.member],depth=+v.d||d.d,F=frac(slot,v,c);let insR=+v.insR||0,above=0;const insT=+v.insT||0;
   if(slot.cover&&v.cover&&insT>depth&&insR){above=insR*(insT-depth)/insT;insR-=above}
-  let cav=insR+(slot.gap?LIB.gap[gapIdx(slot,v)].r:0)+(slot.cavGap||0);if(cav<=0)cav=D.emptyGap;const tr=depth/1000/D.kTimber+(slot.brk&&+v.brkR||0);
-  return 1/(F.f/tr+(1-F.f)/cav)+above}
+  let cav=insR+(slot.gap?LIB.gap[gapIdx(slot,v)].r:0)+(slot.cavGap||0);if(cav<=0)cav=airOf(c,slot);const tr=depth/1000/D.kTimber+(slot.brk&&+v.brkR||0);
+  return (cav>0?1/(F.f/tr+(1-F.f)/cav):0)+above}
 /* slab-on-ground: every number from window.SlabAppE (slab-appendix-e.js). Area = the construction's area (entered on the Project page). */
 const SLABU={none:[null,null],s12:['strip',1.2],s24:['strip',2.4],f12:['full',1.2],f24:['full',2.4]};
 /* the reason a slab has no R, with the next step */
@@ -275,16 +277,16 @@ function calc(c,opt){
       let insR=+v.insR||0,above=0;const insT=+v.insT||0;
       if(slot.cover&&v.cover&&insT>depth&&insR){above=insR*(insT-depth)/insT;insR-=above}
       const g=slot.gap?LIB.gap[gapIdx(slot,v)].r:0,cg=slot.cavGap||0;let cav=insR+g+cg;
-      if(cav<=0){cav=D.emptyGap;if(slot.member!=='batten')notes.push(slot.label+': empty cavity taken as a still air gap, R'+D.emptyGap.toFixed(2)+'.')}
+      if(cav<=0){cav=airOf(c,slot);if(slot.member!=='batten')notes.push(slot.label+': empty cavity taken as a still air gap, R'+D.emptyGap.toFixed(2)+'.')}
       const shared=above,w=+v.w||d.w,sp=+v.s||d.s,tr=depth/1000/D.kTimber;
       const fp=[{name:d.name+' '+depth+' × '+w+' mm timber',r:tr}];if(slot.brk&&+v.brkR)fp.push({name:'Thermal break strip',r:+v.brkR});
       const cp=[];if(insR)cp.push({name:'Insulation R'+(+v.insR).toFixed(1)+(insT?', '+insT+' mm':'')+(above?' — '+depth+' mm of it between the framing':''),r:insR});
-      if(g)cp.push({name:LIB.gap[gapIdx(slot,v)].n+(GAPM.includes(slot.member)&&v.gapMan===false?' ('+gapMM(slot,v)+' mm, stud − insulation)':''),r:g});if(cg)cp.push({name:slot.cavLabel||'Air gap in the joist space',r:cg});if(!cp.length)cp.push({name:slot.member==='batten'?'Still air between the battens':'Empty cavity, still air',r:cav});
+      if(g)cp.push({name:LIB.gap[gapIdx(slot,v)].n+(GAPM.includes(slot.member)&&v.gapMan===false?' ('+gapMM(slot,v)+' mm, stud − insulation)':''),r:g});if(cg)cp.push({name:slot.cavLabel||'Air gap in the joist space',r:cg});if(!cp.length)cp.push({name:slot.member==='batten'?(cav>0?'Still air between the battens':'Air between the ceiling battens — not counted'):'Empty cavity, still air',r:cav});
       const sh=[];
       if(above)sh.push({name:'Cavity insulation above the framing, '+(insT-depth)+' mm of its '+insT+' mm',r:above});
       el.push({i,kind:'frame',slot:slot.id,label:slot.label,name:slot.label,shared,how:F.how,f:F.f,slots:[i],sharedParts:sh,
         insul:+v.insR?'R'+(+v.insR).toFixed(1)+(insT?' / '+insT+' mm':''):'',t:depth,raw:+v.insR||null,
-        mat:+v.insR?(v.prod?v.prod+' ':'Insulation ')+'R'+(+v.insR).toFixed(1)+(insT?' · '+insT+' mm':'')+' between '+d.name.toLowerCase():d.name+', still air between',
+        mat:+v.insR?(v.prod?v.prod+' ':'Insulation ')+'R'+(+v.insR).toFixed(1)+(insT?' · '+insT+' mm':'')+' between '+d.name.toLowerCase():d.name+(cav>0?', still air between':', air between not counted'),
         members:[{name:d.name,depth,width:w,centres:sp,dwangs:slot.member==='stud'?(v.dw!=null?+v.dw:d.dw):null,fraction:F.f,basis:F.how}],
         regions:[{name:d.name,f:F.f,r:tr+(slot.brk&&+v.brkR||0),parts:fp},{name:'Cavity',f:1-F.f,r:cav,parts:cp}]});
       if(slot.member==='stud'&&F.f<.38-1e-9&&!String(v.ev||'').trim())notes.push(FFEV+' ('+slot.label+': '+(F.f*100).toFixed(1)+'%).');
@@ -374,7 +376,8 @@ function basis(){return[
   'Pliable membranes and underlays are passed over when finding where a portion ends (2.1.3.2 iii).',
   'Surface resistances: outside R'+D.se.toFixed(2)+', inside and still indoor air R'+D.si.toFixed(2)+'. Timber framing conductivity '+D.kTimber.toFixed(2)+' W/m·K.',
   'Vented wall cavity R'+D.vent.toFixed(2)+'; the outside surface and layers outside the cavity are counted at half value. Timber skillion roofs without “Insulated roofing, no vent cavity” are treated the same way: a vented cavity R'+D.vent.toFixed(2)+' over the insulation, on the cavity side of the bridged portion (2.1.3.2 i)), and the outside surface and roofing counted at half value. Roof space over a flat ceiling R'+D.roofSpace.toFixed(2)+'.',
-  'Insulation thicker than the framing it sits in is split by thickness: the part between the members is bridged, the part over them is the next layer.',
+  'Insulation thicker than the framing it sits in is split by thickness: the part between the members is bridged, the part over them is the next layer. Truss roofs: insulation thicker than the bottom chords is taken to cover them unless the sheet says otherwise.',
+  'Roofs: the air between ceiling battens is not counted; an empty wall or floor cavity is still air R'+D.emptyGap.toFixed(2)+'.',
   'Truss roofs: where the full insulation thickness does not fit under the roofing at the outer edge of the ceiling, the roof is calculated as two parts (2.1.2.9) — the field at full thickness, and a perimeter strip (default 500 mm from the outer edge of the ceiling) with the insulation compressed. Each part must reach R2.6 (2.1.2.11 a)); a heated ceiling needs R3.3 within 500 mm of the edge (Table 2.1.2.12 note 4).',
   'Room at the ceiling edge: bottom chord + heel height, less whatever of the 25 mm ventilation gap under the roofing the purlin zone does not already give, plus wall framing depth × tan(pitch) to the inside of the top plate.',
   'Truss roof insulation strategy, by the room at the heel (top plate centreline, where the insulation starts; product thickness + 25 mm ventilation gap must fit): 1 two layers Pink® Batts® Ceiling R3.6 (360 mm) to the edge; 2 Pink® Superbatts® R7.0 (275 mm) to the edge; 3 R7.0 field + perimeter product (2.1.2.9; default Pink® Batts® Perimeter R2.7, 100 mm, 560 mm wide, 500 mm into the ceiling — Pink® Batts® Ceiling Product and Installation Guide, March 2026) where it fits and its part reaches its minimum; 4 R7.0 field + compressed insulation under an insulation guard. Any choice can be made by hand. No target R is set: each part only has to meet its own minimum, the whole building is checked by the H1 calculation.',
@@ -491,7 +494,7 @@ function strategy(c){const hw=!!(c.heated&&!c.heatWet);const key=JSON.stringify(
 
 /* ---------- where every R on the sheet comes from ---------- */
 /* SRC: value key -> confirmed source (standard + table). Empty until each one is checked: nothing is listed without one. */
-const SRC={};
+const SRC={kTimber:'0.13 W/m·K — the timber framing value used in the BRANZ House Insulation Guide 6th edition calculator (v2.7)'};
 function matRows(c,r){
   const t=tpl(c),out=[],seen={},slotOf=id=>(t.slots||[]).find(s=>s.id===id)||{},peri=c.part==='perimeter';
   const add=x=>{const k=x.name+'|'+(+x.r).toFixed(3);if(seen[k])return;seen[k]=1;x.src=x.src||SRC[x.key]||null;out.push(x)};
@@ -516,7 +519,7 @@ function matRows(c,r){
           fixed('… '+(T-mb.depth)+' mm of it over the '+nm,Rv*(T-mb.depth)/T,null,'R'+fm(Rv)+' × '+(T-mb.depth)+' / '+T,sp)}}
       const g=s.gap?LIB.gap[gapIdx(s,v)]:null;if(g&&g.r)fixed(g.n,g.r,'gap:'+g.n);
       if(s.cavGap)fixed(s.cavLabel||'Air gap in the joist space',s.cavGap,s.cavLabel?'vent':'cavGap');
-      if(!Rv&&!(g&&g.r)&&!s.cavGap)fixed(s.member==='batten'?'Still air between the battens':'Empty cavity, still air',D.emptyGap,'emptyGap')}});
+      if(!Rv&&!(g&&g.r)&&!s.cavGap){const a=airOf(c,s);if(a>0)fixed(s.member==='batten'?'Still air between the battens':'Empty cavity, still air',a,'emptyGap');else fixed('Air between the ceiling battens',0,null,'Not counted','Not counted — basis of calculation')}}});
   if(last.name==='Subfloor space')fixed(last.name,last.r,null,'Entered','Entered on this sheet');else fixed(last.name,last.r,sk(last.name));
   const U={};out.forEach(x=>{if(x.src&&!x.unconf)return;const k=x.key||x.name;
     const u=U[k]=U[k]||{item:x.key==='kTimber'?'Timber framing conductivity':x.d!=null?x.name+' — conductivity':x.name,value:x.d!=null?'k '+x.k.toFixed(2)+' W/m·K':'R '+(+x.r).toFixed(2),used:[]};u.used.push(x.name)});

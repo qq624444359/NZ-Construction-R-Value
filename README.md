@@ -24,7 +24,7 @@ Your project data stays in your browser and is never sent anywhere. Page visits 
 
 ## Guides
 
-- [Why R2.8 batts make an R1.67 wall](https://rvalue.ezbuild.co.nz/guides/wall-r-value-h1-as1.html) — the H1/AS1 wall method, worked through
+- [Why R2.8 batts make an R1.60 wall](https://rvalue.ezbuild.co.nz/guides/wall-r-value-h1-as1.html) — the H1/AS1 wall method, worked through
 - [Slab-on-ground R-values: the Appendix E lookup, step by step](https://rvalue.ezbuild.co.nz/guides/slab-on-ground-r-value-h1-as1.html) — A/P, the 24 tables, rafts and the garage wall
 
 ## Request a feature or report a problem
