@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wall R-value under H1/AS1 6th edition: why R2.8 batts make an R1.67 wall</title>
+<title>Wall R-value under H1/AS1 6th edition: why R2.8 batts make an R1.60 wall</title>
 <meta name="description" content="How a timber-framed wall's construction R-value is calculated for H1/AS1 6th edition — NZS 4214 isothermal planes, the 38% framing fraction and the vented cavity — with a worked example, layer by layer.">
 <link rel="canonical" href="https://rvalue.ezbuild.co.nz/guides/wall-r-value-h1-as1.html">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Why R2.8 batts make an R1.67 wall — H1/AS1 6th edition">
+<meta property="og:title" content="Why R2.8 batts make an R1.60 wall — H1/AS1 6th edition">
 <meta property="og:description" content="The 38% framing fraction, the vented cavity and the bridged portion, worked through layer by layer.">
 <meta property="og:image" content="https://rvalue.ezbuild.co.nz/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -43,7 +43,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-seri
 <nav class="g-nav"><a class="logo" href="https://ezbuild.co.nz/">EZbuild<span class="beta">Beta</span></a><span class="g-links"><a href="https://ezbuild.co.nz/">Home</a><a href="https://ezbuild.co.nz/for-revit.html">For Revit</a><a class="on" href="../index.html">Construction R-value</a></span><span class="nav-go soon" role="link" aria-disabled="true" title="Coming soon">Get Started →</span></nav>
 <article class="g">
 <p class="kicker">H1/AS1 6th edition · Walls</p>
-<h1>Why R2.8 batts make an R1.67 wall</h1>
+<h1>Why R2.8 batts make an R1.60 wall</h1>
 <p class="lead">The R-value on the batt packet is the insulation's. The number H1/AS1 asks for is the <b>construction R-value</b> — the whole wall, surface to surface, with the timber that bridges the insulation. For a standard 90 mm wall they are not close.</p>
 
 <h2>The method</h2>
@@ -53,7 +53,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-seri
 
 <h2>The 38% framing fraction</h2>
 <p>For framed walls H1/AS1 2.1.3.1 a) i) uses a framing fraction of <b>38%</b> unless a lower fraction is demonstrated for the building. Studs alone at 600 centres are 45 ÷ 600 = 7.5% — the default covers everything else in a real wall too. So 38% of the bridged portion is the timber path, and 62% is the insulation path.</p>
-<p>A 90 mm stud is worth about R0.75 (0.090 m ÷ k 0.12 W/m·K for timber). Next to R2.8 insulation it is a thermal short circuit across more than a third of the wall.</p>
+<p>A 90 mm stud is worth about R0.69 (0.090 m ÷ k 0.13 W/m·K for timber). Next to R2.8 insulation it is a thermal short circuit across more than a third of the wall.</p>
 
 <h2>Worked example: 90 × 45 @ 600, R2.8 batts</h2>
 <p>James Hardie Oblique weatherboard 14 mm on a drained and vented cavity, building wrap, 90 × 45 studs at 600 with Pink® Batts® R2.8 (90 mm), 10 mm plasterboard. Outside to inside:</p>
@@ -63,24 +63,24 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-seri
 <tr><td>Cladding (Oblique 14 mm)</td><td class="n">0.056</td><td class="n">0.028</td><td>Counted at half — outside the vented cavity</td></tr>
 <tr><td>Vented cavity</td><td class="n">0.08</td><td class="n">in Rb</td><td>Sits against the framing — part of the bridged portion</td></tr>
 <tr><td>Building wrap</td><td class="n">0.01</td><td class="n">0.01</td><td></td></tr>
-<tr><td>Studs + insulation (bridged portion)</td><td class="n">2.80</td><td class="n">1.49</td><td>Rb below</td></tr>
-<tr><td>Plasterboard 10 mm</td><td class="n">0.04</td><td class="n">0.04</td><td></td></tr>
+<tr><td>Studs + insulation (bridged portion)</td><td class="n">2.80</td><td class="n">1.41</td><td>Rb below</td></tr>
+<tr><td>Plasterboard 10 mm</td><td class="n">0.045</td><td class="n">0.045</td><td></td></tr>
 <tr><td>Inside surface</td><td class="n">0.09</td><td class="n">0.09</td><td></td></tr>
-<tr class="tot"><td>Construction R-value</td><td class="n"></td><td class="n">R1.67</td><td></td></tr>
+<tr class="tot"><td>Construction R-value</td><td class="n"></td><td class="n">R1.60</td><td></td></tr>
 </table></div>
 <p>The bridged portion, with the vented cavity on both paths:</p>
-<p class="eq">timber path = 0.75 + 0.08 = 0.83<br>insulation path = 2.80 + 0.08 = 2.88<br>1/Rb = 0.38 / 0.83 + 0.62 / 2.88 → Rb = 1.49</p>
-<p>That clears the 2.1.2.11 b) minimum for walls (R1.0) — but the number that goes into the calculation method is R1.67, not R2.8. Use R2.8 and the heat loss of every wall is understated by 40%.</p>
+<p class="eq">timber path = 0.69 + 0.08 = 0.77<br>insulation path = 2.80 + 0.08 = 2.88<br>1/Rb = 0.38 / 0.77 + 0.62 / 2.88 → Rb = 1.41</p>
+<p>That clears the 2.1.2.11 b) minimum for walls (R1.0) — but the number that goes into the calculation method is R1.60, not R2.8. Use R2.8 and the heat loss of every wall is understated by 43%.</p>
 
 <h2>Thicker batts help less than you think</h2>
 <table>
 <tr><th>Wall</th><th class="n">Batts</th><th class="n">Construction R</th></tr>
-<tr><td>90 × 45 @ 600</td><td class="n">R2.8</td><td class="n">R1.67</td></tr>
-<tr><td>140 × 45 @ 600</td><td class="n">R3.6</td><td class="n">R2.30</td></tr>
-<tr><td>140 × 45 @ 600</td><td class="n">R4.3</td><td class="n">R2.42</td></tr>
+<tr><td>90 × 45 @ 600</td><td class="n">R2.8</td><td class="n">R1.60</td></tr>
+<tr><td>140 × 45 @ 600</td><td class="n">R3.6</td><td class="n">R2.20</td></tr>
+<tr><td>140 × 45 @ 600</td><td class="n">R4.3</td><td class="n">R2.32</td></tr>
 </table>
-<p>Going from R3.6 to R4.3 batts in a 140 mm wall adds R0.7 of insulation and R0.13 of wall. The timber path doesn't change, and with 38% of the area on it, it sets the ceiling. To move the number meaningfully you change the timber path — a thermal break over the framing, internal strapping with a second layer of insulation, external insulation — or demonstrate a lower framing fraction.</p>
-<p>Stud spacing on its own does not move it: at 400 centres the wall is still R1.67, because the 38% default already stands in for the timber.</p>
+<p>Going from R3.6 to R4.3 batts in a 140 mm wall adds R0.7 of insulation and R0.12 of wall. The timber path doesn't change, and with 38% of the area on it, it sets the ceiling. To move the number meaningfully you change the timber path — a thermal break over the framing, internal strapping with a second layer of insulation, external insulation — or demonstrate a lower framing fraction.</p>
+<p>Stud spacing on its own does not move it: at 400 centres the wall is still R1.60, because the 38% default already stands in for the timber.</p>
 
 <p class="note">The figures here use the calculator's default material values, which are provisional: confirm them against your own copy of NZS 4214 and the manufacturers' data before they go into a consent. The calculator does not decide compliance — the building consent authority does.</p>
 
