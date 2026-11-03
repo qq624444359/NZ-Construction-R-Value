@@ -55,6 +55,27 @@ function d111(fr,gl,ug){const T=D111[gl],fi=FRAMES.findIndex(f=>f[0]===fr);if(!T
 function wins(){if(!Array.isArray(P.wins))P.wins=[{n:'Windows and glazed doors',a:P.glzA==null?'':P.glzA,mode:'calc',r:P.glzR==null?'':P.glzR,fr:'tbal',gl:'double',ug:''}];return P.wins}
 /* opaque doors, one row each (BRANZ sheet layout); the single doorA of older projects becomes the first row */
 function doors(){if(!Array.isArray(P.doors))P.doors=[{n:'Opaque doors',a:P.doorA==null?'':P.doorA}];return P.doors}
+/* ---------- lots: one project file, several lots. The constructions are shared; each lot has its own areas (and ceiling and
+   slab perimeters), windows, doors, skylights and DP / Lot. The current lot lives in the ordinary fields; P.lots keeps every
+   lot's copy (refreshed after each change) and P.lot is the current one. A project with no P.lots is a single lot. ---------- */
+const LOT_P=['wins','doors','skys','glzA','glzR','doorA','skyA','slabA','slabP'],cl=x=>x==null?x:JSON.parse(JSON.stringify(x));
+function lotGrab(){const a={};list().forEach(c=>{const e=c.v.edge||{},sb=c.v.slab||{};a[c.id]={area:c.area,ra:e.area,rp:e.perim,sP:sb.sP,parts:cl(sb.parts)}});
+  const o={};LOT_P.forEach(k=>{o[k]=cl(P[k])});return{area:a,open:o,legal:R().S.pdf.proj.legal||''}}
+function lotPut(L){list().forEach(c=>{const x=(L.area||{})[c.id]||{},u=v=>v===undefined?null:v;c.area=x.area==null?'':x.area;
+    if(c.el==='roof'){c.v.edge=c.v.edge||{};c.v.edge.area=u(x.ra);c.v.edge.perim=u(x.rp)}
+    if(c.v.slab){c.v.slab.sP=x.sP==null?'':x.sP;if(x.parts!==undefined)c.v.slab.parts=cl(x.parts)}});
+  LOT_P.forEach(k=>{if((L.open||{})[k]!==undefined)P[k]=cl(L.open[k]);else delete P[k]});R().S.pdf.proj.legal=L.legal||''}
+const lots=()=>Array.isArray(P.lots)&&P.lots.length?P.lots:null,lotNo=()=>Math.min(+P.lot||0,(lots()||[1]).length-1);
+const lotSave=()=>{const L=lots();if(L)Object.assign(L[lotNo()],lotGrab())};
+const nextLot=n=>/\d+\s*$/.test(n)?n.replace(/\d+(?=\s*$)/,m=>String(+m+1)):'Lot '+((lots()||[]).length+1);
+/* each lot's result as the BRANZ tool gives it — the other lots are put in place in turn, then the current one again */
+function lotStates(){const L=lots();if(!L)return[];lotSave();const k=lotNo(),out=L.map((x,i)=>{if(i!==k)lotPut(x);return branzCheck(branzRows()).state});lotPut(L[k]);return out}
+function lotBar(side){const L=lots();if(side&&!(L&&L.length>1))return'';const st=lotStates(),k=lotNo();
+  const chips=(L||[{n:'Lot 1'}]).map((x,i)=>`<button class="lotc${i===k?' on':''}" data-a="plot" data-v="${i}" title="${esc((x.n||'Lot '+(i+1))+(st[i]?' — '+({pass:'PASS',fail:'FAIL',need:'incomplete'})[st[i]]:''))}"><i class="lotd ${st[i]||''}"></i>${esc(x.n||'Lot '+(i+1))}</button>`).join('');
+  if(side)return `<div class="lotbar lot-side"><span class="glbl">Lots</span><div class="lots">${chips}</div></div>`;
+  return `<section class="pj-s pj-lots"><h3>Lots</h3><p class="pj-n">One file for every lot: the constructions on the left are shared; each lot has its own areas, windows, doors, skylights and DP / Lot. The dot is each lot's BRANZ result.</p>
+    <div class="lotbar"><div class="lots">${chips}<button class="lotc lot-add" data-a="plotadd" title="A new lot, starting as a copy of this one"><span class="ms s16">add</span>Add lot</button></div>
+    ${L?`<div class="lot-ed">${ib('lotn',L[k].n,'',{text:1,w:'180px',ph:'Lot name'})}${L.length>1?`<button class="link-btn" data-a="plotdel" data-v="${k}">Delete this lot</button>`:''}</div>`:''}</div></section>`}
 /* a window or door row: Height AND Width (mm) when both are given, otherwise the Area entered — as the BRANZ sheet */
 /* Quantity (default 1): the row's area is the one unit's area × quantity */
 const isHW=o=>+o.h>0&&+o.wd>0,qty=o=>+o.q>0?+o.q:1,unitA=o=>isHW(o)?(+o.h)*(+o.wd)/1e6:(+o.a||0),opA=o=>unitA(o)*qty(o),doorRv=d=>d&&d.own&&+d.r>0?+d.r:(+P.doorR||0.18);   /* a door's own R, else the project default */
@@ -161,7 +182,7 @@ const ib=(f,v,cap,o)=>R().ib('p.'+f,v,cap,o),sel=(f,o,v,w)=>R().selF('p.'+f,o,v,
 const pib=(k,cap,o)=>R().ib('pp.'+k,R().S.pdf.proj[k],cap,Object.assign({text:1},o||{}));
 const seg=(k,v)=>`<div class="pseg">${['yes','no'].map(x=>`<button data-a="pseg" data-v="${k}:${x}" class="${v===x?'on':''}">${x==='yes'?'Yes':'No'}</button>`).join('')}</div>`;
 function leftRow(){const on=R().S.cur==='project',sc=scopeP(),av=verdict(),bad=sc.length||av.state==='bad';
-  return `<button class="el-card cx-row cx-proj${on?' on':''}" data-a="sel" data-v="project"><span class="ms s18 cx-pi">home_work</span><span class="cx-n"><b>Project</b><em>${esc(R().S.pdf.proj.address||'H1/AS1 inputs and areas')}</em></span></button>`}
+  return `<button class="el-card cx-row cx-proj${on?' on':''}" data-a="sel" data-v="project"><span class="ms s18 cx-pi">home_work</span><span class="cx-n"><b>Project</b><em>${esc(R().S.pdf.proj.address||'H1/AS1 inputs and areas')}</em></span></button>${lotBar(1)}`}
 function slabBlock(){const s=slab(),sl=(f,o,v)=>sel(f,o,v,'100%');
   return `<div class="pa-r sb"><div class="sb-hd"><span class="pa-n st">Slab-on-ground floor</span><span class="pa-i">${ib('slabA',P.slabA,'m²',{w:'96px'})}${ib('slabP',P.slabP,'m perimeter',{w:'96px'})}</span>
     <span class="pa-v mono${s.ok?'':' sb-bad'}">${s.ok?'R'+s.R.toFixed(1):s.none?'—':'no R'}</span></div>
@@ -193,6 +214,7 @@ function mid(){const z=zone(),taZ=(H.TA.find(t=>t[0]===P.ta)||[])[1],E=envelope(
   <section class="pj-s pj-det"><h3><i>1</i>Project details</h3>
     <div class="pj-addr">${pib('address','',{w:'100%',ph:'Street, suburb, city'})}<span class="pj-zt"><select class="pj-zs" data-f="p.zone" title="Climate zone — click to change">${[['',(P.ta||'Council?')+' · Zone '+(taZ||'—')]].concat([1,2,3,4,5,6].map(k=>[k,(P.ta||'')+(P.ta?' · ':'')+'Zone '+k+' (override)'])).map(([v,l])=>`<option value="${v}"${String(P.zone||'')===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select><span class="pj-i" tabindex="0"><span class="ms s16">info</span><span class="pj-tip">Placeholder — the council → climate zone list is not yet checked against H1/AS1 Appendix C. Council found from the address: ${esc(P.ta||'none')}.</span></span></span></div>
     <div class="pj-g3 pj-g4">${grp('Thermal envelope',sel('envS',[['whole','Whole building'],['unit','One household unit']],P.envS||'whole','100%').replace('<select','<select title="2.1.2.3 — shown on the PDF"'))}${grp('DP / Lot',pib('legal','',{w:'100%',ph:'e.g. Lot 1 DP 12345'}))}${grp('Designer',pib('designer','',{w:'100%'}))}${grp('Date',pib('date','',{w:'100%'}))}</div></section>
+  ${lotBar()}
   <section class="pj-s"><h3><i>2</i>Envelope areas</h3><p class="pj-n">Finished internal face, overall internal dimensions (2.1.2.10). Enter only the walls, roofs and floors of the thermal envelope — leave out the garage, and walls or floors between two heated spaces (e.g. a party wall to a neighbour's living area) (2.1.2.4). Roof, wall and floor R-values come from the constructions on the left. A roof with a ceiling perimeter part needs the ceiling perimeter: perimeter area = perimeter × strip width, field = the rest (2.1.2.9).</p>
     ${[['roof','Roofs'],['wall','Walls']].map(([el,l])=>`<div class="pa-g"><div class="pa-h"><span class="glbl">${l}</span>${addB(el,l.slice(0,-1).toLowerCase())}</div>${byEl(el).map(conRow).join('')}</div>`).join('')}
     <div class="pa-g"><span class="glbl">Floors</span><div class="pa-h"><span class="pa-sub">Suspended / cantilevered floor</span>${addB('floor','suspended floor')}</div>${byEl('floor').filter(c=>!isSlab(c)).map(conRow).join('')}<div class="pa-h"><span class="pa-sub">Slab-on-ground</span>${addB('slab','slab-on-ground floor')}</div>${byEl('floor').filter(isSlab).map(conRow).join('')}</div>
@@ -296,6 +318,7 @@ function set(path,raw){if(typeof raw==='string'&&/^\.\d/.test(raw))raw='0'+raw;c
   else if(p[0]==='w'){const w=wins()[+p[1]];if(w)w[p[2]]=v;syncGlz()}
   else if(p[0]==='dr'){const d=doors()[+p[1]];if(d)d[p[2]]=v;syncDoor()}
   else if(p[0]==='sk'){const s=skys()[+p[1]];if(s)s[p[2]]=v;syncSky()}
+  else if(path==='lotn'){const L=lots();if(L)L[lotNo()].n=v}
   else if(path==='zone')P.zone=raw?+raw:null;else P[path]=v;invalidate()}
 /* the single-row fields stay in step (total area, first row's R) */
 function syncDoor(){P.doorA=String(doors().reduce((a,d)=>a+opA(d),0)||'')}
@@ -319,6 +342,11 @@ function act(a,v,b){
   else if(a==='psdel'){skys().splice(+v,1);syncSky()}
   else if(a==='pwown'){const w=wins()[+v];if(!w)return false;w.own=w.own?'':'1';   /* Custom starts from the default */
     if(w.own){const d=P.wdk==='custom'||!WPRE[P.wdk]?[P.wfr,P.wgl,P.wug]:WPRE[P.wdk];w.fr=d[0];w.gl=d[1];w.ug=d[2];w.r=P.wdefR}syncGlz()}
+  else if(a==='plot'){const L=lots(),i=+v;if(!L||!L[i]||i===lotNo())return false;lotSave();P.lot=i;lotPut(L[i]);invalidate()}
+  else if(a==='plotadd'){if(!lots()){P.lots=[Object.assign({n:'Lot 1'},lotGrab())];P.lot=0}const L=lots(),k=lotNo();lotSave();   /* a copy of this lot */
+    const lg=L[k].legal||'';L.push(Object.assign(cl(L[k]),{n:nextLot(L[L.length-1].n||''),legal:/\bLot\s*\d+/i.test(lg)?lg.replace(/\b(Lot\s*)(\d+)/i,(m,a,d)=>a+(Math.max(0,...L.map(x=>{const q=/\bLot\s*(\d+)/i.exec(x.legal||'');return q?+q[1]:0}))+1)):''}));   /* the DP / Lot takes the next lot number, or is left for the user */P.lot=L.length-1;lotPut(L[P.lot]);invalidate();
+    setTimeout(()=>{const i=document.querySelector('[data-f="p.lotn"]');if(i){i.focus();i.select()}},0)}
+  else if(a==='plotdel'){const L=lots(),i=+v;if(!L||L.length<2||!L[i])return false;L.splice(i,1);P.lot=Math.max(0,Math.min(i,L.length-1));lotPut(L[P.lot]);invalidate()}
   else if(a==='pexclok'){const c=list().find(c=>c.id===v);if(c)delete c.exclMsg}
   else if(a==='psugg'){const c=list().find(c=>c.id===v);if(c)applySugg(c)}
   else if(a==='psuggall'){const S=SUG||{};if(S.state==='ok')list().forEach(c=>{const o=S.by[c.id];if(o&&o.key!==curKey(c))o.apply(c)});invalidate()}
@@ -328,7 +356,7 @@ function act(a,v,b){
 /* council from the address: the last place name in it that matches the council list (placeholder list) */
 const ALIAS={'browns bay':'Auckland','north shore':'Auckland','takapuna':'Auckland','manukau':'Auckland','lower hutt':'Hutt City','petone':'Hutt City','porirua':'Wellington','frankton':'Queenstown-Lakes','wanaka':'Queenstown-Lakes','rolleston':'Selwyn','mount maunganui':'Tauranga'};
 function taFrom(addr){const s=addr.toLowerCase();let best=null,at=-1;H.TA.forEach(([n])=>{const i=s.lastIndexOf(n.toLowerCase());if(i>at){at=i;best=n}});Object.keys(ALIAS).forEach(k=>{const i=s.lastIndexOf(k);if(i>at){at=i;best=ALIAS[k]}});return best}
-function after(){const S=R().S,z=zone();if(z)S.zone=z;const pr=S.pdf.proj;if(pr.address){const t=taFrom(pr.address);if(t&&t!==P.ta){P.ta=t}S.name=pr.address;pr.project_name=pr.address}invalidate();
+function after(){lotSave();const S=R().S,z=zone();if(z)S.zone=z;const pr=S.pdf.proj;if(pr.address){const t=taFrom(pr.address);if(t&&t!==P.ta){P.ta=t}S.name=pr.address;pr.project_name=pr.address}invalidate();
   if(SK)try{localStorage.setItem(SK,JSON.stringify({fmt:2,P,list:toSaved(S.list),proj:S.pdf.proj,guide:S.guide||{}}))}catch(e){}}
 /* New project: the stored project becomes an empty one (test mode: only this test project) */
 function blank(){if(!SK)return;try{localStorage.setItem(SK,JSON.stringify({fmt:2,P:Object.assign({glzR:''},NEWOPEN()),list:[],proj:{},guide:{}}))}catch(e){}}
