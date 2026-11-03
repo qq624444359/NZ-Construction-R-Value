@@ -480,7 +480,7 @@ document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.altKey||(S
 document.addEventListener('input',e=>{const t=e.target;if(!t.dataset||!t.dataset.f||t.tagName==='SELECT'||t.type==='checkbox')return;hPush(t.dataset.f);if(t.dataset.n)RAW[t.dataset.f]=t.value;setF(t.dataset.f,t.value,!!t.dataset.n);render()});
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!t.dataset.f)return;hPush();
   if(t.dataset.cl){const L=LIB.cladding,o=L[+t.closest('.v6clad').querySelector('select:not([data-cl])').value]||L[0],g=t.dataset.cl==='g'?t.value:(o.grp||'ot'),b=t.dataset.cl==='b'?t.value:null,j=cladIn(g,b)[0];if(j!=null){setF(t.dataset.f,String(j),false);render()}return}
-  if(t.tagName==='SELECT'){setF(t.dataset.f,t.value,false);render()}else if(t.type==='checkbox'){setF(t.dataset.f,t.checked);render()}});
+  if(t.tagName==='SELECT'){setF(t.dataset.f,t.value,false);render()}else if(t.type==='checkbox'){setF(t.dataset.f,t.checked);if(t.dataset.f==='v.over.on'&&isStrat(cur()))S.af=t.checked?'over':firstFrame(cur());render()}});   /* ticking the second layer points the product list at it */
 document.addEventListener('focusout',e=>{const t=e.target;t._sel=0;t._fj=0;if(t.dataset&&t.dataset.f&&RAW[t.dataset.f]!=null){delete RAW[t.dataset.f];const nv2=lz(t.value);if(nv2!==t.value)t.value=nv2}});
 /* clicking into a number selects it, ready to type over: every time it gets focus (not only the first), and the
    mouse-up of that click must not put a caret back. Focus put back after a re-render (_sel set first) keeps the caret. */

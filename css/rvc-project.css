@@ -143,7 +143,7 @@ div.sb-r{display:flex;flex-direction:column;gap:2px}
 .v6col .sg>.ms{margin-top:2px}.v6col .sg>span:not(.ms){min-width:0;text-wrap:pretty}
 .v6col .sg>button{grid-column:2;justify-self:start;margin:0}
 .v6cvr{margin-top:4px}.v6cvr.dis{opacity:.5;cursor:not-allowed}.v6cvn{margin-top:-4px}
-.eaves-section .insulation.nocover{opacity:.45}.eaves-section .chordtop{stroke:var(--ink,#111);stroke-width:2.5;stroke-dasharray:12 8;fill:none}
+
 .nav-a{color:inherit;text-decoration:none}.hg-start{text-decoration:none}
 .cx-hg{color:var(--brand-on,var(--brand));margin-right:4px;vertical-align:-3px}
 .hg-ban{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;border-radius:10px;border:1px solid rgba(25,120,229,.35);background:var(--brand-soft);font:500 13px/1.4 Inter;color:var(--text)}
