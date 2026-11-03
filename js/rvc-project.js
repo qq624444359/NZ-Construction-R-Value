@@ -214,7 +214,7 @@ function mid(){const z=zone(),taZ=(H.TA.find(t=>t[0]===P.ta)||[])[1],E=envelope(
 function branzRows(){const E=envelope(),out=[];
   E.L.forEach(c=>{if(isSlab(c)){const L=calc(c).slab;if(L&&!L.ok){out.push({sh:'Slab Floors',d:c.name+' — R not determined — see sheet '+(toSheet(c,list()).ref||''),a:areaOf(c),r:null});return}
     if(L&&L.ok)out.push({sh:'Slab Floors',con:c,d:c.name+' — '+(L.vm1?'H1/VM1 Appendix E calculation'+(L.src?' ('+L.src+')':''):L.mixed?'Appendix E, '+L.segs.length+' perimeter parts (Eq E.3–E.5)':'Table '+L.table+', A/P row '+L.apRow+', wall '+L.band),a:areaOf(c),r:+L.Rtxt});return}
-    const x=rOf(c),A=areaOf(c),sh={roof:'Roof',wall:'Walls',floor:'Suspended Floors'}[c.el];
+    const x=rOf(c),A=areaOf(c),sh={roof:'Roof',wall:'Walls',floor:'Other Floors'}[c.el];
     if(x.rp!=null){const ap=Math.min(A,perimOfC(c)*x.W/1000);out.push({sh,d:c.name+' — field',a:A-ap,r:x.r,heated:c.heated,con:c},{sh,d:c.name+' — ceiling perimeter '+x.W+' mm',a:ap,r:x.rp,heated:c.heated,con:c,per:1})}
     else out.push({sh,d:c.name+(hasSide(c)&&sideOf(c)!=='out'?' — other side: '+sideTxt(c):''),a:A,r:x.r,heated:c.heated,con:c})});
   const hwT=o=>(isHW(o)?' — '+(+o.h)+' × '+(+o.wd)+' mm':'')+(qty(o)>1?' × '+qty(o):'');
@@ -236,16 +236,16 @@ function branzCheck(rows){const z=zone(),E=envelope(),miss=[],err=[];if(!z)miss.
   const g=k=>sum[k]||0,gross=g('Walls')+g('Glazing (walls & doors)')+g('Doors (opaque)'),pct=gross?g('Glazing (walls & doors)')/gross*100:0;
   if(pct>40+1e-9)err.push('glazing is '+f1(pct)+'% of the gross wall — over the 40% limit of the Calculation Method (2.1.2.5)');
   if(miss.length||!z)return{state:'need',miss};
-  const T=H.REFR(z),hr=(g('Roof')+g('Skylights'))/T.roof+gross*.7/T.wall+gross*.3/T.glz+g('Slab Floors')/T.slab+g('Suspended Floors')/T.susp;
+  const T=H.REFR(z),hr=(g('Roof')+g('Skylights'))/T.roof+gross*.7/T.wall+gross*.3/T.glz+g('Slab Floors')/T.slab+g('Other Floors')/T.susp;
   return{state:hp<=hr+1e-9&&!err.length?'pass':'fail',hp,hr,err}}
 function bzVerdict(rows){const V=branzCheck(rows);
   if(V.state==='need')return `<div class="bz-v open"><b>Incomplete</b><span>To get the result: ${esc(V.miss.join('; '))}.</span></div>`;
   return `<div class="bz-v ${V.state}"><b>${V.state==='pass'?'PASS':'FAIL'}</b><span>HL proposed <i class="mono">${f1(V.hp)}</i> ${V.hp<=V.hr+1e-9?'≤':'>'} reference <i class="mono">${f1(V.hr)} W/K</i>${V.err.length?' · '+esc(V.err.join('; ')):''}</span></div>`}
-/* the BRANZ sheets for windows, doors and skylights: always shown, last, in this order */
-const OPEN_SH=['Glazing (walls & doors)','Doors (opaque)','Skylights'];
+/* the sheets in the BRANZ tool's tab order; skylights, glazing and doors are always shown */
+const BZ_SH=['Slab Floors','Other Floors','Roof','Skylights','Walls','Glazing (walls & doors)','Doors (opaque)'],OPEN_SH=['Skylights','Glazing (walls & doors)','Doors (opaque)'];
 function right(){const rows=branzRows(),by={};rows.forEach(r=>{(by[r.sh]=by[r.sh]||[]).push(r)});
   return `<div class="card pj-r"><div class="bz-top"><h2>BRANZ input</h2>${bzVerdict(rows)}</div><p class="pj-n">Type these into the BRANZ H1/AS1 calculation tool — the result above is worked the way the tool works it from these rows; the tool's own result is the one for the consent. Copy pastes a sheet's rows at cell C10.</p>
-    ${Object.entries(by).filter(([sh])=>!OPEN_SH.includes(sh)).concat(OPEN_SH.map(sh=>[sh,by[sh]||[]])).map(([sh,L])=>`<div class="bz"><div class="bz-h"><b>${esc(sh)}</b>${L.length?`<button class="v6btn bz-c" data-a="pcopy" data-v="${esc(sh)}"><span class="ms s16">content_copy</span>Copy</button>`:''}</div>${OPEN_SH.includes(sh)?(L.length?'<p class="pj-n bz-hint">Paste at the first Description cell of the sheet: Description · ID · Area · Height · Width · R-value</p>':`<p class="pj-n bz-hint">None yet — enter the sizes in <button class="link-btn" data-a="sel" data-v="openings">Windows &amp; doors</button>.</p>`):''}${L.map(r=>`<div class="bz-r"><span>${esc(r.d)}</span><b class="mono">${f1(r.a)} m²</b><b class="mono">${r.r==null?'—':'R'+f2(r.r)}</b></div>`).join('')}</div>`).join('')||'<p class="pj-n">Enter the areas first.</p>'}
+    ${BZ_SH.filter(sh=>by[sh]||OPEN_SH.includes(sh)).map(sh=>[sh,by[sh]||[]]).map(([sh,L])=>`<div class="bz"><div class="bz-h"><b>${esc(sh)}</b>${L.length?`<button class="v6btn bz-c" data-a="pcopy" data-v="${esc(sh)}"><span class="ms s16">content_copy</span>Copy</button>`:''}</div>${OPEN_SH.includes(sh)?(L.length?'<p class="pj-n bz-hint">Paste at the first Description cell of the sheet: Description · ID · Area · Height · Width · R-value</p>':`<p class="pj-n bz-hint">None yet — enter the sizes in <button class="link-btn" data-a="sel" data-v="openings">Windows &amp; doors</button>.</p>`):''}${L.map(r=>`<div class="bz-r"><span>${esc(r.d)}</span><b class="mono">${f1(r.a)} m²</b><b class="mono">${r.r==null?'—':'R'+f2(r.r)}</b></div>`).join('')}</div>`).join('')||'<p class="pj-n">Enter the areas first.</p>'}
     <div class="bz-pd"><span class="glbl">Project Details sheet</span><div class="bz-r"><span>F7 Project name</span><b>${esc(R().S.pdf.proj.address||'—')}</b></div><div class="bz-r"><span>F9 Designer</span><b>${esc(R().S.pdf.proj.designer||'—')}</b></div><div class="bz-r"><span>F12 Territorial Authority</span><b>${esc(P.ta||'—')}</b></div></div>
     <button class="v6pdfb pj-pdf" data-a="pdf"><span class="ms s18">picture_as_pdf</span>Export PDF report</button></div>`}
 /* Windows & doors — optional, only for the BRANZ input (not in the PDF). On the Project page it is a read-only summary. */
