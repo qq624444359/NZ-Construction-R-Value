@@ -57,7 +57,7 @@ function wins(){if(!Array.isArray(P.wins))P.wins=[{n:'Windows and glazed doors',
 function doors(){if(!Array.isArray(P.doors))P.doors=[{n:'Opaque doors',a:P.doorA==null?'':P.doorA}];return P.doors}
 /* a window or door row: Height AND Width (mm) when both are given, otherwise the Area entered — as the BRANZ sheet */
 /* Quantity (default 1): the row's area is the one unit's area × quantity */
-const isHW=o=>+o.h>0&&+o.wd>0,qty=o=>+o.q>0?+o.q:1,unitA=o=>isHW(o)?(+o.h)*(+o.wd)/1e6:(+o.a||0),opA=o=>unitA(o)*qty(o),doorRv=()=>+P.doorR||0.18;
+const isHW=o=>+o.h>0&&+o.wd>0,qty=o=>+o.q>0?+o.q:1,unitA=o=>isHW(o)?(+o.h)*(+o.wd)/1e6:(+o.a||0),opA=o=>unitA(o)*qty(o),doorRv=d=>d&&d.own&&+d.r>0?+d.r:(+P.doorR||0.18);   /* a door's own R, else the project default */
 /* window R-values: one method for the section (P.wm: Table D.1.1.1 'tab' or H1/VM1 Appendix D 'calc') and one default every
    window takes; a window set to Custom (w.own) has its own. R0.37 / R0.46 are the usual market windows, both rows of Table D.1.1.1. */
 const WPRE={r037:['al','double','1.1'],r046:['tbal','double','1.3']};
@@ -118,7 +118,7 @@ function current(){const E=envelope(),hr=refHL(E),miss=[];if(!hr)miss.push('clim
 function refHL(E){const z=zone();if(!z)return null;const T=H.REFR(z);return (E.roof+E.sky)/T.roof+E.gross*.7/T.wall+E.gross*.3/T.glz+E.slab/T.slab+E.floor/T.susp}
 const glzHL=gR=>wins().reduce((a,w)=>{const A=opA(w);if(!A)return a;const r=gR||winR(w).r;return r?a+A/r:a},0);
 const refTxt=z=>{const T=H.REFR(z);const f=x=>(+x).toFixed(1);return 'roof + skylights R'+f(T.roof)+' · 70% of gross wall R'+f(T.wall)+' · slab-on-ground R'+f(T.slab)+' · other floors R'+f(T.susp)+' · 30% of gross wall (glazing) R'+T.glz.toFixed(2)};
-const fixedHL=(E,gR)=>(E.glz?glzHL(gR):0)+(E.door?E.door/(+P.doorR||0.18):0)+(E.sky&&skyR()?E.sky/skyR():0);
+const fixedHL=(E,gR)=>(E.glz?glzHL(gR):0)+doors().reduce((a,d)=>{const A=opA(d);return A?a+A/doorRv(d):a},0)+(E.sky&&skyR()?E.sky/skyR():0);
 /* ---------- background check: cheapest combination that keeps HL proposed ≤ HL reference ---------- */
 const MEMO=new Map();
 function optEval(c){const key=JSON.stringify([c.id,c.kind,c.o,c.v,c.heated,c.area,zone()]);if(MEMO.has(key))return MEMO.get(key);
@@ -199,7 +199,7 @@ function mid(){const z=zone(),taZ=(H.TA.find(t=>t[0]===P.ta)||[])[1],E=envelope(
     ${areaCheck(E)}
     <div class="pa-g"><div class="pa-h"><span class="glbl">Windows and doors</span><button class="v6btn pa-edit" data-a="sel" data-v="openings"><span class="ms s16">edit</span>Edit in Windows &amp; doors</button></div>
       ${wins().map(w=>{const x=winR(w);return roRow(w.n||'Window type',opA(w),x.r?'R'+f2(x.r):'—')}).join('')}
-      ${doors().map(d=>roRow(d.n||'Opaque door',opA(d),'R'+f2(doorRv()))).join('')}${skys().map(s=>roRow(s.n||'Skylight',opA(s),skyR()?'R'+f2(skyR()):'—')).join('')}</div>
+      ${doors().map(d=>roRow(d.n||'Opaque door',opA(d),'R'+f2(doorRv(d)))).join('')}${skys().map(s=>roRow(s.n||'Skylight',opA(s),skyR()?'R'+f2(skyR()):'—')).join('')}</div>
     <div class="pj-tot"><div><span>Gross wall area</span><b class="mono">${f1(E.gross)} m²</b></div><div><span>Wall glazing</span><b class="mono${E.glzPct>40?' neg':''}">${f1(E.glzPct)}%</b><em>${E.glzPct>40?'over the 40% limit of the Calculation Method (2.1.2.5)':'of gross wall area · limit 40% (2.1.2.5)'}</em></div></div>
     <p class="pj-n pj-scope">H1/AS1 does not apply to curtain walling, foil insulation, or non-housing occupied space over 300 m² (1.1.1.1, 1.1.2).</p></section>
   <section class="pj-s"><h3><i>3</i>Suggested insulation</h3>
@@ -219,7 +219,7 @@ function branzRows(){const E=envelope(),out=[];
     else out.push({sh,d:c.name+(hasSide(c)&&sideOf(c)!=='out'?' — other side: '+sideTxt(c):''),a:A,r:x.r,heated:c.heated})});
   const hwT=o=>(isHW(o)?' — '+(+o.h)+' × '+(+o.wd)+' mm':'')+(qty(o)>1?' × '+qty(o):'');
   wins().forEach(w=>{const A=opA(w);if(!A)return;const x=winR(w);out.push({sh:'Glazing (walls & doors)',d:(w.n||'Windows and glazed doors')+hwT(w)+' — '+(x.src||x.why),a:A,r:x.r,op:w})});
-  doors().forEach(d=>{const A=opA(d);if(!A)return;out.push({sh:'Doors (opaque)',d:(d.n||'Opaque door')+hwT(d)+(P.doorR===''?' — 2.1.2.13 default':''),a:A,r:doorRv(),op:d})});
+  doors().forEach(d=>{const A=opA(d);if(!A)return;out.push({sh:'Doors (opaque)',d:(d.n||'Opaque door')+hwT(d)+(d.own&&+d.r>0?' — custom R':P.doorR===''?' — 2.1.2.13 default':''),a:A,r:doorRv(d),op:d})});
   skys().forEach(s=>{const A=opA(s);if(!A)return;out.push({sh:'Skylights',d:(s.n||'Skylight')+hwT(s)+' — manufacturer R (Appendix D.2)',a:A,r:skyR(),op:s})});
   return out}
 /* the BRANZ sheets for windows, doors and skylights: always shown, last, in this order */
@@ -253,8 +253,10 @@ function openMid(){return `<div class="card pj"><div class="pj-hd"><p class="kic
         ${w.own?`<div class="wown">${P.wm==='tab'?sel(wf('fr'),FRAMES,w.fr||P.wfr,'100%')+sel(wf('gl'),[['double','Double glazing'],['triple','Triple glazing']],w.gl||P.wgl,'100%')+ib(wf('ug'),w.ug,'Ug W/m²K',{w:'90px',bad:!(+w.ug>0)}):ib(wf('r'),w.r,'R',{w:'64px',ph:'0.37',bad:!(+w.r>0)})}<span class="pa-why ${x.r?'sb-n':'pa-amb'}">${esc(x.r?x.src:x.why)}</span></div>`:''}</div>`}).join('')}
       <div class="wadd"><button class="v6btn" data-a="pwadd"><span class="ms s16">add</span>Add a window</button><span class="pa-why sb-n">Opaque part of a door is counted separately (D.1.1.2) — put it in Opaque doors.</span></div></div>
     <div class="wlist"><div class="wrow wrow-h"><span>Opaque door</span><span>Area m² — or Height × Width mm · Qty</span><span></span><span>R</span></div>
-      ${doors().map((d,i)=>`<div class="wrow"><span class="wname">${ib('dr.'+i+'.n',d.n,'',{text:1,w:'100%',ph:'Opaque door'})}</span><span class="wsz">${hwIn('dr.'+i+'.',d)}</span><span></span><span class="wv mono">R${f2(doorRv())}${delB('pddel',i,doors().length,'door')}</span></div>`).join('')}
-      <div class="wadd"><button class="v6btn" data-a="pdadd"><span class="ms s16">add</span>Add a door</button><span class="wr">Door R ${ib('doorR',P.doorR,'',{w:'64px',ph:'0.18'})}</span><span class="pa-why sb-n">Default 0.18 (2.1.2.13) unless calculated to H1/VM1 Appendix D.</span></div></div>
+      ${doors().map((d,i)=>`<div class="wrow${d.own?' own':''}"><span class="wname">${ib('dr.'+i+'.n',d.n,'',{text:1,w:'100%',ph:'Opaque door'})}</span><span class="wsz">${hwIn('dr.'+i+'.',d)}</span>
+        <button class="wic${d.own?' on':''}" data-a="pdown" data-v="${i}" title="${d.own?'Custom R — click to use the default':'Default R — click for a custom R'}"><span class="ms s16">tune</span></button><span class="wv mono">R${f2(doorRv(d))}${delB('pddel',i,doors().length,'door')}</span>
+        ${d.own?`<div class="wown">${ib('dr.'+i+'.r',d.r,'R',{w:'64px',ph:f2(doorRv()),bad:!(+d.r>0)})}<span class="pa-why ${+d.r>0?'sb-n':'pa-amb'}">${+d.r>0?'This door only — from the manufacturer or calculated to H1/VM1 Appendix D.':'Enter this door’s R — until then it uses the default R'+f2(doorRv())+'.'}</span></div>`:''}</div>`).join('')}
+      <div class="wadd"><button class="v6btn" data-a="pdadd"><span class="ms s16">add</span>Add a door</button><span class="wr">Default door R ${ib('doorR',P.doorR,'',{w:'64px',ph:'0.18'})}</span><span class="pa-why sb-n">Default 0.18 (2.1.2.13) unless calculated to H1/VM1 Appendix D.</span></div></div>
     <div class="wlist"><div class="wrow wrow-h"><span>Skylight</span><span>Area m² — or Height × Width mm · Qty</span><span></span><span>R</span></div>
       ${skys().map((s,i)=>`<div class="wrow"><span class="wname">${ib('sk.'+i+'.n',s.n,'',{text:1,w:'100%',ph:'Skylight'})}</span><span class="wsz">${hwIn('sk.'+i+'.',s)}</span><span></span><span class="wv mono">${skyR()?'R'+f2(skyR()):'—'}${delB('psdel',i,1,'skylight')}</span></div>`).join('')}
       <div class="wadd"><button class="v6btn" data-a="psadd"><span class="ms s16">add</span>Add a skylight</button><span class="wr">Skylight R ${ib('skyR',P.skyR,'',{w:'64px',ph:'R',bad:skys().some(s=>opA(s)>0)&&!skyR()})}</span><span class="pa-why sb-n">From the manufacturer (Appendix D.2). The reference roof uses the gross roof area (roof + skylights).</span></div></div>
@@ -291,6 +293,7 @@ function act(a,v,b){
   else if(a==='pwdel'){wins().splice(+v,1);syncGlz()}
   else if(a==='pdadd'){doors().push({n:'Opaque door '+(doors().length+1),a:'',h:'',wd:''});syncDoor()}
   else if(a==='pddel'){doors().splice(+v,1);syncDoor()}
+  else if(a==='pdown'){const d=doors()[+v];if(!d)return false;d.own=d.own?'':'1';if(d.own&&!(+d.r>0))d.r=String(doorRv())}   /* Custom starts from the default */
   else if(a==='psadd'){skys().push({n:'Skylight '+(skys().length+1),a:'',h:'',wd:''});syncSky()}
   else if(a==='psdel'){skys().splice(+v,1);syncSky()}
   else if(a==='pwown'){const w=wins()[+v];if(!w)return false;w.own=w.own?'':'1';   /* Custom starts from the default */
