@@ -111,7 +111,7 @@ function leftCol(){
     ${L.length?L.map(c=>`<button class="el-card cx-row${c.id===S.cur?' on':''}" data-a="sel" data-v="${c.id}"><i class="cx-dot ${status(c)}"></i><span class="cx-n">${c.origin&&c.origin.guide?'<span class="ms s16 cx-hg" title="Created by the House Guide">cottage</span>':''}${esc(c.name||'Untitled')}</span><b class="mono">${tpl(c).slab?(calc(c).slab&&calc(c).slab.ok?'R'+calc(c).slab.Rtxt:'—'):'R'+r2(calc(c).total)}${(P=>P?`<em class="cx-p">perim R${r2(P.x.total)}</em>`:'')(perimOf(c))}</b></button>`).join(''):'<div class="cx-none">None yet</div>'}</div>`};
   const menu=S.menu?`<div class="cx-menu v6menu">${['wall','roof','floor'].map(el=>`<button data-a="addel" data-v="${el}">${ELW[el]}</button>`).join('')}<button data-a="addel" data-v="slab">Floor – concrete slab</button></div>`:'';
   return `<div class="card cx">${XP?XP.leftRow():''}<div class="cx-hd"><h2>Constructions</h2><p>${esc(hdrTxt())}</p></div>
-  ${grp('roof')}${grp('wall')}${grp('floor')}${grp('floor',1)}${XP?XP.openRow():''}
+  ${grp('floor',1)}${grp('floor')}${grp('roof')}${grp('wall')}${XP?XP.openRow():''}
   <div class="cx-add"><button class="cx-addb" data-a="add" aria-expanded="${S.menu}"><span class="ms s18">add</span>Add a construction…<span class="ms s18 cv">${S.menu?'expand_less':'expand_more'}</span></button>${menu}</div>
 </div>`}
 
