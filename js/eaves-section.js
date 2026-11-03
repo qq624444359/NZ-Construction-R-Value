@@ -220,11 +220,8 @@
       var hi = lo + layer.thickness;
       stackTop = Math.max(stackTop, hi);
       var id = 'insulation-' + layer.layer;
-      var split = layer.layer === 'between' && S.chordCovered === false && hi > bt + 0.5 && zone !== 'perimeter';
+      // one batt is one band, whether or not it covers the chords (the truss outline beyond shows the chord top)
       out.push(group(id, zone === 'perimeter' ? band(lo, hi, 'ghost', '', xDiv) :
-        split ? band(lo, bt, 'insulation ' + layer.layer, battFill(layer.layer, bt - lo, [0, bt]), zone ? xDiv : 0) +
-          band(bt, hi, 'insulation between nocover', battFill(layer.layer, hi - bt, [0, hi]), zone ? xDiv : 0) +
-          line([[0, bt], [X, bt]], 'chordtop') :
         band(lo, hi, 'insulation ' + layer.layer, battFill(layer.layer, hi - lo, [0, hi]), zone ? xDiv : 0)));
       var name = { between: 'Between the members', over: 'Over the framing',
         notched: 'Single layer, notched' }[layer.layer];
