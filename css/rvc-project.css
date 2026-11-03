@@ -202,3 +202,10 @@ div.sb-r{display:flex;flex-direction:column;gap:2px}
 .sbc .sb-q,.sbc .sb-g{align-items:start}
 /* the short-perimeter case is a plain note (right for terraced units), not a warning */
 .sb-warn.info{border-color:var(--border);background:var(--surface-2);color:var(--text-2);font-weight:500}.sb-warn.info .ms{color:var(--text-3)}
+
+/* lots */
+.lotbar{display:flex;flex-direction:column;gap:8px}.lots{display:flex;flex-wrap:wrap;gap:6px}
+.lotc{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--border);border-radius:999px;font:600 12.5px/1.2 Inter;color:var(--text-2,var(--text));background:var(--surface)}
+.lotc:hover{background:var(--surface-2)}.lotc.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-on,var(--brand))}
+.lotc.lot-add{border-style:dashed;color:var(--text-3)}.lotd{width:7px;height:7px;border-radius:50%;background:var(--border)}.lotd.pass{background:var(--pass)}.lotd.fail{background:var(--fail)}.lotd.need{background:var(--review)}
+.lot-ed{display:flex;align-items:center;gap:12px}.lot-side{margin:-6px 0 14px;padding:0 2px}.lot-side .glbl{display:block;margin-bottom:6px;font:600 10.5px/1.2 Inter;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}.lot-side .lotc{padding:4px 9px;font-size:12px}
