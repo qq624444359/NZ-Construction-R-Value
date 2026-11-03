@@ -58,13 +58,15 @@ function doors(){if(!Array.isArray(P.doors))P.doors=[{n:'Opaque doors',a:P.doorA
 /* ---------- lots: one project file, several lots. The constructions are shared; each lot has its own areas (and ceiling and
    slab perimeters), windows, doors, skylights and DP / Lot. The current lot lives in the ordinary fields; P.lots keeps every
    lot's copy (refreshed after each change) and P.lot is the current one. A project with no P.lots is a single lot. ---------- */
-const LOT_P=['wins','doors','skys','glzA','glzR','doorA','skyA','slabA','slabP'],cl=x=>x==null?x:JSON.parse(JSON.stringify(x));
+/* per lot: the window, door and skylight rows and every setting of the Windows & doors page (window R method and default,
+   default door R, skylight R) */
+const LOT_P=['wins','doors','skys','glzA','glzR','doorA','skyA','slabA','slabP','doorR','skyR','skyU','wm','wdk','wdefR','wfr','wgl','wug'],cl=x=>x==null?x:JSON.parse(JSON.stringify(x));
 function lotGrab(){const a={};list().forEach(c=>{const e=c.v.edge||{},sb=c.v.slab||{};a[c.id]={area:c.area,ra:e.area,rp:e.perim,sP:sb.sP,parts:cl(sb.parts)}});
-  const o={};LOT_P.forEach(k=>{o[k]=cl(P[k])});return{area:a,open:o,legal:R().S.pdf.proj.legal||''}}
+  const o={};LOT_P.forEach(k=>{o[k]=P[k]===undefined?null:cl(P[k])});return{area:a,open:o,legal:R().S.pdf.proj.legal||''}}
 function lotPut(L){list().forEach(c=>{const x=(L.area||{})[c.id]||{},u=v=>v===undefined?null:v;c.area=x.area==null?'':x.area;
     if(c.el==='roof'){c.v.edge=c.v.edge||{};c.v.edge.area=u(x.ra);c.v.edge.perim=u(x.rp)}
     if(c.v.slab){c.v.slab.sP=x.sP==null?'':x.sP;if(x.parts!==undefined)c.v.slab.parts=cl(x.parts)}});
-  LOT_P.forEach(k=>{if((L.open||{})[k]!==undefined)P[k]=cl(L.open[k]);else delete P[k]});R().S.pdf.proj.legal=L.legal||''}
+  const O=L.open||{};LOT_P.forEach(k=>{if(!(k in O))return;if(O[k]===null)delete P[k];else P[k]=cl(O[k])});   /* a setting a lot saved before it was per lot keeps the current value */R().S.pdf.proj.legal=L.legal||''}
 const lots=()=>Array.isArray(P.lots)&&P.lots.length?P.lots:null,lotNo=()=>Math.min(+P.lot||0,(lots()||[1]).length-1);
 const lotSave=()=>{const L=lots();if(L)Object.assign(L[lotNo()],lotGrab())};
 const nextLot=n=>/\d+\s*$/.test(n)?n.replace(/\d+(?=\s*$)/,m=>String(+m+1)):'Lot '+((lots()||[]).length+1);
