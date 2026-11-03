@@ -272,9 +272,9 @@ function openMid(){return `<div class="card pj"><div class="pj-hd"><p class="kic
         ${w.own?`<div class="wown">${P.wm==='tab'?sel(wf('fr'),FRAMES,w.fr||P.wfr,'100%')+sel(wf('gl'),[['double','Double glazing'],['triple','Triple glazing']],w.gl||P.wgl,'100%')+ib(wf('ug'),w.ug,'Ug W/m²K',{w:'90px',bad:!(+w.ug>0)}):ib(wf('r'),w.r,'R',{w:'64px',ph:'0.37',bad:!(+w.r>0)})}<span class="pa-why ${x.r?'sb-n':'pa-amb'}">${esc(x.r?x.src:x.why)}</span></div>`:''}</div>`}).join('')}
       <div class="wadd"><button class="v6btn" data-a="pwadd"><span class="ms s16">add</span>Add a window</button><span class="pa-why sb-n">Opaque part of a door is counted separately (D.1.1.2) — put it in Opaque doors.</span></div></div>
     <div class="wlist"><div class="wrow wrow-h"><span>Opaque door</span><span>Area m² — or Height × Width mm · Qty</span><span></span><span>R</span></div>
-      ${doors().map((d,i)=>`<div class="wrow${d.own?' own':''}"><span class="wname">${ib('dr.'+i+'.n',d.n,'',{text:1,w:'100%',ph:'Opaque door'})}</span><span class="wsz">${hwIn('dr.'+i+'.',d)}</span>
-        <button class="wic${d.own?' on':''}" data-a="pdown" data-v="${i}" title="${d.own?'Custom R — click to use the default':'Default R — click for a custom R'}"><span class="ms s16">tune</span></button><span class="wv mono">R${f2(doorRv(d))}${delB('pddel',i,doors().length,'door')}</span>
-        ${d.own?`<div class="wown">${ib('dr.'+i+'.r',d.r,'R',{w:'64px',ph:f2(doorRv()),bad:!(+d.r>0)})}<span class="pa-why ${+d.r>0?'sb-n':'pa-amb'}">${+d.r>0?'This door only — from the manufacturer or calculated to H1/VM1 Appendix D.':'Enter this door’s R — until then it uses the default R'+f2(doorRv())+'.'}</span></div>`:''}</div>`).join('')}
+      ${doors().map((d,i)=>{const ed=d.own&&d.ed;return `<div class="wrow${ed?' own':''}"><span class="wname">${ib('dr.'+i+'.n',d.n,'',{text:1,w:'100%',ph:'Opaque door'})}</span><span class="wsz">${hwIn('dr.'+i+'.',d)}</span>
+        <button class="wic${d.own?' on':''}" data-a="pdown" data-v="${i}" title="${d.own?'Custom R — click to change it':'Default R — click for a custom R'}"><span class="ms s16">tune</span></button><span class="wv mono">R${f2(doorRv(d))}${delB('pddel',i,doors().length,'door')}</span>
+        ${ed?`<div class="wown">${ib('dr.'+i+'.r',d.r,'R',{w:'64px',ph:f2(doorRv()),bad:!(+d.r>0)})}<button class="v6btn wok" data-a="pdok" data-v="${i}" title="Use this R for this door (Enter)"><span class="ms s16">check</span>Done</button><button class="link-btn" data-a="pddef" data-v="${i}">Use the default R${f2(doorRv())}</button><span class="pa-why ${+d.r>0?'sb-n':'pa-amb'}">${+d.r>0?'This door only — from the manufacturer or calculated to H1/VM1 Appendix D.':'Enter this door’s R — until then it uses the default R'+f2(doorRv())+'.'}</span></div>`:''}</div>`}).join('')}
       <div class="wadd"><button class="v6btn" data-a="pdadd"><span class="ms s16">add</span>Add a door</button><span class="wr">Default door R ${ib('doorR',P.doorR,'',{w:'64px',ph:'0.18'})}</span><span class="pa-why sb-n">Default 0.18 (2.1.2.13) unless calculated to H1/VM1 Appendix D.</span></div></div>
     <div class="wlist"><div class="wrow wrow-h"><span>Skylight</span><span>Area m² — or Height × Width mm · Qty</span><span></span><span>R</span></div>
       ${skys().map((s,i)=>`<div class="wrow"><span class="wname">${ib('sk.'+i+'.n',s.n,'',{text:1,w:'100%',ph:'Skylight'})}</span><span class="wsz">${hwIn('sk.'+i+'.',s)}</span><span></span><span class="wv mono">${skyR()?'R'+f2(skyR()):'—'}${delB('psdel',i,1,'skylight')}</span></div>`).join('')}
@@ -312,7 +312,9 @@ function act(a,v,b){
   else if(a==='pwdel'){wins().splice(+v,1);syncGlz()}
   else if(a==='pdadd'){doors().push({n:'Opaque door '+(doors().length+1),a:'',h:'',wd:''});syncDoor()}
   else if(a==='pddel'){doors().splice(+v,1);syncDoor()}
-  else if(a==='pdown'){const d=doors()[+v];if(!d)return false;d.own=d.own?'':'1';if(d.own&&!(+d.r>0))d.r=String(doorRv())}   /* Custom starts from the default */
+  else if(a==='pdown'){const d=doors()[+v];if(!d)return false;if(!d.own){d.own='1';d.ed='1';if(!(+d.r>0))d.r=String(doorRv())}else d.ed=d.ed?'':'1'}   /* custom starts from the default; the button opens / closes its editor */
+  else if(a==='pdok'){const d=doors()[+v];if(!d)return false;d.ed='';if(!(+d.r>0))d.own=''}   /* Done: the row keeps its own R (none entered → the default) */
+  else if(a==='pddef'){const d=doors()[+v];if(!d)return false;d.own='';d.ed=''}
   else if(a==='psadd'){skys().push({n:'Skylight '+(skys().length+1),a:'',h:'',wd:''});syncSky()}
   else if(a==='psdel'){skys().splice(+v,1);syncSky()}
   else if(a==='pwown'){const w=wins()[+v];if(!w)return false;w.own=w.own?'':'1';   /* Custom starts from the default */
@@ -336,6 +338,8 @@ function load(){if(!SK)return null;try{const s=JSON.parse(localStorage.getItem(S
 function replaceWith(d){const S=R().S;Object.keys(P).forEach(k=>delete P[k]);Object.assign(P,DEF,d.project.P||{});LZ(P);
   S.list=fromSaved(JSON.parse(JSON.stringify(d.list)),2);migSide(S.list);S.pdf.proj=Object.assign({},S.pdf.proj,d.project.proj||{});S.guide=d.guide||{};S.cur='project';S.af=null}
 const hasContent=()=>list().some(c=>areaOf(c)>0)||!!(R().S.pdf.proj||{}).address;
+/* Enter in a door's R box is Done */
+document.addEventListener('keydown',e=>{const f=e.key==='Enter'&&e.target.dataset&&e.target.dataset.f,m=f&&/^p\.dr\.(\d+)\.r$/.exec(f);if(!m)return;e.preventDefault();const b=document.querySelector('[data-a="pdok"][data-v="'+m[1]+'"]');if(b)b.click()});
 if(SK)window.addEventListener('storage',e=>{if(e.key!==SK||!e.newValue)return;const sv=load();if(!sv)return;if(sv.P){Object.keys(P).forEach(k=>delete P[k]);Object.assign(P,DEF,sv.P);LZ(P)}R().reload(sv)});
 window.RVP={blank,migSide,SIDES,SIDEQ,SIDEHELP,hasSide,sideOf,replaceWith,hasContent,seed,leftRow,openRow,openMid,mid,right,pdf,set,act,after,load,suggHTML,suggKey,invalidate,state:()=>P,PARAM};
 })();

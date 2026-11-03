@@ -522,7 +522,7 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   else if(a==='pdlg'){projDlg(v);return}
   else if(a==='pdfclose'){closePdf();return}
   else if(a==='pdfdl'){download();return}
-  else if(XP&&/^p(seg|sugg|suggall|copy|glz|wadd|wdel|dadd|ddel|down|sadd|sdel|wown|sideok)$/.test(a)){if(XP.act(a,v,b)===false)return}
+  else if(XP&&/^p(seg|sugg|suggall|copy|glz|wadd|wdel|dadd|ddel|down|dok|ddef|sadd|sdel|wown|sideok)$/.test(a)){if(XP.act(a,v,b)===false)return}
   else if(a==='theme'){const t=document.body.dataset.theme==='light'?'dark':'light';document.body.dataset.theme=t;try{localStorage.setItem('ezbuild-theme',t)}catch(e){}
     /* shared with ezbuild.co.nz and its other subdomains */if(/(^|\.)ezbuild\.co\.nz$/.test(location.hostname))document.cookie='ezbuild-theme='+t+';domain=.ezbuild.co.nz;path=/;max-age=31536000;samesite=lax';return}
   else if(a==='startx'){FROMG=false;history.replaceState(null,'',location.pathname+(TQ?'?'+TQ:''))}
