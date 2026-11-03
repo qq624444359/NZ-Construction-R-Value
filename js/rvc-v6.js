@@ -615,10 +615,23 @@ function block(c,k){const s=toSheet(c,S.list),P=s.perimeter;
   if(P){const pd=drawing(strategy(c).pc,true),pf=pd?`<figure class="cb-fig ${pd.t}">${uniq(pd.svg,k+'p')}</figure>`:'';
     out.push(`<section class="cb cb-per">${cbHead(P,'Perimeter',s.name+' — ceiling perimeter',P.checks.some(x=>!x.ok&&!x.warn))}${pf}${edgeHTML(P)}<div class="cb-bd">${layerTable(P)}</div>${P.rsText?`<p class="cb-pn">${esc(P.rsText)}</p>`:''}${fnHTML(P)}</section>`)}
   return out}
+/* the loops of a pattern-filled band drawn out as plain paths, clipped to the band: Chrome's PDF writes an SVG pattern as a
+   tiling pattern that Acrobat shows without its loops. The band keeps its outline; its pattern fill is dropped. */
+function battLoops(svg,s){const m=/url\(#([^)]+)\)/.exec(s.getAttribute('style')||''),P=m&&svg.querySelector('pattern[id="'+m[1]+'"]');if(!P||!s.getBBox)return;
+  const w=+P.getAttribute('width'),h=+P.getAttribute('height'),G=P.innerHTML,T=P.getAttribute('patternTransform')||'',NS='http://www.w3.org/2000/svg';if(!(w>0&&h>0))return;
+  const tl=P.patternTransform&&P.patternTransform.baseVal.consolidate(),M=tl?tl.matrix.inverse():null,b=s.getBBox();
+  const pts=[[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]].map(([x,y])=>M?[M.a*x+M.c*y+M.e,M.b*x+M.d*y+M.f]:[x,y]);
+  const i0=Math.floor(Math.min(...pts.map(p=>p[0]))/w)-1,i1=Math.ceil(Math.max(...pts.map(p=>p[0]))/w)+1,j0=Math.floor(Math.min(...pts.map(p=>p[1]))/h)-1,j1=Math.ceil(Math.max(...pts.map(p=>p[1]))/h)+1;
+  if((i1-i0)*(j1-j0)>4000)return;
+  const id=m[1]+'-clip'+(svg.querySelectorAll('clipPath').length),cp=document.createElementNS(NS,'clipPath'),sh=s.cloneNode(false);cp.id=id;
+  ['class','style','data-layer'].forEach(a=>sh.removeAttribute(a));cp.appendChild(sh);(svg.querySelector('defs')||svg).appendChild(cp);
+  let tiles='';for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++)tiles+=`<g transform="translate(${i*w} ${j*h})">${G}</g>`;
+  const g=document.createElementNS(NS,'g');g.setAttribute('clip-path','url(#'+id+')');g.innerHTML=`<g transform="${T}">${tiles}</g>`;
+  s.parentNode.insertBefore(g,s.nextSibling);s.style.fill='none'}
 /* the drawing is fitted whole into its fixed-height figure; numbers print at 9pt, nothing in it below 7pt */
 function fitFig(el){const fig=el.querySelector('.cb-fig'),svg=fig&&fig.querySelector('svg');if(!svg)return;const V=svg.viewBox.baseVal;if(!V||!V.width)return;
   /* insulation drawn with a loop pattern gets a solid pale copy underneath: some print routes drop SVG patterns, and the band must still show */
-  svg.querySelectorAll('[style*="url(#"][style*="batt"]').forEach(s=>{const u=s.cloneNode(false);u.removeAttribute('data-layer');u.setAttribute('class','ins-under');u.setAttribute('style','fill:#F3DE9C;stroke:none');s.parentNode.insertBefore(u,s)});
+  svg.querySelectorAll('[style*="url(#"][style*="batt"]').forEach(s=>{const u=s.cloneNode(false);u.removeAttribute('data-layer');u.setAttribute('class','ins-under');u.setAttribute('style','fill:#F3DE9C;stroke:none');s.parentNode.insertBefore(u,s);battLoops(svg,s)});
   const sc=Math.min(fig.clientWidth/V.width,fig.clientHeight/V.height),PT=96/72;if(!sc)return;
   svg.querySelectorAll('text.num').forEach(t=>t.style.fontSize=(9*PT/sc).toFixed(1)+'px');
   svg.querySelectorAll('text:not(.num)').forEach(t=>{const fs=parseFloat(getComputedStyle(t).fontSize)||0;if(fs*sc<7.05*PT)t.style.fontSize=(Math.ceil(7.05*PT/sc*10)/10)+'px'});
