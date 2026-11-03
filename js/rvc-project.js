@@ -70,12 +70,13 @@ const lotSave=()=>{const L=lots();if(L)Object.assign(L[lotNo()],lotGrab())};
 const nextLot=n=>/\d+\s*$/.test(n)?n.replace(/\d+(?=\s*$)/,m=>String(+m+1)):'Lot '+((lots()||[]).length+1);
 /* each lot's result as the BRANZ tool gives it — the other lots are put in place in turn, then the current one again */
 function lotStates(){const L=lots();if(!L)return[];lotSave();const k=lotNo(),out=L.map((x,i)=>{if(i!==k)lotPut(x);return branzCheck(branzRows()).state});lotPut(L[k]);return out}
+let lotEd=false;   /* the current lot's name is being edited (Project page) */
 function lotBar(side){const L=lots();if(side&&!(L&&L.length>1))return'';const st=lotStates(),k=lotNo();
-  const chips=(L||[{n:'Lot 1'}]).map((x,i)=>`<button class="lotc${i===k?' on':''}" data-a="plot" data-v="${i}" title="${esc((x.n||'Lot '+(i+1))+(st[i]?' — '+({pass:'PASS',fail:'FAIL',need:'incomplete'})[st[i]]:''))}"><i class="lotd ${st[i]||''}"></i>${esc(x.n||'Lot '+(i+1))}</button>`).join('');
+  const chips=(L||[{n:'Lot 1'}]).map((x,i)=>!side&&i===k&&lotEd?`<span class="lot-edit">${ib('lotn',x.n,'',{text:1,w:'140px',ph:'Lot name'})}<button class="lot-ic" data-a="plotok" title="Done (Enter)"><span class="ms s16">check</span></button>${L&&L.length>1?`<button class="lot-ic lot-del" data-a="plotdel" data-v="${i}" title="Delete this lot"><span class="ms s16">delete</span></button>`:''}</span>`:
+    `<button class="lotc${i===k?' on':''}" data-a="plot" data-v="${i}" title="${esc((x.n||'Lot '+(i+1))+(st[i]?' — '+({pass:'PASS',fail:'FAIL',need:'incomplete'})[st[i]]:''))}"><i class="lotd ${st[i]||''}"></i>${esc(x.n||'Lot '+(i+1))}</button>${!side&&i===k?'<button class="lot-ic" data-a="plotren" title="Rename or delete this lot"><span class="ms s16">edit</span></button>':''}`).join('');
   if(side)return `<div class="lotbar lot-side"><span class="glbl">Lots</span><div class="lots">${chips}</div></div>`;
   return `<section class="pj-s pj-lots"><h3>Lots</h3><p class="pj-n">One file for every lot: the constructions on the left are shared; each lot has its own areas, windows, doors, skylights and DP / Lot. The dot is each lot's BRANZ result.</p>
-    <div class="lotbar"><div class="lots">${chips}<button class="lotc lot-add" data-a="plotadd" title="A new lot, starting as a copy of this one"><span class="ms s16">add</span>Add lot</button></div>
-    ${L?`<div class="lot-ed">${ib('lotn',L[k].n,'',{text:1,w:'180px',ph:'Lot name'})}${L.length>1?`<button class="link-btn" data-a="plotdel" data-v="${k}">Delete this lot</button>`:''}</div>`:''}</div></section>`}
+    <div class="lotbar"><div class="lots">${chips}<button class="lotc lot-add" data-a="plotadd" title="A new lot, starting as a copy of this one"><span class="ms s16">add</span>Add lot</button></div></div></section>`}
 /* a window or door row: Height AND Width (mm) when both are given, otherwise the Area entered — as the BRANZ sheet */
 /* Quantity (default 1): the row's area is the one unit's area × quantity */
 const isHW=o=>+o.h>0&&+o.wd>0,qty=o=>+o.q>0?+o.q:1,unitA=o=>isHW(o)?(+o.h)*(+o.wd)/1e6:(+o.a||0),opA=o=>unitA(o)*qty(o),doorRv=d=>d&&d.own&&+d.r>0?+d.r:(+P.doorR||0.18);   /* a door's own R, else the project default */
@@ -342,11 +343,13 @@ function act(a,v,b){
   else if(a==='psdel'){skys().splice(+v,1);syncSky()}
   else if(a==='pwown'){const w=wins()[+v];if(!w)return false;w.own=w.own?'':'1';   /* Custom starts from the default */
     if(w.own){const d=P.wdk==='custom'||!WPRE[P.wdk]?[P.wfr,P.wgl,P.wug]:WPRE[P.wdk];w.fr=d[0];w.gl=d[1];w.ug=d[2];w.r=P.wdefR}syncGlz()}
-  else if(a==='plot'){const L=lots(),i=+v;if(!L||!L[i]||i===lotNo())return false;lotSave();P.lot=i;lotPut(L[i]);invalidate()}
+  else if(a==='plotren'){if(!lots()){P.lots=[Object.assign({n:'Lot 1'},lotGrab())];P.lot=0}lotEd=true;setTimeout(()=>{const i=document.querySelector('[data-f="p.lotn"]');if(i){i.focus();i.select()}},0)}
+  else if(a==='plotok'){lotEd=false}
+  else if(a==='plot'){lotEd=false;const L=lots(),i=+v;if(!L||!L[i]||i===lotNo())return false;lotSave();P.lot=i;lotPut(L[i]);invalidate()}
   else if(a==='plotadd'){if(!lots()){P.lots=[Object.assign({n:'Lot 1'},lotGrab())];P.lot=0}const L=lots(),k=lotNo();lotSave();   /* a copy of this lot */
-    const lg=L[k].legal||'';L.push(Object.assign(cl(L[k]),{n:nextLot(L[L.length-1].n||''),legal:/\bLot\s*\d+/i.test(lg)?lg.replace(/\b(Lot\s*)(\d+)/i,(m,a,d)=>a+(Math.max(0,...L.map(x=>{const q=/\bLot\s*(\d+)/i.exec(x.legal||'');return q?+q[1]:0}))+1)):''}));   /* the DP / Lot takes the next lot number, or is left for the user */P.lot=L.length-1;lotPut(L[P.lot]);invalidate();
-    setTimeout(()=>{const i=document.querySelector('[data-f="p.lotn"]');if(i){i.focus();i.select()}},0)}
-  else if(a==='plotdel'){const L=lots(),i=+v;if(!L||L.length<2||!L[i])return false;L.splice(i,1);P.lot=Math.max(0,Math.min(i,L.length-1));lotPut(L[P.lot]);invalidate()}
+    lotEd=false;const lg=L[k].legal||'';L.push(Object.assign(cl(L[k]),{n:nextLot(L[L.length-1].n||''),legal:/\bLot\s*\d+/i.test(lg)?lg.replace(/\b(Lot\s*)(\d+)/i,(m,a,d)=>a+(Math.max(0,...L.map(x=>{const q=/\bLot\s*(\d+)/i.exec(x.legal||'');return q?+q[1]:0}))+1)):''}));   /* the DP / Lot takes the next lot number, or is left for the user */P.lot=L.length-1;lotPut(L[P.lot]);invalidate();
+}
+  else if(a==='plotdel'){const L=lots(),i=+v;if(!L||L.length<2||!L[i])return false;lotEd=false;L.splice(i,1);P.lot=Math.max(0,Math.min(i,L.length-1));lotPut(L[P.lot]);invalidate()}
   else if(a==='pexclok'){const c=list().find(c=>c.id===v);if(c)delete c.exclMsg}
   else if(a==='psugg'){const c=list().find(c=>c.id===v);if(c)applySugg(c)}
   else if(a==='psuggall'){const S=SUG||{};if(S.state==='ok')list().forEach(c=>{const o=S.by[c.id];if(o&&o.key!==curKey(c))o.apply(c)});invalidate()}
@@ -366,8 +369,8 @@ function load(){if(!SK)return null;try{const s=JSON.parse(localStorage.getItem(S
 function replaceWith(d){const S=R().S;Object.keys(P).forEach(k=>delete P[k]);Object.assign(P,DEF,d.project.P||{});LZ(P);
   S.list=fromSaved(JSON.parse(JSON.stringify(d.list)),2);migSide(S.list);S.pdf.proj=Object.assign({},S.pdf.proj,d.project.proj||{});S.guide=d.guide||{};S.cur='project';S.af=null}
 const hasContent=()=>list().some(c=>areaOf(c)>0)||!!(R().S.pdf.proj||{}).address;
-/* Enter in a door's R box is Done */
-document.addEventListener('keydown',e=>{const f=e.key==='Enter'&&e.target.dataset&&e.target.dataset.f,m=f&&/^p\.dr\.(\d+)\.r$/.exec(f);if(!m)return;e.preventDefault();const b=document.querySelector('[data-a="pdok"][data-v="'+m[1]+'"]');if(b)b.click()});
+/* Enter in a door's R box, or in the lot name, is Done */
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.f==='p.lotn'){e.preventDefault();const b=document.querySelector('[data-a="plotok"]');if(b)b.click();return}const f=e.key==='Enter'&&e.target.dataset&&e.target.dataset.f,m=f&&/^p\.dr\.(\d+)\.r$/.exec(f);if(!m)return;e.preventDefault();const b=document.querySelector('[data-a="pdok"][data-v="'+m[1]+'"]');if(b)b.click()});
 if(SK)window.addEventListener('storage',e=>{if(e.key!==SK||!e.newValue)return;const sv=load();if(!sv)return;if(sv.P){Object.keys(P).forEach(k=>delete P[k]);Object.assign(P,DEF,sv.P);LZ(P)}R().reload(sv)});
 window.RVP={blank,migSide,SIDES,SIDEQ,SIDEHELP,hasSide,sideOf,replaceWith,hasContent,seed,leftRow,openRow,openMid,mid,right,pdf,set,act,after,load,suggHTML,suggKey,invalidate,state:()=>P,PARAM};
 })();
