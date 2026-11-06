@@ -636,7 +636,12 @@ function fitFig(el){const fig=el.querySelector('.cb-fig'),svg=fig&&fig.querySele
   const sc=Math.min(fig.clientWidth/V.width,fig.clientHeight/V.height),PT=96/72;if(!sc)return;
   svg.querySelectorAll('text.num').forEach(t=>t.style.fontSize=(9*PT/sc).toFixed(1)+'px');
   svg.querySelectorAll('text:not(.num)').forEach(t=>{const fs=parseFloat(getComputedStyle(t).fontSize)||0;if(fs*sc<7.05*PT)t.style.fontSize=(Math.ceil(7.05*PT/sc*10)/10)+'px'});
-  svg.querySelectorAll('.leader-dot').forEach(d=>d.setAttribute('r',(.55*96/25.4/sc).toFixed(1)))}
+  svg.querySelectorAll('.leader-dot').forEach(d=>d.setAttribute('r',(.55*96/25.4/sc).toFixed(1)));
+  /* each label sits on a white box instead of a white stroke: stroked text prints to PDF as Type 3 glyphs, which Acrobat draws
+     poorly at small sizes, so the label carries no stroke and embeds as real text */
+  const pad=.5*96/25.4/sc;svg.querySelectorAll('text').forEach(t=>{if(t.previousElementSibling&&t.previousElementSibling.classList.contains('lbl-bg'))return;let b;try{b=t.getBBox()}catch(e){return}if(!b.width)return;
+    const r=document.createElementNS('http://www.w3.org/2000/svg','rect');r.setAttribute('class','lbl-bg');['x','y','width','height'].forEach((k,i)=>r.setAttribute(k,[b.x-pad,b.y-pad*.4,b.width+2*pad,b.height+pad*.8][i]));
+    r.setAttribute('rx',pad);r.setAttribute('fill','#fff');if(t.getAttribute('transform'))r.setAttribute('transform',t.getAttribute('transform'));t.parentNode.insertBefore(r,t);t.style.setProperty('stroke','none','important')})}
 
 /* pages: fixed A4 sheets, filled block by block so preview and print are the same */
 function selfCheck(c){const s=toSheet(c,S.list);if(s.manual)return;const sum=s.layers.reduce((a,l)=>a+(l.counted||0),0);
