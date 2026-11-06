@@ -40,10 +40,10 @@ g.RVC_PRODUCTS = {
       { brand: 'Pink® Batts®', name: 'Pink® Superbatts®', r: 7.4, t: 275, w: 560 }
     ],
     /* R-value · thickness pairs offered for each framing member, all from one brand:
-       studs (walls), truss chords, rafters and joists (floors) */
+       studs (walls), truss chords, rafters and joists (floors). An optional third entry is the product name */
     byMember: {
       brand: 'Pink® Batts®',
-      stud: [[2.2, 90], [2.4, 90], [2.6, 90], [2.8, 90], [3.2, 140], [3.6, 140], [4.0, 140], [4.3, 140]],
+      stud: [[2.2, 90, 'Pink® Batts® Classic Wall'], [2.4, 90, 'Pink® Batts® Classic Wall'], [2.6, 90, 'Pink® Batts® Ultra® Wall'], [2.8, 90, 'Pink® Batts® Ultra® Wall'], [3.2, 140, 'Pink® Batts® Ultra® Wall'], [3.6, 140, 'Pink® Batts® Ultra® Wall'], [4.0, 140, 'Pink® Batts® Ultra® Wall'], [4.3, 140, 'Pink® Batts® Ultra® Wall']],
       chord: [[1.8, 95], [2.2, 115], [2.6, 110], [2.6, 140], [3.0, 160], [3.2, 170], [3.6, 180]],
       rafter: [[2.6, 110], [3.0, 160], [3.2, 170], [3.6, 180]],
       joist: [[1.8, 95], [2.6, 110], [3.2, 170], [3.6, 180]],
