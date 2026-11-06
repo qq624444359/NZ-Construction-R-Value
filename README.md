@@ -36,6 +36,16 @@ Your project data stays in your browser and is never sent anywhere. Page visits 
 
 Insulation and cladding manufacturers can have their products listed in the calculator — free for founding partners until 31 October 2027. See [rvalue.ezbuild.co.nz/for-manufacturers.html](https://rvalue.ezbuild.co.nz/for-manufacturers.html). Product data lives in [`js/products.js`](js/products.js).
 
+## API and MCP server
+
+The calculation model is also served as an API and an MCP server, for AI assistants, Revit and your own code — see [rvalue.ezbuild.co.nz/api.html](https://rvalue.ezbuild.co.nz/api.html).
+
+- MCP (Streamable HTTP, stateless): `https://rvalue.ezbuild.co.nz/api/mcp` — tools `list_construction_types`, `describe_construction`, `calculate_construction`, `check_h1`
+- HTTP: `https://rvalue.ezbuild.co.nz/api/v1` — `GET /types`, `GET /describe`, `POST /construction`, `POST /h1-check`
+- Revit: a pyRevit button, [`revit/H1Check.pushbutton/script.py`](revit/H1Check.pushbutton/script.py)
+
+The endpoints are Vercel functions in `api/` that load the same `js/` model files as the page (`api/_engine.js`).
+
 ## Run it locally
 
 It is a static site — no build step, no dependencies.
@@ -57,6 +67,8 @@ python3 -m http.server 8080
 | `js/rvc-project.js` | Project page, Windows & doors, BRANZ input |
 | `js/*-section.js` | Section drawings (SVG) |
 | `js/project-file.js`, `js/export-name.js` | Save / open project files, file names |
+| `api/` | API and MCP server (Vercel functions) over the same model |
+| `revit/` | pyRevit button for the H1 check |
 
 ## Python package (`python/`)
 

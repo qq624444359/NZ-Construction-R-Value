@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H1 R-value API and MCP server — for AI assistants and Revit</title>
+<meta name="description" content="Free API and MCP server for NZ H1/AS1 6th edition construction R-values and the Calculation Method check. Use it from Claude or another AI assistant, from Revit with pyRevit, or from your own code.">
+<link rel="canonical" href="https://rvalue.ezbuild.co.nz/api.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="H1 R-value API and MCP server">
+<meta property="og:description" content="Construction R-values and the H1 Calculation Method check, for AI assistants, Revit and your own code.">
+<meta property="og:image" content="https://rvalue.ezbuild.co.nz/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="css/fonts.css?v=1">
+<link rel="stylesheet" href="css/rvc.css?v=3">
+<style>
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif}
+.g-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 24px;border-bottom:1px solid var(--glass-br)}
+.g-nav a{color:var(--text-2);text-decoration:none;font:500 13.5px/1 Inter}.g-nav .logo{color:var(--text);font:900 22px/1 Inter;letter-spacing:-.02em}
+.g{max-width:760px;margin:0 auto;padding:40px 16px 64px}
+.g .kicker{font:700 11px/1.4 Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--brand-on)}
+.g h1{font:800 32px/1.18 Inter;letter-spacing:-.02em;margin:10px 0 14px;text-wrap:balance}
+.g h2{font:800 21px/1.3 Inter;letter-spacing:-.01em;margin:40px 0 10px}
+.g h3{font:700 16px/1.35 Inter;margin:24px 0 8px}
+.g p,.g li{font:400 16px/1.65 Inter;color:var(--text-2)}.g p b,.g li b{color:var(--text)}
+.g p{margin:0 0 14px}.g a{color:var(--brand-on)}
+.g .lead{font-size:18px;color:var(--text)}
+.g table{width:100%;border-collapse:collapse;margin:16px 0;font:500 14px/1.45 Inter}
+.g th,.g td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.g th{font:700 11px/1.3 Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.g code{font:500 .9em/1.4 'JetBrains Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:1px 5px;color:var(--text);word-break:break-word}
+.g pre{font:500 13px/1.55 'JetBrains Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;overflow-x:auto;color:var(--text);margin:10px 0 16px}
+.g pre code{background:none;border:0;padding:0}
+.g .note{background:var(--review-soft);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text-2)}
+.g .url{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border-strong);border-radius:12px;padding:12px 14px;margin:14px 0}
+.g .url code{font-size:15px;background:none;border:0;padding:0}
+.btn{display:inline-flex;align-items:center;height:38px;padding:0 14px;border-radius:9px;font:700 13.5px/1 Inter;text-decoration:none;border:1px solid var(--border-strong);color:var(--text);background:var(--surface);cursor:pointer}
+.btn.p{background:var(--brand);border-color:var(--brand);color:#fff}
+.tw{overflow-x:auto}.g td:first-child code{white-space:nowrap}
+</style>
+</head>
+<body>
+<nav class="g-nav"><a class="logo" href="./">R-value calculator</a><a href="./">Open the calculator →</a></nav>
+<main class="g">
+<div class="kicker">For AI assistants, Revit and your own code</div>
+<h1>H1 R-value API and MCP server</h1>
+<p class="lead">The calculator’s model, without the page: construction R-values for walls, roofs and floors to H1/AS1 6th edition, and the Calculation Method PASS / FAIL. Ask an AI assistant whether a design meets H1, or check it from Revit while you draw.</p>
+<p>It runs the same code as the calculator, so the numbers match the website. It is free, needs no key, and does not store what you send.</p>
+
+<h2>MCP server</h2>
+<p>Add this address to any AI assistant that takes a remote MCP server (in Claude, as a custom connector):</p>
+<div class="url"><code id="mcpurl">https://rvalue.ezbuild.co.nz/api/mcp</code><button class="btn" type="button" onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('mcpurl').textContent);this.textContent='Copied'">Copy</button></div>
+<p>For clients configured with a JSON file:</p>
+<pre><code>{
+  "mcpServers": {
+    "ezbuild-rvalue": { "url": "https://rvalue.ezbuild.co.nz/api/mcp" }
+  }
+}</code></pre>
+<div class="tw"><table>
+<thead><tr><th>Tool</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>list_construction_types</code></td><td>Every wall, roof and floor type — timber frame, block wall, truss and skillion roofs, suspended timber floor, slab-on-ground — with its options.</td></tr>
+<tr><td><code>describe_construction</code></td><td>The layers of one type, outside to inside: material choices with their R-values, framing, insulation, or the slab inputs.</td></tr>
+<tr><td><code>calculate_construction</code></td><td>The construction R-value, each layer and each bridged path (NZS 4214 as modified by 2.1.3.2; slab-on-ground by Appendix E).</td></tr>
+<tr><td><code>check_h1</code></td><td>PASS / FAIL by the Calculation Method from each element’s area and R-value, worked the way the BRANZ H1/AS1 tool works it.</td></tr>
+</tbody></table></div>
+<p>Then ask in plain words, for example: <i>“A 90 × 45 @ 600 wall with brick veneer and R2.8 batts, a truss roof with two layers of R3.6, a 100 m² raft slab with 42 m perimeter, 30 m² of R0.46 windows, Auckland — does it meet H1?”</i></p>
+
+<h2>Revit (pyRevit)</h2>
+<p>A pyRevit button that sums the areas in your model, sends them with each type’s R-value to <code>check_h1</code>, and shows PASS / FAIL and the heat-loss table.</p>
+<ol>
+<li>Install <a href="https://github.com/pyrevitlabs/pyRevit" rel="noopener">pyRevit</a>, then put <a href="revit/H1Check.pushbutton/script.py" download>script.py</a> in a pushbutton folder, e.g. <code>EZbuild.extension/EZbuild.tab/H1.panel/H1Check.pushbutton/</code>, and add the extension folder in pyRevit’s settings.</li>
+<li>Add two parameters to the wall, roof, floor, ceiling, window and door types you want counted: <b>H1 Element</b> (text: <code>roof</code>, <code>wall</code>, <code>slab</code>, <code>floor</code>, <code>skylight</code>, <code>glazing</code> or <code>door</code>) and <b>H1 R-value</b> (number — from the calculator). Optional: <b>H1 Heated</b> and, on roofs, <b>H1 Ceiling Perimeter</b> (yes/no).</li>
+<li>Add <b>H1 Climate Zone</b> (integer, 1–6) to Project Information, or pick it when asked.</li>
+</ol>
+<div class="note">Walls, roofs, floors and ceilings use Revit’s computed area; windows and doors use width × height. H1/AS1 2.1.2.10 asks for finished internal-face areas, so check the areas against that before you rely on the result. The script has not yet been tried in every Revit version — tell us if it doesn’t run in yours.</div>
+
+<h2>HTTP API</h2>
+<p>JSON in, JSON out, CORS open. Base address <code>https://rvalue.ezbuild.co.nz/api/v1</code>.</p>
+<div class="tw"><table>
+<thead><tr><th>Request</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td><code>GET /types</code></td><td>Construction types and options</td></tr>
+<tr><td><code>GET /describe?element=wall&amp;kind=block</code></td><td>The layers of one type and what each accepts (<code>options=cav,-strap</code> to switch options)</td></tr>
+<tr><td><code>POST /construction</code></td><td>R-value of one construction</td></tr>
+<tr><td><code>POST /h1-check</code></td><td>PASS / FAIL, heat loss proposed and reference</td></tr>
+</tbody></table></div>
+<h3>A wall</h3>
+<pre><code>curl -X POST https://rvalue.ezbuild.co.nz/api/v1/construction \
+  -H "Content-Type: application/json" \
+  -d '{"element":"wall","kind":"frame","name":"W1 Brick veneer",
+       "layers":{"clad":"brick-veneer-70-mm",
+                 "fr":{"depth_mm":90,"centres_mm":600,"insulation_r":2.8,"insulation_mm":90},
+                 "lin":"plasterboard-10-mm"}}'</code></pre>
+<p>Layers you leave out keep the calculator’s defaults. A material can be given by id or by an unambiguous part of its name, or as <code>{"r": 0.05}</code> for your own R-value.</p>
+<h3>A slab-on-ground floor</h3>
+<pre><code>{"element":"floor","kind":"slab",
+ "slab":{"area_m2":100,"perimeter_m":42.04,"floor":"raft","wall_thickness_mm":90,
+         "parts":[{"length_m":17.15,"wall":"masonry"}]}}</code></pre>
+<h3>The H1 check</h3>
+<pre><code>curl -X POST https://rvalue.ezbuild.co.nz/api/v1/h1-check \
+  -H "Content-Type: application/json" \
+  -d '{"climate_zone":1,"elements":[
+        {"type":"roof","area_m2":100.8,"r_value":7.45},
+        {"type":"wall","area_m2":243.6,"r_value":1.60},
+        {"type":"glazing","area_m2":70.5,"r_value":0.46},
+        {"type":"door","area_m2":2.4,"r_value":0.18},
+        {"type":"slab","area_m2":100,"r_value":1.27}]}'</code></pre>
+<p>Element types: <code>roof</code>, <code>wall</code>, <code>slab</code>, <code>floor</code> (suspended and other floors), <code>skylight</code>, <code>glazing</code> (windows and glazed doors), <code>door</code> (opaque). Add <code>"heated": true</code> for an element with heating in it, and <code>"ceiling_perimeter": true</code> for a roof’s ceiling perimeter strip.</p>
+
+<h2>What it does not do</h2>
+<ul>
+<li>Material, air-gap and surface values are provisional defaults. Confirm each against NZS 4214 and the manufacturer before a figure goes into a consent.</li>
+<li>The H1 check is the Calculation Method only. The BRANZ H1/AS1 calculation tool’s own result is the one for the building consent authority.</li>
+<li>It is not a modelling-method (H1/VM1) tool, and it does not read drawings or Revit materials’ thermal properties.</li>
+</ul>
+<p><a href="./">← Back to the calculator</a> · Something missing or wrong? <a href="https://github.com/qq624444359/NZ-Construction-R-Value/issues">Report it</a>.</p>
+</main>
+</body>
+</html>
