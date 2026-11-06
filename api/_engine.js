@@ -161,7 +161,7 @@ function construction(body = {}) {
   }
   const min = { roof: 2.6, wall: 1.0, floor: c.kind === 'slab' ? null : 1.3 }[c.el];
   return {
-    element: c.el, kind: c.kind, name: c.name || t.name, type: t.name,
+    element: c.el, kind: c.kind, name: (body.construction ? c.name : body.name) || t.name, type: t.name,   /* the website's default names ("Floor – 240@400") don't describe other build-ups */
     r_value: r2(res.total), r_exact: r3(res.total),
     minimum_r: min, meets_minimum: min == null ? null : res.total >= min - 1e-9,
     layers: (res.rows || []).map(r => {
