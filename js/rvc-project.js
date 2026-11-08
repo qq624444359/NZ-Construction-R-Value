@@ -204,6 +204,8 @@ function slabBlock(){const s=slab(),sl=(f,o,v)=>sel(f,o,v,'100%');
     ${s.none?'':s.ok?`<p class="sb-r">A/P = ${f2(s.ap)} (Eq ${s.eq}) → <b>Table ${esc(s.table)}</b> · A/P row ${esc(s.apRow)} · wall ${esc(s.band)} → <b>R${s.R.toFixed(1)}</b><em>A/P between two rows: the smaller row is used (no interpolation).</em></p>`:`<p class="sb-r bad"><span class="ms s16">error</span>${s.ap!=null?'A/P = '+f2(s.ap)+' · ':''}${esc(s.why)}</p>`}
     <p class="sb-n">Mixed edge insulation or wall types: Equations E.3–E.5</p></div>`}
 /* roof (field + perimeter) against slab + suspended floors: the top and the bottom of the building */
+/* windows, doors and skylights on the Project page: read only, edited on the Windows & doors page */
+const opG=(lbl,rows)=>`<div class="pa-g"><div class="pa-h"><span class="glbl">${lbl}</span><button class="v6btn pa-edit" data-a="sel" data-v="openings"><span class="ms s16">edit</span>Edit in Windows &amp; doors</button></div>${rows.length?rows.join(''):'<p class="pj-n pa-none">None</p>'}</div>`;
 function areaCheck(E){const r=E.roof,f=E.slab+E.floor;if(!r||!f)return'';const d=Math.abs(r-f)/Math.max(r,f)*100;if(d<=10)return'';
   return `<div class="pj-v open"><span class="ms s18">warning</span>Roof area (${f1(r)} m²) and floor area (${f1(f)} m²) differ by ${Math.round(d)}% — check the areas. A raked / skillion ceiling measured along the slope, or parts of the building with different numbers of storeys, can explain a difference.</div>`}
 function curHTML(){const C=current();if(!C.hr)return'';const d=C.hr-C.hp,ok=d>=-1e-9;
@@ -221,15 +223,19 @@ function mid(){const z=zone(),taZ=(H.TA.find(t=>t[0]===P.ta)||[])[1],E=envelope(
   return `<div class="card pj"><div class="pj-hd"><p class="kicker">H1/AS1 6th edition · Calculation Method</p><h2>Project</h2><p>Envelope areas and the numbers to type into the BRANZ H1/AS1 calculation tool. The areas also let the calculator suggest the lowest-cost insulation for each construction.</p></div>
   <section class="pj-s pj-det"><h3><i>1</i>Project details</h3>
     <div class="pj-addr">${pib('address','',{w:'100%',ph:'Street, suburb, city'})}<span class="pj-zt"><select class="pj-zs" data-f="p.zone" title="Climate zone — click to change">${[['',(P.ta||'Council?')+' · Zone '+(taZ||'—')]].concat([1,2,3,4,5,6].map(k=>[k,(P.ta||'')+(P.ta?' · ':'')+'Zone '+k+' (override)'])).map(([v,l])=>`<option value="${v}"${String(P.zone||'')===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select><span class="pj-i" tabindex="0"><span class="ms s16">info</span><span class="pj-tip">Placeholder — the council → climate zone list is not yet checked against H1/AS1 Appendix C. Council found from the address: ${esc(P.ta||'none')}.</span></span></span></div>
+    <div class="pj-addr pj-cli">${pib('client','',{w:'100%',ph:'Client / owner'})}</div>
     <div class="pj-g3 pj-g4">${grp('Thermal envelope',sel('envS',[['whole','Whole building'],['unit','One household unit']],P.envS||'whole','100%').replace('<select','<select title="2.1.2.3 — shown on the PDF"'))}${grp('DP / Lot',pib('legal','',{w:'100%',ph:'e.g. Lot 1 DP 12345'}))}${grp('Designer',pib('designer','',{w:'100%'}))}${grp('Date',pib('date','',{w:'100%'}))}</div></section>
   ${lotBar()}
   <section class="pj-s"><h3><i>2</i>Envelope areas</h3><p class="pj-n">Finished internal face, overall internal dimensions (2.1.2.10). Enter only the walls, roofs and floors of the thermal envelope — leave out the garage, and walls or floors between two heated spaces (e.g. a party wall to a neighbour's living area) (2.1.2.4). Roof, wall and floor R-values come from the constructions on the left. A roof with a ceiling perimeter part needs the ceiling perimeter: perimeter area = perimeter × strip width, field = the rest (2.1.2.9).</p>
-    ${[['roof','Roofs'],['wall','Walls']].map(([el,l])=>`<div class="pa-g"><div class="pa-h"><span class="glbl">${l}</span>${addB(el,l.slice(0,-1).toLowerCase())}</div>${byEl(el).map(conRow).join('')}</div>`).join('')}
-    <div class="pa-g"><span class="glbl">Floors</span><div class="pa-h"><span class="pa-sub">Suspended / cantilevered floor</span>${addB('floor','suspended floor')}</div>${byEl('floor').filter(c=>!isSlab(c)).map(conRow).join('')}<div class="pa-h"><span class="pa-sub">Slab-on-ground</span>${addB('slab','slab-on-ground floor')}</div>${byEl('floor').filter(isSlab).map(conRow).join('')}</div>
+    ${/* in the BRANZ tool's sheet order: Slab Floors · Other Floors · Roof · Skylights · Walls · Glazing · Doors */''}
+    <div class="pa-g"><div class="pa-h"><span class="glbl">Slab floors</span>${addB('slab','slab-on-ground floor')}</div>${byEl('floor').filter(isSlab).map(conRow).join('')}</div>
+    <div class="pa-g"><div class="pa-h"><span class="glbl">Other floors</span><span class="pa-sub">Suspended / cantilevered</span>${addB('floor','suspended floor')}</div>${byEl('floor').filter(c=>!isSlab(c)).map(conRow).join('')}</div>
+    <div class="pa-g"><div class="pa-h"><span class="glbl">Roof</span>${addB('roof','roof')}</div>${byEl('roof').map(conRow).join('')}</div>
     ${areaCheck(E)}
-    <div class="pa-g"><div class="pa-h"><span class="glbl">Windows and doors</span><button class="v6btn pa-edit" data-a="sel" data-v="openings"><span class="ms s16">edit</span>Edit in Windows &amp; doors</button></div>
-      ${wins().map(w=>{const x=winR(w);return roRow(w.n||'Window type',opA(w),x.r?'R'+f2(x.r):'—')}).join('')}
-      ${doors().map(d=>roRow(d.n||'Opaque door',opA(d),'R'+f2(doorRv(d)))).join('')}${skys().map(s=>roRow(s.n||'Skylight',opA(s),skyR()?'R'+f2(skyR()):'—')).join('')}</div>
+    ${opG('Skylights',skys().map(s=>roRow(s.n||'Skylight',opA(s),skyR()?'R'+f2(skyR()):'—')))}
+    <div class="pa-g"><div class="pa-h"><span class="glbl">Walls</span>${addB('wall','wall')}</div>${byEl('wall').map(conRow).join('')}</div>
+    ${opG('Glazing (walls &amp; doors)',wins().map(w=>{const x=winR(w);return roRow(w.n||'Window type',opA(w),x.r?'R'+f2(x.r):'—')}))}
+    ${opG('Doors (opaque)',doors().map(d=>roRow(d.n||'Opaque door',opA(d),'R'+f2(doorRv(d)))))}
     <div class="pj-tot"><div><span>Gross wall area</span><b class="mono">${f1(E.gross)} m²</b></div><div><span>Wall glazing</span><b class="mono${E.glzPct>40?' neg':''}">${f1(E.glzPct)}%</b><em>${E.glzPct>40?'over the 40% limit of the Calculation Method (2.1.2.5)':'of gross wall area · limit 40% (2.1.2.5)'}</em></div></div>
     <p class="pj-n pj-scope">H1/AS1 does not apply to curtain walling, foil insulation, or non-housing occupied space over 300 m² (1.1.1.1, 1.1.2).</p></section>
   <section class="pj-s"><h3><i>3</i>Suggested insulation</h3>
@@ -273,10 +279,13 @@ function bzVerdict(rows){const V=branzCheck(rows);
   return `<div class="bz-v ${V.state}"><b>${V.state==='pass'?'PASS':'FAIL'}</b><span>HL proposed <i class="mono">${f1(V.hp)}</i> ${V.hp<=V.hr+1e-9?'≤':'>'} reference <i class="mono">${f1(V.hr)} W/K</i>${V.err.length?' · '+esc(V.err.join('; ')):''}</span></div>`}
 /* the sheets in the BRANZ tool's tab order; skylights, glazing and doors are always shown */
 const BZ_SH=['Slab Floors','Other Floors','Roof','Skylights','Walls','Glazing (walls & doors)','Doors (opaque)'],OPEN_SH=['Skylights','Glazing (walls & doors)','Doors (opaque)'];
+/* the BRANZ Project Details sheet, cells F6–F10 (pasted as one column). With lots, the project name is the lot's */
+function pdRows(){const pr=R().S.pdf.proj||{},L=lots(),lg=(pr.legal||'').trim(),ad=(pr.address||'').trim();
+  return[['F6','Client',pr.client||''],['F7','Project name',L?(L[lotNo()].n||ad):ad],['F8','Address',ad+(lg?(ad?' - ':'')+lg:'')],['F9','Designer',pr.designer||''],['F10','Date',pr.date||'']]}
 function right(){const rows=branzRows(),by={};rows.forEach(r=>{(by[r.sh]=by[r.sh]||[]).push(r)});
   return `<div class="card pj-r"><div class="bz-top"><h2>BRANZ input</h2>${bzVerdict(rows)}</div><p class="pj-n">Type these into the BRANZ H1/AS1 calculation tool — the result above is worked the way the tool works it from these rows; the tool's own result is the one for the consent. Copy pastes a sheet's rows at cell C10.</p>
+    <div class="bz bz-pd"><div class="bz-h"><b>Project Details</b><button class="v6btn bz-c" data-a="pdcopy"><span class="ms s16">content_copy</span>Copy</button></div><p class="pj-n bz-hint">Paste at cell F6. Choose the Territorial Authority in F12.</p>${pdRows().map(([c,l,x])=>`<div class="bz-r"><span>${c} ${l}</span><b>${esc(x||'—')}</b></div>`).join('')}<div class="bz-r"><span>F12 Territorial Authority</span><b>${esc(P.ta||'—')}</b></div></div>
     ${BZ_SH.filter(sh=>by[sh]||OPEN_SH.includes(sh)).map(sh=>[sh,by[sh]||[]]).map(([sh,L])=>`<div class="bz"><div class="bz-h"><b>${esc(sh)}</b>${L.length?`<button class="v6btn bz-c" data-a="pcopy" data-v="${esc(sh)}"><span class="ms s16">content_copy</span>Copy</button>`:''}</div>${OPEN_SH.includes(sh)?(L.length?'<p class="pj-n bz-hint">Paste at the first Description cell of the sheet: Description · ID · Area · Height · Width · R-value</p>':`<p class="pj-n bz-hint">None yet — enter the sizes in <button class="link-btn" data-a="sel" data-v="openings">Windows &amp; doors</button>.</p>`):''}${L.map(r=>`<div class="bz-r"><span>${esc(r.d)}</span><b class="mono">${f1(r.a)} m²</b><b class="mono">${r.r==null?'—':'R'+f2(r.r)}</b></div>`).join('')}</div>`).join('')||'<p class="pj-n">Enter the areas first.</p>'}
-    <div class="bz-pd"><span class="glbl">Project Details sheet</span><div class="bz-r"><span>F7 Project name</span><b>${esc(R().S.pdf.proj.address||'—')}</b></div><div class="bz-r"><span>F9 Designer</span><b>${esc(R().S.pdf.proj.designer||'—')}</b></div><div class="bz-r"><span>F12 Territorial Authority</span><b>${esc(P.ta||'—')}</b></div></div>
     <button class="v6pdfb pj-pdf" data-a="pdf"><span class="ms s18">picture_as_pdf</span>Export PDF report</button></div>`}
 /* Windows & doors — optional, only for the BRANZ input (not in the PDF). On the Project page it is a read-only summary. */
 const roRow=(n,a,r)=>`<div class="pa-r pa-ro"><span class="pa-n st">${esc(n)}</span><span class="pa-i mono">${+a>0?f1(+a)+' m²':'—'}</span><span class="pa-v mono">${r}</span></div>`;
@@ -314,7 +323,7 @@ function openMid(){return `<div class="card pj"><div class="pj-hd"><p class="kic
 const delB=(a,i,n,l)=>n>1||a==='psdel'?`<button class="wdel" data-a="${a}" data-v="${i}" title="Delete this ${l}"><span class="ms s16">close</span></button>`:'';
 /* ---------- PDF: project details only — the report is construction R-values; areas, glazing and the pass / fail are the BRANZ tool's ---------- */
 function pdf(){const z=zone(),pr=R().S.pdf.proj;
-  return[`<section class="pjps"><h3>Project</h3><div class="pjkv">${[['Address',pr.address],['DP / Lot',pr.legal],['Designer',pr.designer],['Territorial Authority',P.ta],['Climate zone',z?z+(P.zone?' (selected)':''):'—'],['Date',pr.date]].map(([k,v])=>`<div><span>${k}</span><b>${esc(v||'—')}</b></div>`).join('')}</div></section>`]}
+  return[`<section class="pjps"><h3>Project</h3><div class="pjkv">${[['Client',pr.client],['Address',pr.address],['DP / Lot',pr.legal],['Designer',pr.designer],['Territorial Authority',P.ta],['Climate zone',z?z+(P.zone?' (selected)':''):'—'],['Date',pr.date]].filter(([k,v])=>k!=='Client'||v).map(([k,v])=>`<div><span>${k}</span><b>${esc(v||'—')}</b></div>`).join('')}</div></section>`]}
 /* ---------- writes ---------- */
 function set(path,raw){if(typeof raw==='string'&&/^\.\d/.test(raw))raw='0'+raw;const p=path.split('.'),v=raw==null?'':String(raw);
   if(p[0]==='pp'){R().S.pdf.proj[p[1]]=v}
@@ -362,6 +371,7 @@ function act(a,v,b){
   else if(a==='pexclok'){const c=list().find(c=>c.id===v);if(c)delete c.exclMsg}
   else if(a==='psugg'){const c=list().find(c=>c.id===v);if(c)applySugg(c)}
   else if(a==='psuggall'){const S=SUG||{};if(S.state==='ok')list().forEach(c=>{const o=S.by[c.id];if(o&&o.key!==curKey(c))o.apply(c)});invalidate()}
+  else if(a==='pdcopy'){const txt=pdRows().map(r=>r[2]).join('\n'),done=()=>{b.innerHTML='<span class="ms s16">check</span>Copied'};(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(done).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(_){}ta.remove();done()});return false}
   else if(a==='pcopy'){const txt=branzRows().filter(r=>r.sh===v).map(r=>(r.op?(o=>{const hw=isHW(o)&&qty(o)===1;return[(o.n||'')+(qty(o)>1?' x'+qty(o):''),'',hw?'':f2(r.a),hw?String(+o.h):'',hw?String(+o.wd):'',r.r==null?'':f2(r.r)]})(r.op):   /* BRANZ glazing / door sheet: Description · ID · Area or Height AND Width · R-value; Qty > 1 → "EXW203 x6" with the total area */[r.d,r.heated?'Yes':'No',f1(r.a),r.r==null?'—':f2(r.r)]).join('\t')).join('\n');
     const done=()=>{b.innerHTML='<span class="ms s16">check</span>Copied'};(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(done).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(_){}ta.remove();done()});return false}
   else return false}
