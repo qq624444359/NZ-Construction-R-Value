@@ -64,7 +64,7 @@ function describe({ element, kind, options } = {}) {
     out.slab = {
       area_m2: 'floor area, m² (required)', perimeter_m: 'exposed perimeter, m (required)',
       floor: ['slab', 'raft'], edge_insulation: ['none', 'r10'], underslab: Object.keys(M.SLABU),
-      wall: ['other', 'masonry'], dimensions: ['internal', 'external'], wall_thickness_mm: 'effective wall thickness, default 100',
+      wall: ['other', 'masonry'], dimensions: ['internal', 'external'], wall_thickness_mm: 'effective wall thickness, default 90',
       parts: '[{length_m, edge_insulation, wall}] — parts of the perimeter with their own edge insulation or wall (Eq E.3–E.5)',
       vm1_r: 'an R-value calculated to H1/VM1 Appendix E instead of the tables (optional)'
     };
@@ -120,7 +120,7 @@ function construction(body = {}) {
       c.area = num(s.area_m2, 'slab.area_m2') ?? bad('slab.area_m2 is required.');
       const sv = c.v.slab = { sP: num(s.perimeter_m, 'slab.perimeter_m') ?? bad('slab.perimeter_m is required.'),
         sF: s.floor || 'slab', sE: s.edge_insulation || 'none', sU: s.underslab || 'none', sWall: s.wall || 'other',
-        sM: s.dimensions === 'internal' ? 'int' : 'ext', sT: num(s.wall_thickness_mm, 'slab.wall_thickness_mm') ?? 100 };
+        sM: s.dimensions === 'internal' ? 'int' : 'ext', sT: num(s.wall_thickness_mm, 'slab.wall_thickness_mm') ?? 90 };
       if (!['slab', 'raft'].includes(sv.sF)) bad('slab.floor must be slab or raft.');
       if (!['none', 'r10'].includes(sv.sE)) bad('slab.edge_insulation must be none or r10.');
       if (!M.SLABU[sv.sU]) bad('slab.underslab must be one of ' + Object.keys(M.SLABU).join(', ') + '.');

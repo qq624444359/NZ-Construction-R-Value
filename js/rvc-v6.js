@@ -38,7 +38,7 @@ const S={name:'12 Example Street, Auckland',zone:1,cur:null,pin:null,hover:null,
   mk('roof',c=>{c.name='Roof – metal longrun, flat ceiling';c.v.roof.m=libI('roofing','metal-sheet-any-profile')}),
   mk('roof',c=>{c.kind='skillion';c.name='Roof – metal longrun, rafter';c.v={roof:{m:libI('roofing','metal-sheet-any-profile')},fr:{d:290,w:45,s:600,mode:'std',insR:RAFT_R,insT:RAFT_T,gap:0,cover:false,prod:'Pink® Superbatts®'},st:{d:35,w:70,s:450,s450:1},ceil:{m:1}}}),
   mk('floor',c=>{c.name='Floor – timber cantilever 240@400';c.v.flin.m=libI('floorLining','james-hardie-fibre-cement-6.5-mm')}),
-  mk('floor',c=>{c.kind='slab';c.name='Floor – RibRaft concrete slab';c.area=140;c.v={slab:{sP:52,sM:'int',sF:'raft',sU:'none',sE:'none',sWall:'other',sT:100}}})]};
+  mk('floor',c=>{c.kind='slab';c.name='Floor – RibRaft concrete slab';c.area=140;c.v={slab:{sP:52,sM:'ext',sF:'raft',sU:'none',sE:'none',sWall:'other',sT:90}}})]};
 S.cur=S.list[0].id;const DEF_IDS=S.list.map(c=>c.id);
 /* links to the 3D house keep the test-mode ?c= */
 const TQ=q.get('c')!=null?'c='+encodeURIComponent(q.get('c')):'';
@@ -518,7 +518,7 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   if(!c&&['dup','del','reset','prod','af'].includes(a))return;
   if(a==='sel'){S.cur=v;S.pin=null;S.af=cur()?firstFrame(cur()):null}
   else if(a==='add'){S.menu=!S.menu;if(S.menu)setTimeout(()=>{const m=document.querySelector('#c-left .cx-menu');if(m)m.scrollIntoView({block:'nearest'})},0)}   /* the left column scrolls on its own: bring the menu into view */
-  else if(a==='addel'){const nc=v==='slab'?mk('floor',c=>{c.kind='slab';c.name='Floor – concrete slab';c.v={slab:{sM:'int',sF:'slab',sU:'none',sE:'none',sWall:'other',sT:100}}}):mk(v);ensure(nc);{const L=S.list.filter(z=>z.el===nc.el&&!!tpl(z).slab===!!tpl(nc).slab),nm=L.length&&nextName(L[L.length-1].name);if(nm)nc.name=nm}S.list.push(nc);S.menu=false;S.pin=null;if(b.dataset.stay){setTimeout(()=>{const i=document.querySelector(`[data-f="p.ca.${nc.id}"],[data-f="p.ra.${nc.id}"]`);if(i){i.scrollIntoView({block:'center'});i.focus()}},0)}else{S.cur=nc.id;S.af=firstFrame(nc)}}   /* the Project page + stays on the Project page: areas first */
+  else if(a==='addel'){const nc=v==='slab'?mk('floor',c=>{c.kind='slab';c.name='Floor – concrete slab';c.v={slab:{sM:'ext',sF:'slab',sU:'none',sE:'none',sWall:'other',sT:90}}}):mk(v);ensure(nc);{const L=S.list.filter(z=>z.el===nc.el&&!!tpl(z).slab===!!tpl(nc).slab),nm=L.length&&nextName(L[L.length-1].name);if(nm)nc.name=nm}S.list.push(nc);S.menu=false;S.pin=null;if(b.dataset.stay){setTimeout(()=>{const i=document.querySelector(`[data-f="p.ca.${nc.id}"],[data-f="p.ra.${nc.id}"]`);if(i){i.scrollIntoView({block:'center'});i.focus()}},0)}else{S.cur=nc.id;S.af=firstFrame(nc)}}   /* the Project page + stays on the Project page: areas first */
   else if(a==='dup'){const nc=JSON.parse(JSON.stringify(c));nc.id='c'+(++n);nc.name=c.name+' (copy)';S.list.splice(S.list.indexOf(c)+1,0,nc);S.cur=nc.id}
   else if(a==='sbadd'){const sv=c.v.slab=c.v.slab||{};(sv.parts=sv.parts||[]).push({len:'',sE:'none',sWall:'other'})}
   else if(a==='sbbv'){const sv=c.v.slab=c.v.slab||{};(sv.parts=sv.parts||[]).push({name:'Under brick veneer',len:'',sE:sv.sE||'none',sWall:'masonry'});if(sv.sWall==='masonry')sv.sWall='other'}   /* the perimeter under brick veneer: masonry-veneer table; the rest: other cladding */
