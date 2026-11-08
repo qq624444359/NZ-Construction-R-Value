@@ -52,15 +52,44 @@ g.RVC_PRODUCTS = {
   },
   /* named wall claddings. t = thickness mm, k = conductivity W/(m·K) — R is t ÷ k.
      group: fc fibre cement · tb timber · br brick · ot other. brand: the brand dropdown's entry.
-     display: how it reads in the product dropdown — start it with the brand in brackets, as below */
+     display: "<profile> (<brand> <product>, <t> mm)". The profile — Bevelback weatherboard · Weatherboard — horizontal ·
+     Board — vertical · Sheet / panel — is the group the product sits in. n is the saved id: never rename one.
+     old: no longer offered; kept so a project saved with it still opens */
   cladding: [
-    { brand: 'James Hardie', n: 'James Hardie Linea Weatherboard 16 mm', t: 16, k: 0.25, group: 'fc', display: 'Weatherboard — horizontal (James Hardie Linea, 16 mm)', src: 'Value to be confirmed with the manufacturer' },
-    { brand: 'James Hardie', n: 'James Hardie Stria Cladding 14 mm', t: 14, k: 0.25, group: 'fc', display: 'Weatherboard — horizontal (James Hardie Stria, 14 mm)', src: 'Value to be confirmed with the manufacturer' },
-    { brand: 'James Hardie', n: 'James Hardie Axon Panel 9 mm', t: 9, k: 0.25, group: 'fc', display: 'Sheet / panel (James Hardie Axon, 9 mm)', src: 'Value to be confirmed with the manufacturer' },
+    /* James Hardie (NZ) — Product Identification Guide, May 2026; BRANZ Appraisal 1285 (2025) */
+    { brand: 'James Hardie', n: 'James Hardie Hardie Plank Weatherboard 7.5 mm', t: 7.5, k: 0.25, group: 'fc', display: 'Bevelback weatherboard (James Hardie Hardie Plank, 7.5 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'James Hardie', n: 'James Hardie Hardie Plank Weatherboard 10 mm', t: 10, k: 0.25, group: 'fc', display: 'Bevelback weatherboard (James Hardie Hardie Plank, 10 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'James Hardie', n: 'James Hardie Linea Weatherboard 16 mm', t: 16, k: 0.25, group: 'fc', display: 'Bevelback weatherboard (James Hardie Linea, 16 mm)', src: 'Value to be confirmed with the manufacturer' },
     { brand: 'James Hardie', n: 'James Hardie Oblique Weatherboard 14 mm', t: 14, k: 0.25, group: 'fc', display: 'Weatherboard — horizontal (James Hardie Oblique, 14 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'James Hardie', n: 'James Hardie Stria Cladding 14 mm', t: 14, k: 0.25, group: 'fc', display: 'Weatherboard — horizontal (James Hardie Stria, 14 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'James Hardie', n: 'James Hardie Oblique Weatherboard vertical 14 mm', t: 14, k: 0.25, group: 'fc', display: 'Board — vertical (James Hardie Oblique, 14 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'James Hardie', n: 'James Hardie Stria Cladding vertical 14 mm', t: 14, k: 0.25, group: 'fc', display: 'Board — vertical (James Hardie Stria, 14 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'James Hardie', n: 'James Hardie Axon Panel 9 mm', t: 9, k: 0.25, group: 'fc', display: 'Board — vertical (James Hardie Axon Panel Grooved 133, 9 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'James Hardie', n: 'James Hardie Axon Panel Grooved Grained 133 9 mm', t: 9, k: 0.25, group: 'fc', display: 'Board — vertical (James Hardie Axon Panel Grooved Grained 133, 9 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'James Hardie', n: 'James Hardie Axon Panel Grooved 400 9 mm', t: 9, k: 0.25, group: 'fc', display: 'Board — vertical (James Hardie Axon Panel Grooved 400, 9 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'James Hardie', n: 'James Hardie Axon Panel Smooth 9 mm', t: 9, k: 0.25, group: 'fc', display: 'Board — vertical (James Hardie Axon Panel Smooth, 9 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'James Hardie', n: 'James Hardie Axon Panel Brushed Concrete 8.5 mm', t: 8.5, k: 0.25, group: 'fc', display: 'Board — vertical (James Hardie Axon Panel Brushed Concrete, 8.5 mm)', src: 'Value to be confirmed with the manufacturer' },
     { brand: 'James Hardie', n: 'James Hardie HardieFlex sheet 6 mm', t: 6, k: 0.25, group: 'fc', display: 'Sheet / panel (James Hardie HardieFlex, 6 mm)', src: 'Value to be confirmed with the manufacturer' },
-    { brand: 'Clad Solutions', n: 'Clad Solutions Shera Weatherboard Cavity Cladding 7.5 mm', t: 7.5, k: 0.25, group: 'fc', display: 'Weatherboard — horizontal (Clad Solutions Shera Weatherboard Cavity Cladding, 7.5 mm)', src: 'Value to be confirmed with the manufacturer' },
-    { brand: 'Clad Solutions', n: 'Clad Solutions Shera Shiplap Vertical Weatherboard 7.5 mm', t: 7.5, k: 0.25, group: 'fc', display: 'Board — vertical (Clad Solutions Shera Shiplap Vertical, 7.5 mm)', src: 'Value to be confirmed with the manufacturer' }
+    { brand: 'James Hardie', n: 'James Hardie ExoTec Facade Panel 9 mm', t: 9, k: 0.25, group: 'fc', display: 'Sheet / panel (James Hardie ExoTec Facade Panel, 9 mm)', src: 'Value to be confirmed with the manufacturer' },
+    /* Clad Solutions — Shera. cladsolutions.nz; BRANZ Appraisals 1251, 1253, 1254 (2023). The two 7.5 mm entries are an earlier listing: kept so saved projects open, not offered */
+    { brand: 'Clad Solutions', n: 'Clad Solutions Shera Weatherboard Bevelback 15 mm', t: 15, k: 0.25, group: 'fc', display: 'Bevelback weatherboard (Clad Solutions Shera Weatherboard Bevelback, 15 mm)', src: 'Supplier lists a 15 mm depth — confirm the board thickness and value with the manufacturer' },
+    { brand: 'Clad Solutions', n: 'Clad Solutions Shera Weatherboard Flat 10 mm', t: 10, k: 0.25, group: 'fc', display: 'Weatherboard — horizontal (Clad Solutions Shera Weatherboard Flat, 10 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Clad Solutions', n: 'Clad Solutions Shera Shiplap Horizontal Weatherboard 10 mm', t: 10, k: 0.25, group: 'fc', display: 'Weatherboard — horizontal (Clad Solutions Shera Shiplap Horizontal, 10 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Clad Solutions', n: 'Clad Solutions Shera Shiplap Vertical Weatherboard 10 mm', t: 10, k: 0.25, group: 'fc', display: 'Board — vertical (Clad Solutions Shera Shiplap Vertical, 10 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Clad Solutions', n: 'Clad Solutions Shera Weatherboard Cavity Cladding 7.5 mm', t: 7.5, k: 0.25, group: 'fc', display: 'Weatherboard — horizontal (Clad Solutions Shera Weatherboard, 7.5 mm — earlier listing)', src: 'Value to be confirmed with the manufacturer', old: true },
+    { brand: 'Clad Solutions', n: 'Clad Solutions Shera Shiplap Vertical Weatherboard 7.5 mm', t: 7.5, k: 0.25, group: 'fc', display: 'Board — vertical (Clad Solutions Shera Shiplap Vertical, 7.5 mm — earlier listing)', src: 'Value to be confirmed with the manufacturer', old: true },
+    /* Cemintel (NZ) — cemintel.co.nz / EBOSS product pages. Territory is cement-bonded panel; Surround: the product page also quotes 16 mm — confirm */
+    { brand: 'Cemintel', n: 'Cemintel Territory 16 mm', t: 16, k: 0.25, group: 'fc', display: 'Weatherboard — horizontal (Cemintel Territory, 16 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Cemintel', n: 'Cemintel Territory vertical 16 mm', t: 16, k: 0.25, group: 'fc', display: 'Board — vertical (Cemintel Territory, 16 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Cemintel', n: 'Cemintel Barestone 9 mm', t: 9, k: 0.25, group: 'fc', display: 'Sheet / panel (Cemintel Barestone, 9 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Cemintel', n: 'Cemintel Surround 8 mm', t: 8, k: 0.25, group: 'fc', display: 'Sheet / panel (Cemintel Surround, 8 mm)', src: 'Value to be confirmed with the manufacturer' },
+    /* timber — Abodo Vulcan (abodo.co.nz, profile size as listed); CHH Shadowclad grooved plywood 12 mm */
+    { brand: 'Abodo', n: 'Abodo Vulcan Bevelback AW62 20 mm', t: 20, k: 0.12, group: 'tb', display: 'Bevelback weatherboard (Abodo Vulcan Bevelback AW62, 20 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Abodo', n: 'Abodo Vulcan WB18 18 mm', t: 18, k: 0.12, group: 'tb', display: 'Weatherboard — horizontal (Abodo Vulcan WB18, 18 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Abodo', n: 'Abodo Vulcan WB18 vertical 18 mm', t: 18, k: 0.12, group: 'tb', display: 'Board — vertical (Abodo Vulcan WB18, 18 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Abodo', n: 'Abodo Vulcan WB12 18 mm', t: 18, k: 0.12, group: 'tb', display: 'Board — vertical (Abodo Vulcan WB12, 18 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Abodo', n: 'Abodo Vulcan Fineline WB12F 18 mm', t: 18, k: 0.12, group: 'tb', display: 'Board — vertical (Abodo Vulcan Fineline WB12F, 18 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'CHH', n: 'CHH Shadowclad 12 mm', t: 12, k: 0.13, group: 'tb', display: 'Board — vertical (CHH Shadowclad grooved plywood, 12 mm)', src: 'Value to be confirmed with the manufacturer' }
   ]
 };
 })(typeof window !== 'undefined' ? window : globalThis);

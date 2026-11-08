@@ -160,7 +160,7 @@ const ib=(f,val,cap,o)=>{o=o||{};return `<span class="ib${o.bad?' bad':''}"${o.w
 const selF=(f,opts,curv,w)=>{let g=false;const o=opts.map(([v,l,dis])=>{if(v==='§'){const s=(g?'</optgroup>':'')+`<optgroup label="${esc(l)}">`;g=true;return s}return `<option value="${v}"${String(curv)===String(v)?' selected':''}${dis?' disabled':''}>${esc(l)}</option>`}).join('')+(g?'</optgroup>':'');return `<select data-f="${f}"${w?` style="width:${w}"`:''}>${o}</select>`};
 /* wall cladding: Fibre cement, Timber, Other — in the order of CLAD_DN (category, brand before generic); display names only */
 function cladOpts(){const L=LIB.cladding,ord=Object.keys(CLAD_DN),out=[];
-  [['fc','Fibre cement'],['tb','Timber'],['br','Brick veneer'],['ot','Other']].forEach(([g,lbl])=>{const it=L.map((o,j)=>j).filter(j=>(L[j].grp||'ot')===g).sort((a,b)=>{const x=ord.indexOf(L[a].n),y=ord.indexOf(L[b].n);return(x<0?999:x)-(y<0?999:y)});
+  [['fc','Fibre cement'],['tb','Timber'],['br','Brick veneer'],['ot','Other']].forEach(([g,lbl])=>{const it=L.map((o,j)=>j).filter(j=>!L[j].old&&(L[j].grp||'ot')===g).sort((a,b)=>{const x=ord.indexOf(L[a].n),y=ord.indexOf(L[b].n);return(x<0?999:x)-(y<0?999:y)});
     if(!it.length)return;out.push(['§',lbl]);it.forEach(j=>out.push([j,(L[j].dn||L[j].n)+(L[j].vsrc&&/generic/.test(L[j].dn||'')?' *':'')]))});return out}
 /* other material dropdowns, grouped by material: "None" first, then each group in its first item's order. Display only — the saved id is the item's place in LIB */
 const MATG={airBarrier:[[/paper|wrap/i,'Building wrap'],[/plywood/i,'Rigid air barrier — plywood'],[/fibre cement/i,'Rigid air barrier — fibre cement'],[/plasterboard/i,'Rigid air barrier — plasterboard']],
@@ -179,12 +179,16 @@ function kindOpts(el){const out=[];let g0;KINDS[el].forEach(k=>{const g=KGRP[el]
   if((LATER[el]||[]).length){out.push(['§','Not available yet']);LATER[el].forEach(l=>out.push(['',l,1]))}return out}
 /* wall cladding as three dropdowns: material → brand (only where there is more than one) → product. Only the product is stored */
 const CLG=[['fc','Fibre cement'],['tb','Timber'],['br','Brick veneer'],['ot','Other']],CLBR=[...CLAD_BR,'Generic'];   /* brands from js/products.js, then Generic */
-const cladIn=(g,b)=>{const L=LIB.cladding,ord=Object.keys(CLAD_DN);return L.map((o,j)=>j).filter(j=>(L[j].grp||'ot')===g&&(b==null||L[j].brand===b)).sort((x,y)=>{const a=ord.indexOf(L[x].n),c=ord.indexOf(L[y].n);return(a<0?999:a)-(c<0?999:c)})};
+const cladIn=(g,b)=>{const L=LIB.cladding,ord=Object.keys(CLAD_DN);return L.map((o,j)=>j).filter(j=>!L[j].old&&(L[j].grp||'ot')===g&&(b==null||L[j].brand===b)).sort((x,y)=>{const a=ord.indexOf(L[x].n),c=ord.indexOf(L[y].n);return(a<0?999:a)-(c<0?999:c)})};
 const cladBrands=g=>CLBR.filter(b=>cladIn(g,b).length);
-function cladSel(f,m){const L=LIB.cladding,o=L[m]||L[0],g=o.grp||'ot',brs=cladBrands(g),b=brs.length>1?o.brand:null;
+function cladSel(f,m){const L=LIB.cladding,o=L[m]||L[0],g=o.grp||'ot',brs=cladBrands(g),b=brs.length>1?o.brand:null,it=cladIn(g,b);if(o.old&&!it.includes(+m))it.push(+m);
   const mk=(kind,opts,cur,t)=>`<select data-f="${f}" data-cl="${kind}" title="${t}">${opts.map(([v,l])=>`<option value="${esc(v)}"${String(cur)===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select>`;
   return `<span class="v6clsel">${mk('g',CLG,g,'Cladding material')}${b?mk('b',brs.map(x=>[x,x]),b,'Brand'):''}</span>`+
-    selF(f,cladIn(g,b).map(j=>[j,L[j].pn+(L[j].vsrc&&L[j].brand==='Generic'&&g!=='ot'?' *':'')]),m)}
+    selF(f,cladProf(it).map(x=>x[0]==='§'?x:[x,L[x].pn+(L[x].vsrc&&L[x].brand==='Generic'&&g!=='ot'?' *':'')]),m)}
+/* the product list in groups by profile — the start of each display name; brick and other materials have none */
+const CLPROF=[['Bevelback weatherboard','Bevel-back weatherboard'],['Weatherboard — horizontal','Horizontal — weatherboard, rusticated or shiplap'],['Board — vertical','Vertical — board, shiplap or grooved panel'],['Sheet / panel','Sheet or panel']];
+function cladProf(it){const L=LIB.cladding,k=j=>(L[j].dn||'').split(' (')[0],pi=j=>CLPROF.findIndex(p=>p[0]===k(j));if(!it.some(j=>pi(j)>=0))return it;
+  const out=[];CLPROF.forEach(([key,lbl],i)=>{const g=it.filter(j=>pi(j)===i);if(g.length)out.push(['§',lbl],...g)});const rest=it.filter(j=>pi(j)<0);if(rest.length)out.push(['§','Other'],...rest);return out}
 const grpF=(label,inner,note)=>`<div class="fgrp"><span class="glbl">${label}</span><div class="ginputs">${inner}</div>${note?`<span class="fcalc">${note}</span>`:''}</div>`;
 const halfChip=t=>`<span class="bchip v6half">${t}</span>`;
 function lrow(num,id,name,body,r,cls,chip){return `<div class="lrow ${cls||''}"${id?` data-layer="${id}" tabindex="0"`:''}><span class="lnum"${num==='·'?' style="background:transparent;border-style:dashed"':''}>${num}</span><div><div class="lname">${name}${chip||''}</div>${body||''}</div><div class="lr">${r}</div></div>`}

@@ -37,7 +37,7 @@ const LIB={
     M('Metal sheet or aluminium weatherboard',0),K('Plaster / stucco 20 mm',20,.9),
     PB('Plasterboard 10 mm into still air (garage)',10,0.045,{still:1}),PB('Plasterboard 13 mm into still air (garage)',13,0.06,{still:1}),K('Vertical timber board 18 mm',18,.12),
     /* named products: js/products.js */
-    ...RP.cladding.map(p=>K(p.n,p.t,p.k,p.src?{vsrc:p.src}:{})),
+    ...RP.cladding.map(p=>K(p.n,p.t,p.k,Object.assign(p.src?{vsrc:p.src}:{},p.old?{old:1}:{}))),
     /* profiles without their own data: same material and generic thickness, k as above */
     K('Timber bevelback weatherboard 18 mm',18,.12,{vsrc:'Value to be confirmed with the manufacturer'}),K('Fibre cement weatherboard horizontal 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'}),
     K('Fibre cement vertical 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'}),K('Fibre cement bevelback 7.5 mm',7.5,.25,{vsrc:'Value to be confirmed with the manufacturer'})],
