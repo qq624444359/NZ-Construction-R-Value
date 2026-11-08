@@ -80,7 +80,7 @@ function ensure(c){c.o=c.o||{};const t=tpl(c);if(t.manual)return;ffMig(c);batMig
 /* the note on every wall's internal strapping */
 const STHINT='<p class="lsub v6sth"><span class="ms s16">info</span> Internal strapping starts at 90 × 45 @ 600 with the best-fitting wall batts — change the batten size and the insulation to match your drawings. It is non-structural (no lintels), so its framing fraction is batten width ÷ spacing, not the 38% framed-wall default.</p>';
 /* the highest-R product that fits a member of this depth, as {insR, insT, prod} */
-function fitIns(member,depth){const L=prodList(member,depth).filter(([,t])=>t<=depth),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;return b?{insR:b[0],insT:b[1],prod:window.RVC_PRODUCTS.insulation.byMember.brand}:{}}   /* runs at load too: no RPI here */
+function fitIns(member,depth){const L=prodList(member,depth).filter(([,t])=>t<=depth),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;return b?{insR:b[0],insT:b[1],prod:b[2]||window.RVC_PRODUCTS.insulation.byMember.brand}:{}}   /* runs at load too: no RPI here */
 /* names the calculator gave (not typed by the designer) follow the construction type when it changes */
 const KN={wall:{double:'double stud',it:'intertenancy',block:'concrete block',custom:'custom R-value',exist:'existing wall'},
   roof:{truss:'truss',skillion:'skillion',grid:'suspended grid',self:'self-supporting',custom:'custom R-value',exist:'existing roof'},
@@ -160,16 +160,35 @@ const ib=(f,val,cap,o)=>{o=o||{};return `<span class="ib${o.bad?' bad':''}"${o.w
 const selF=(f,opts,curv,w)=>{let g=false;const o=opts.map(([v,l,dis])=>{if(v==='§'){const s=(g?'</optgroup>':'')+`<optgroup label="${esc(l)}">`;g=true;return s}return `<option value="${v}"${String(curv)===String(v)?' selected':''}${dis?' disabled':''}>${esc(l)}</option>`}).join('')+(g?'</optgroup>':'');return `<select data-f="${f}"${w?` style="width:${w}"`:''}>${o}</select>`};
 /* wall cladding: Fibre cement, Timber, Other — in the order of CLAD_DN (category, brand before generic); display names only */
 function cladOpts(){const L=LIB.cladding,ord=Object.keys(CLAD_DN),out=[];
-  [['fc','Fibre cement'],['tb','Timber'],['br','Brick veneer'],['ot','Other']].forEach(([g,lbl])=>{const it=L.map((o,j)=>j).filter(j=>(L[j].grp||'ot')===g).sort((a,b)=>{const x=ord.indexOf(L[a].n),y=ord.indexOf(L[b].n);return(x<0?999:x)-(y<0?999:y)});
+  [['fc','Fibre cement'],['tb','Timber'],['br','Brick veneer'],['ot','Other']].forEach(([g,lbl])=>{const it=L.map((o,j)=>j).filter(j=>!L[j].old&&(L[j].grp||'ot')===g).sort((a,b)=>{const x=ord.indexOf(L[a].n),y=ord.indexOf(L[b].n);return(x<0?999:x)-(y<0?999:y)});
     if(!it.length)return;out.push(['§',lbl]);it.forEach(j=>out.push([j,(L[j].dn||L[j].n)+(L[j].vsrc&&/generic/.test(L[j].dn||'')?' *':'')]))});return out}
+/* other material dropdowns, grouped by material: "None" first, then each group in its first item's order. Display only — the saved id is the item's place in LIB */
+const MATG={airBarrier:[[/paper|wrap/i,'Building wrap'],[/plywood/i,'Rigid air barrier — plywood'],[/fibre cement/i,'Rigid air barrier — fibre cement'],[/plasterboard/i,'Rigid air barrier — plasterboard']],
+  lining:[[/plasterboard/i,'Plasterboard'],[/plywood|mdf|t&g/i,'Timber and wood panels'],[/fibre cement/i,'Fibre cement']],
+  floorLining:[[/plasterboard/i,'Plasterboard'],[/plywood/i,'Timber and wood panels'],[/fibre cement/i,'Fibre cement']],
+  flooring:[[/particleboard|plywood/i,'Sheet flooring'],[/t&g/i,'Timber boards']],
+  block:[[/20 series/i,'20 series · 190 mm'],[/25 series/i,'25 series · 240 mm']]};
+MATG.ceiling=MATG.lining;
+function matOpts(lib){const L=LIB[lib],G=MATG[lib],all=L.map((o,j)=>[j,o.n]);if(!G)return all;
+  const top=[],grp=new Map();all.forEach(x=>{const g=/^None/.test(x[1])?null:(G.find(([re])=>re.test(x[1]))||[0,'Other'])[1];if(g==null)top.push(x);else{if(!grp.has(g))grp.set(g,[]);grp.get(g).push(x)}});
+  const out=top.slice();grp.forEach((it,g)=>{out.push(['§',g]);out.push(...it)});return out}
+/* construction type dropdown, grouped; the types not modelled yet sit at the end, greyed out */
+const KGRP={wall:{frame:'Timber framed',double:'Timber framed',it:'Timber framed',block:'Masonry'},roof:{truss:'Timber framed',skillion:'Timber framed',grid:'Other roofs',self:'Other roofs'},
+  floor:{susp:'Timber',solid:'Timber',slab:'Concrete'}};
+function kindOpts(el){const out=[];let g0;KINDS[el].forEach(k=>{const g=KGRP[el][k.id]||'Enter the R-value';if(g!==g0){out.push(['§',g]);g0=g}out.push([k.id,k.name])});
+  if((LATER[el]||[]).length){out.push(['§','Not available yet']);LATER[el].forEach(l=>out.push(['',l,1]))}return out}
 /* wall cladding as three dropdowns: material → brand (only where there is more than one) → product. Only the product is stored */
 const CLG=[['fc','Fibre cement'],['tb','Timber'],['br','Brick veneer'],['ot','Other']],CLBR=[...CLAD_BR,'Generic'];   /* brands from js/products.js, then Generic */
-const cladIn=(g,b)=>{const L=LIB.cladding,ord=Object.keys(CLAD_DN);return L.map((o,j)=>j).filter(j=>(L[j].grp||'ot')===g&&(b==null||L[j].brand===b)).sort((x,y)=>{const a=ord.indexOf(L[x].n),c=ord.indexOf(L[y].n);return(a<0?999:a)-(c<0?999:c)})};
+const cladIn=(g,b)=>{const L=LIB.cladding,ord=Object.keys(CLAD_DN);return L.map((o,j)=>j).filter(j=>!L[j].old&&(L[j].grp||'ot')===g&&(b==null||L[j].brand===b)).sort((x,y)=>{const a=ord.indexOf(L[x].n),c=ord.indexOf(L[y].n);return(a<0?999:a)-(c<0?999:c)})};
 const cladBrands=g=>CLBR.filter(b=>cladIn(g,b).length);
-function cladSel(f,m){const L=LIB.cladding,o=L[m]||L[0],g=o.grp||'ot',brs=cladBrands(g),b=brs.length>1?o.brand:null;
+function cladSel(f,m){const L=LIB.cladding,o=L[m]||L[0],g=o.grp||'ot',brs=cladBrands(g),b=brs.length>1?o.brand:null,it=cladIn(g,b);if(o.old&&!it.includes(+m))it.push(+m);
   const mk=(kind,opts,cur,t)=>`<select data-f="${f}" data-cl="${kind}" title="${t}">${opts.map(([v,l])=>`<option value="${esc(v)}"${String(cur)===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select>`;
   return `<span class="v6clsel">${mk('g',CLG,g,'Cladding material')}${b?mk('b',brs.map(x=>[x,x]),b,'Brand'):''}</span>`+
-    selF(f,cladIn(g,b).map(j=>[j,L[j].pn+(L[j].vsrc&&L[j].brand==='Generic'&&g!=='ot'?' *':'')]),m)}
+    selF(f,cladProf(it).map(x=>x[0]==='§'?x:[x,L[x].pn+(L[x].vsrc&&L[x].brand==='Generic'&&g!=='ot'?' *':'')]),m)}
+/* the product list in groups by profile — the start of each display name; brick and other materials have none */
+const CLPROF=[['Bevelback weatherboard','Bevel-back weatherboard'],['Weatherboard — horizontal','Horizontal — weatherboard, rusticated or shiplap'],['Board — vertical','Vertical — board, shiplap or grooved panel'],['Sheet / panel','Sheet or panel']];
+function cladProf(it){const L=LIB.cladding,k=j=>(L[j].dn||'').split(' (')[0],pi=j=>CLPROF.findIndex(p=>p[0]===k(j));if(!it.some(j=>pi(j)>=0))return it;
+  const out=[];CLPROF.forEach(([key,lbl],i)=>{const g=it.filter(j=>pi(j)===i);if(g.length)out.push(['§',lbl],...g)});const rest=it.filter(j=>pi(j)<0);if(rest.length)out.push(['§','Other'],...rest);return out}
 const grpF=(label,inner,note)=>`<div class="fgrp"><span class="glbl">${label}</span><div class="ginputs">${inner}</div>${note?`<span class="fcalc">${note}</span>`:''}</div>`;
 const halfChip=t=>`<span class="bchip v6half">${t}</span>`;
 function lrow(num,id,name,body,r,cls,chip){return `<div class="lrow ${cls||''}"${id?` data-layer="${id}" tabindex="0"`:''}><span class="lnum"${num==='·'?' style="background:transparent;border-style:dashed"':''}>${num}</span><div><div class="lname">${name}${chip||''}</div>${body||''}</div><div class="lr">${r}</div></div>`}
@@ -181,7 +200,7 @@ function header(c,t,x){const m=minOf(c),ok=x.total>=m.r-1e-9,P=perimOf(c),RT=t.s
   if(c.el==='wall'&&c.kind!=='block'){const e3=x.total>=1.5-1e-9;ck.push([e3?'pass':'review',`${e3?'Meets':'Below'} E3/AS1 R1.5`])}
   if(c.batMsg)ck.unshift(['review',esc(c.batMsg)+` <button class="link-btn" data-a="batok">OK</button>`]);
   if(c.ffMsg)ck.unshift(['review',esc(c.ffMsg)+` <button class="link-btn" data-a="ffok">OK</button>`]);
-  const kinds=KINDS[c.el].map(k=>[k.id,k.name]).concat((LATER[c.el]||[]).map(l=>['',l+' — phase 2',1]));
+  const kinds=kindOpts(c.el);
   const opts=(t.opts||[]).map(o=>{const box=`<label class="tgl"><input type="checkbox" data-f="o.${o.id}"${o.on?' checked':''}>${esc(o.label)}</label>`;
     return o.id==='perim'?`<span class="v6optg">${box}<span class="v6hint">Tick only for the perimeter strip — add it as its own construction.</span></span>`:box}).join('');
   const SG0=isStrat(c)?strategy(c):null,pTgl=SG0?`<label class="tgl"><input type="checkbox" data-f="perimTgl"${SG0.per!=='none'?' checked':''}>Ceiling perimeter</label>`:'';
@@ -207,7 +226,7 @@ function midCol(c,x){const hd=header(c,tpl(c),x),SG=isStrat(c)?strategy(c):null;
     const v=val(c,s.id),row=x.rows.find(r=>r.i===i),half=t.vented&&s.ext,chip=half?halfChip('halved · outside the vented cavity'):'';
     const host=x.rows.find(r=>r.kind==='frame'&&r.slots&&r.slots.includes(i)&&r.i!==i),cnt=host&&s.k!=='frame'?cntChip(num[host.i]):'';
     if(s.k==='mat'){const m=matR(s,v),f='v.'+s.id;
-      const body=`<div class="lctl v6mat${s.lib==='cladding'&&v.m!==-1?' v6clad':''}">${s.lib==='cladding'&&v.m!==-1?cladSel(f+'.m',v.m||0):selF(f+'.m',(v.m===-1&&v.lm?[[-1,v.lm.n+' — saved earlier']]:[]).concat((s.lib==='cladding'?cladOpts():LIB[s.lib].map((o,j)=>[j,o.n]))),v.m===-1&&v.lm?-1:v.m||0)}${ib(f+'.r',r2(m.r),'R',{w:'74px'})}${m.over?`<span class="v6ent">R entered — thickness not used</span><button class="link-btn" data-a="reset" data-v="${s.id}">Reset</button>`:''}</div>`;
+      const body=`<div class="lctl v6mat${s.lib==='cladding'&&v.m!==-1?' v6clad':''}">${s.lib==='cladding'&&v.m!==-1?cladSel(f+'.m',v.m||0):selF(f+'.m',(v.m===-1&&v.lm?[[-1,v.lm.n+' — saved earlier']]:[]).concat((s.lib==='cladding'?cladOpts():matOpts(s.lib))),v.m===-1&&v.lm?-1:v.m||0)}${ib(f+'.r',r2(m.r),'R',{w:'74px'})}${m.over?`<span class="v6ent">R entered — thickness not used</span><button class="link-btn" data-a="reset" data-v="${s.id}">Reset</button>`:''}</div>`;
       rows.push(lrow(num[i],s.id,s.label,body,row?r2(row.r):r2(m.r*(half?.5:1)),'',chip));
       const L=s.id==='roof'&&rLink(v.m);
       if(L){const by=`<span class="chip-set"><span class="ms">link</span>Set by ${esc(m.m.n)}</span>`;
@@ -356,15 +375,17 @@ function prodCard(c){const t=tpl(c),ovr=isStrat(c)&&S.af==='over'&&(t.slots||[])
   if(!s)return `<div class="card prodcard">${hd}</div>`;
   const v=c.v[s.id]||{},depth=+v.d||MEMBER[s.member].d,L=prodList(s.member,depth);
   const sk=XP&&s.id==='fr'?XP.suggKey(c):null,PL=pbList(s.member);
-  if(PL){const cov=s.member==='chord'&&!!v.cover;const rows=PL.map(p=>{const r=p[1],th=p[2],chips=[];if(Math.abs((+v.insR||0)-r)<1e-9&&+v.insT===th)chips.push('<i class="pchip on">Selected</i>');if(sk===r+'@'+th)chips.push('<i class="pchip sugg">Suggested</i>');
-      if(th===depth)chips.push(`<i class="pchip fit">Fills a ${depth} mm ${MEMBER[s.member].name.toLowerCase().replace(/s$/,'')}</i>`);else if(th>depth&&!s.cover)chips.push('<i class="pchip squash">Compressed in this depth</i>');
-      if(cov&&p[3]===460)chips.push('<i class="pchip fit">Suits covering the chords</i>');return pbRow(p,chips,s.member==='rafter')}).join('');
+  /* rows in groups by how the product fits this member — thinner, fills it, thicker — each group by R-value, then thickness. Members that let insulation
+     rise above them (truss chords) never compress it; whether it is counted over the chords is a separate choice */
+  const mw=MEMBER[s.member].name.toLowerCase().replace(/s$/,''),fg=th=>th<depth?0:th===depth?1:2,
+    GH=[`Thinner than the ${depth} mm ${mw} — leaves an air gap`,`Fills the ${depth} mm ${mw}`,s.cover?`Thicker than the ${depth} mm ${mw} — rises above it`:`Thicker than the ${depth} mm ${mw} — compressed`],
+    grouped=R=>{let g0=-1;return R.map((x,i)=>[x,i]).sort((a,b)=>fg(a[0].th)-fg(b[0].th)||a[1]-b[1]).map(([x])=>{const g=fg(x.th),h=g!==g0?`<div class="pgrp v6fg${g===2&&s.cover?3:g}">${GH[g]}</div>`:'';g0=g;return h+x.html}).join('')};
+  const pick=(r,th)=>{const chips=[];if(Math.abs((+v.insR||0)-r)<1e-9&&+v.insT===th)chips.push('<i class="pchip on">Selected</i>');if(sk===r+'@'+th)chips.push('<i class="pchip sugg">Suggested</i>');return chips};
+  if(PL){const cov=s.member==='chord'&&!!v.cover;const rows=grouped(PL.map(p=>{const chips=pick(p[1],p[2]);
+      if(cov&&p[3]===460)chips.push('<i class="pchip fit">Suits covering the chords</i>');return {th:p[2],html:pbRow(p,chips,s.member==='rafter')}}));
     return `<div class="card prodcard">${hd}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(pbSrc(PL))} Fills the selected framing layer only.</div></div>`}
-  const rows=L.map(([r,th])=>{const chips=[];if(Math.abs((+v.insR||0)-r)<1e-9&&+v.insT===th)chips.push('<i class="pchip on">Selected</i>');if(sk===r+'@'+th)chips.push('<i class="pchip sugg">Suggested</i>');
-    if(th===depth)chips.push(`<i class="pchip fit">Fills a ${depth} mm ${MEMBER[s.member].name.toLowerCase().replace(/s$/,'')}</i>`);
-    /* members that let insulation rise above them (truss chords) never compress it — whether it is counted over the chords is a separate choice */
-    else if(th>depth&&!s.cover)chips.push('<i class="pchip squash">Compressed in this depth</i>');
-    return `<button class="prow2 v6pr" data-a="prod" data-r="${r}" data-t="${th}"><b>R${r.toFixed(1)} · ${th} mm</b><em>${esc(MEMBER[s.member].name)}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`}).join('');
+  const rows=grouped(L.map(([r,th,n])=>{const chips=pick(r,th);
+    return {th,html:`<button class="prow2 v6pr" data-a="prod" data-r="${r}" data-t="${th}"${n?` data-n="${esc(n)}"`:''}><b>R${r.toFixed(1)} · ${th} mm</b><em>${esc(n||RPI.byMember.brand)}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`}}));
   return `<div class="card prodcard">${hd}<div class="prodscroll">${rows||'<div class="pgrp">No products listed for this member — enter the R-value.</div>'}</div><div class="prodsrc">${esc(RPI.byMember.brand)} declared product values. Fills the selected framing layer only.</div></div>`}
 /* ---------- render ---------- */
 /* ---------- Open project ---------- */

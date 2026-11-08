@@ -58,6 +58,7 @@
 .wall-section .beyond { fill: var(--timber-beyond); stroke: var(--timber); stroke-width: 2; stroke-dasharray: 10 8; }
 .wall-section .cut.lining, .wall-section .cut.ply { fill: var(--lining); stroke-width: 2; }
 .wall-section .cut.ply { fill: var(--timber); }
+.wall-section .cut.fc { fill: color-mix(in oklch, var(--text-3) 30%, var(--bg)); stroke-width: 2; }   /* fibre cement cladding */
 .wall-section .insulation { stroke: var(--insulation); stroke-width: 3; }
 .wall-section .batt { fill: none; stroke: var(--insulation); stroke-width: 4; }
 .wall-section .beyond-outline { fill: none; stroke: var(--timber); stroke-width: 3; stroke-dasharray: 14 10; }

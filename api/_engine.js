@@ -76,7 +76,7 @@ function describe({ element, kind, options } = {}) {
     const v = c.v[s.id] || {}, L = { id: s.id, label: s.label, type: s.k };
     if (s.k === 'mat') {
       L.default = (M.LIB[s.lib][v.m || 0] || {}).id;
-      L.choices = M.LIB[s.lib].map(o => ({ id: o.id, name: o.n, r: o.r }));
+      L.choices = M.LIB[s.lib].filter(o => !o.old).map(o => ({ id: o.id, name: o.n, r: o.r }));
       L.accepts = 'a choice id or name, or {"r": number} for your own R-value';
     } else if (s.k === 'frame') {
       const d = M.MEMBER[s.member] || {};

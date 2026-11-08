@@ -20,7 +20,7 @@
   'use strict';
 
   var DEFAULTS = {
-    cladding: { type: 'bevel', thickness: 19, cover: 160, lap: 30 },  // 'bevel' | 'vertical' | 'sheet' (flat sheet on vertical cavity battens; give it a label)
+    cladding: { type: 'bevel', thickness: 19, cover: 160, lap: 30 },  // 'bevel' | 'horizontal' (rusticated / shiplap, flat back) | 'vertical' | 'sheet'; material 'fc' draws it plain, otherwise timber
     cavity: { depth: 20 },                  // null = direct fixed
     // vertical boards are fixed through horizontal cavity battens (drained / castellated);
     // take the centres from the cladding supplier
@@ -169,18 +169,28 @@
     }
 
     // ---- cladding (cut) ------------------------------------------------------------------------
-    var C = S.cladding, cl = '';
+    var C = S.cladding, cl = '', fc = C.material === 'fc';
+    var cutC = fc ? 'cut fc' : 'cut timber';
     if (vertical) {
       // one board cut along its length; the shiplap rebate of the joint beyond shows as a hidden line
-      cl = rect(clFace, clBottom, cOut, top, 'cut timber') +
+      cl = rect(clFace, clBottom, cOut, top, cutC) +
         line([[(clFace + cOut) / 2, clBottom], [(clFace + cOut) / 2, top]], 'hidden');
     } else if (sheet) {
       // a flat sheet cut along its length
-      cl = rect(clFace, clBottom, cOut, top, 'cut ply');
+      cl = rect(clFace, clBottom, cOut, top, fc ? 'cut fc' : 'cut ply');
+    } else if (C.type === 'horizontal') {
+      // flat-backed boards (rusticated / shiplap): full thickness over the cover, the joint a half-thickness rebate
+      // — the lower board's inner half runs up behind the outer half of the board above
+      var mid = (clFace + cOut) / 2, lp = Math.min(C.lap || 20, C.cover / 3);
+      for (var yh = clBottom; yh < top; yh += C.cover) {
+        cl += poly([[clFace, yh], [clFace, yh + C.cover], [mid, yh + C.cover], [mid, yh + C.cover + lp],
+          [cOut, yh + C.cover + lp], [cOut, yh + lp], [mid, yh + lp], [mid, yh]], cutC);
+      }
     } else {
       // bevel-back boards: thin at the top, full thickness at the butt, each lapping the one below
+      var thin = Math.max(2, Math.min(6, C.thickness * 0.35));
       for (var yb = clBottom; yb < top; yb += C.cover) {
-        cl += poly([[cOut, yb], [clFace, yb], [cOut - 6, yb + C.cover + C.lap], [cOut, yb + C.cover + C.lap]], 'cut timber');
+        cl += poly([[cOut, yb], [clFace, yb], [cOut - thin, yb + C.cover + C.lap], [cOut, yb + C.cover + C.lap]], cutC);
       }
     }
     out.push(group('cladding', cl));
@@ -196,7 +206,7 @@
     });
 
     // ---- labels with leaders ------------------------------------------------------------------
-    labelL('cladding', [clFace + 4, ly + 100], S.cladding.label || (vertical ? 'Vertical shiplap weatherboard' : sheet ? 'Sheet cladding ' + S.cladding.thickness + ' mm' : 'Bevel-back weatherboard'));
+    labelL('cladding', [clFace + 4, ly + 100], S.cladding.label || (vertical ? 'Vertical shiplap weatherboard' : sheet ? 'Sheet cladding ' + S.cladding.thickness + ' mm' : S.cladding.type === 'horizontal' ? 'Horizontal weatherboard' : 'Bevel-back weatherboard'));
     if (S.cavity) labelL('cavity', [(cOut + bOut) / 2, ly], S.cavity.depth + ' mm drained cavity');
     var hbIn = hbY.filter(function (y) { return y > lo + 40 && y < hi - 40; })[0];
     if (S.cavity && vertical && hbIn != null) labelL('cavity', [(cOut + bOut) / 2, hbIn],
