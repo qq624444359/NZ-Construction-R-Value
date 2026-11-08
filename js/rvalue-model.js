@@ -326,11 +326,16 @@ function toSection(c){
   const nums=map=>{const n={};(t.slots||[]).forEach((s,i)=>{if(map[s.id])n[map[s.id]]=i+1});return n};
   const mat=(lib,id)=>LIB[lib][v(id).m||0]||LIB[lib][0],fr=v('fr');
   const insul=(x,depth)=>+x.insR?{label:'R'+(+x.insR).toFixed(1)+' · '+(+x.insT||depth)+' mm',thickness:+x.insT||depth}:null;
+  /* the cladding as drawn: its profile (the start of its display name), else read from the name; fibre cement drawn plain, timber hatched */
+  const cladDraw=cl=>{const pk=(cl.dn||'').split(' (')[0],t=+cl.t||0,material=cl.grp==='fc'?'fc':cl.grp==='tb'?'tb':null,
+      type=pk==='Bevelback weatherboard'?'bevel':pk==='Weatherboard — horizontal'?'horizontal':pk==='Board — vertical'?'vertical':pk==='Sheet / panel'?'sheet':/vertical/i.test(cl.n)?'vertical':/weatherboard/i.test(cl.n)?'bevel':'sheet';
+    return type==='bevel'?{type,thickness:t||19,cover:160,lap:30,material,label:cl.n}:type==='horizontal'?{type,thickness:t||18,cover:150,lap:20,material,label:cl.n}
+      :{type,thickness:t||(type==='vertical'?18:9),material,label:cl.n}};
   if(c.el==='wall'&&c.kind==='frame'){
     const cl=mat('cladding','clad'),ab=mat('airBarrier','ab'),li=mat('lining','lin'),d=+fr.d||90;
     ['strap','tb','cins','xins'].forEach(id=>{if(o(id))notDrawn.push(t.opts.find(x=>x.id===id).label)});
     return{fn:'wallSection',notDrawn,params:{labels:true,numbers:nums({clad:'cladding',vcav:'cavity',ab:'barrier',fr:'insulation',lin:'lining'}),
-      cladding:/vertical/i.test(cl.n)?{type:'vertical',thickness:cl.t||18,label:cl.n}:/weatherboard/i.test(cl.n)?{type:'bevel',thickness:19,cover:160,lap:30,label:cl.n+' (drawn horizontal — bevel-back)'}:{type:'sheet',thickness:cl.t||9,label:cl.n},
+      cladding:cladDraw(cl),
       cavity:t.vented?{depth:20}:null,barrier:ab.t?{type:'rigid',thickness:ab.t,label:ab.n}:{type:'wrap',label:ab.n},
       stud:{width:+fr.w||45,depth:d},spacing:+fr.s||600,nogs:fr.dw!=null?(+fr.dw||null):800,lining:li.t||10,liningLabel:li.n,insulation:insul(fr,d)}};
   }

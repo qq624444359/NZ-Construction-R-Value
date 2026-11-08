@@ -89,7 +89,20 @@ g.RVC_PRODUCTS = {
     { brand: 'Abodo', n: 'Abodo Vulcan WB18 vertical 18 mm', t: 18, k: 0.12, group: 'tb', display: 'Board — vertical (Abodo Vulcan WB18, 18 mm)', src: 'Value to be confirmed with the manufacturer' },
     { brand: 'Abodo', n: 'Abodo Vulcan WB12 18 mm', t: 18, k: 0.12, group: 'tb', display: 'Board — vertical (Abodo Vulcan WB12, 18 mm)', src: 'Value to be confirmed with the manufacturer' },
     { brand: 'Abodo', n: 'Abodo Vulcan Fineline WB12F 18 mm', t: 18, k: 0.12, group: 'tb', display: 'Board — vertical (Abodo Vulcan Fineline WB12F, 18 mm)', src: 'Value to be confirmed with the manufacturer' },
-    { brand: 'CHH', n: 'CHH Shadowclad 12 mm', t: 12, k: 0.13, group: 'tb', display: 'Board — vertical (CHH Shadowclad grooved plywood, 12 mm)', src: 'Value to be confirmed with the manufacturer' }
+    { brand: 'CHH', n: 'CHH Shadowclad 12 mm', t: 12, k: 0.13, group: 'tb', display: 'Board — vertical (CHH Shadowclad grooved plywood, 12 mm)', src: 'Value to be confirmed with the manufacturer' },
+    /* Hermpac (Herman Pacific) — Profile Portfolio, hermpac.co.nz; one entry per profile family and thickness, profile codes in the name */
+    { brand: 'Hermpac', n: 'Hermpac Bevel Back 18.5 mm', t: 18.5, k: 0.12, group: 'tb', display: 'Bevelback weatherboard (Hermpac Bevel Back HP61 · HP62 · CP325, 18.5 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Hermpac', n: 'Hermpac Rebated Bevel Back 18.5 mm', t: 18.5, k: 0.12, group: 'tb', display: 'Bevelback weatherboard (Hermpac Rebated Bevel Back HP63 · HP64, 18.5 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Hermpac', n: 'Hermpac Rusticated 18.5 mm', t: 18.5, k: 0.12, group: 'tb', display: 'Weatherboard — horizontal (Hermpac Rusticated CP835–CP840 · CP656 · HP67 · HP68, 18.5 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Hermpac', n: 'Hermpac Rusticated 28 mm', t: 28, k: 0.12, group: 'tb', display: 'Weatherboard — horizontal (Hermpac Rusticated CP1736 · CP1737 · CP1738, 28 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Hermpac', n: 'Hermpac Splaycut 18.5 mm', t: 18.5, k: 0.12, group: 'tb', display: 'Weatherboard — horizontal (Hermpac Splaycut HP65 · HP66 · HP65MS · HP66MS, 18.5 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Hermpac', n: 'Hermpac Vertical Shiplap 18.5 mm', t: 18.5, k: 0.12, group: 'tb', display: 'Board — vertical (Hermpac Vertical Shiplap HP50–HP60 · CP862 · CP1470 · CP1739 · CP1740 · CP2257 · CP2258 · CP3344, 18.5 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Hermpac', n: 'Hermpac Vertical Shiplap 28 mm', t: 28, k: 0.12, group: 'tb', display: 'Board — vertical (Hermpac Vertical Shiplap CP1741 · CP1742 · CP1743 · CP3495, 28 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'Hermpac', n: 'Hermpac Board and Batten 18.5 mm', t: 18.5, k: 0.12, group: 'tb', display: 'Board — vertical (Hermpac Board & Batten HP120 · HP121 · CP2197, 18.5 mm)', src: 'Value to be confirmed with the manufacturer' },
+    /* JSC — jsc.co.nz profiles J50, J51-22; RustiClad 18.5 mm (JSC). BevelClad and Board & Batten: no thickness published yet */
+    { brand: 'JSC', n: 'JSC RustiClad 18.5 mm', t: 18.5, k: 0.12, group: 'tb', display: 'Weatherboard — horizontal (JSC RustiClad rusticated, 18.5 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'JSC', n: 'JSC VertiClad J50 18.5 mm', t: 18.5, k: 0.12, group: 'tb', display: 'Board — vertical (JSC VertiClad shiplap J50, 18.5 mm)', src: 'Value to be confirmed with the manufacturer' },
+    { brand: 'JSC', n: 'JSC VertiClad J51-22 22 mm', t: 22, k: 0.12, group: 'tb', display: 'Board — vertical (JSC VertiClad shiplap J51-22, 22 mm)', src: 'Value to be confirmed with the manufacturer' }
   ]
 };
 })(typeof window !== 'undefined' ? window : globalThis);
