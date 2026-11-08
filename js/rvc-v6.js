@@ -544,7 +544,7 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   else if(a==='pdlg'){projDlg(v);return}
   else if(a==='pdfclose'){closePdf();return}
   else if(a==='pdfdl'){download();return}
-  else if(XP&&/^p(seg|sugg|suggall|copy|glz|wadd|wdel|dadd|ddel|down|dok|ddef|lot|lotadd|lotdel|lotren|lotok|sadd|sdel|wown|sideok)$/.test(a)){if(XP.act(a,v,b)===false)return}
+  else if(XP&&/^p(seg|sugg|suggall|copy|dcopy|glz|wadd|wdel|dadd|ddel|down|dok|ddef|lot|lotadd|lotdel|lotren|lotok|sadd|sdel|wown|sideok)$/.test(a)){if(XP.act(a,v,b)===false)return}
   else if(a==='theme'){const t=document.body.dataset.theme==='light'?'dark':'light';document.body.dataset.theme=t;try{localStorage.setItem('ezbuild-theme',t)}catch(e){}
     /* shared with ezbuild.co.nz and its other subdomains */if(/(^|\.)ezbuild\.co\.nz$/.test(location.hostname))document.cookie='ezbuild-theme='+t+';domain=.ezbuild.co.nz;path=/;max-age=31536000;samesite=lax';return}
   else if(a==='startx'){FROMG=false;history.replaceState(null,'',location.pathname+(TQ?'?'+TQ:''))}
@@ -564,7 +564,7 @@ function stick(){const rc=$('#c-right');if(rc)rc.classList.toggle('nostick',rc.o
 /* ---------- PDF export: a calculation report — every word and number comes from toSheet() / basis() ---------- */
 const today=()=>{const d=new Date(),p=x=>String(x).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()};
 S.pdf={open:false,proj:{client:'',project_name:'',address:'',designer:'',date:today()},ex:{},sum:true,solo:0};
-if(S._proj)Object.assign(S.pdf.proj,S._proj);
+if(S._proj)Object.assign(S.pdf.proj,S._proj);S.pdf.proj.date=today();   /* the date is the day the site is opened */
 const PF=[['client','Client'],['project_name','Project name'],['address','Address'],['designer','Designer'],['date','Date']];
 const ordered=()=>['roof','wall','floor'].flatMap(el=>S.list.filter(c=>c.el===el));
 const incl=()=>ordered().filter(c=>!S.pdf.ex[c.id]);
