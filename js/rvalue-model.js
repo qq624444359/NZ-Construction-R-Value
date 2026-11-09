@@ -97,7 +97,10 @@ function libSlots(c){let t;try{t=tpl(c)}catch(e){return[]}if(!t||t.manual)return
 function idAt(lib,i,legacy){const L=legacy&&LEGACY[lib];if(L){const nm=L[+i||0];const o=nm&&LIB[lib].find(x=>x.n===nm);return o?o.id:null}const o=LIB[lib][+i||0];return o?o.id:null}
 function toSaved(list){return JSON.parse(JSON.stringify(list)).map(c=>{libSlots(c).forEach(([id,f,lib])=>{const v=c.v&&c.v[id];if(!v||v[f]==null||typeof v[f]==='string')return;
     if(v[f]===-1&&v.lm){v[f]='id:'+v.lm.id;delete v.lm;return}const k=idAt(lib,v[f]);if(k)v[f]='id:'+k});return c})}
-function fromSaved(list,fmt){return fromSaved0(list,fmt).map(slabMig).map(ffMig).map(batMig).map(tbMig).map(gapMig)}
+/* slabs saved before 9 Nov 2026 still on the old defaults (internal dimensions, 100 mm wall) take the new ones — external, 90 mm.
+   Once: d9 marks a slab as done, and new slabs are created with it, so a slab later set back to internal / 100 mm stays that way */
+function slabDef(c){const s=c&&c.kind==='slab'&&c.v&&c.v.slab;if(!s||s.d9)return c;if(s.sM!=='ext'&&(s.sT==null||s.sT===''||+s.sT===100)){s.sM='ext';s.sT=90}s.d9=1;return c}
+function fromSaved(list,fmt){return fromSaved0(list,fmt).map(slabMig).map(slabDef).map(ffMig).map(batMig).map(tbMig).map(gapMig)}
 function tbMig(c){if(c&&c.v&&c.v.fr&&+c.v.fr.brkR>0&&((c.el==='wall'&&c.kind==='frame')||(c.el==='roof'&&c.kind==='skillion'))){c.o=c.o||{};c.o.tb=true}return c}
 /* ceiling battens are always part of a flat-ceiling roof: roofs saved without them get the locked default, asked once */
 function batMig(c){if(!c||c.el!=='roof'||!c.o||(c.kind!=='truss'&&c.kind!=='skillion'&&c.kind))return c;c.v=c.v||{};
@@ -117,6 +120,12 @@ const MEMBER={stud:{d:90,w:45,s:600,dw:800,name:'Studs'},chord:{d:90,w:45,s:900,
 const WALL_ST={d:90,w:45,s:600};
 /* products offered for a framing member: battens 90 mm deep or more take the wall (stud) batts */
 const prodList=(member,depth)=>member==='batten'&&+depth>=90?PROD.stud:(PROD[member]||[]);
+/* the default brand's products — the ones filled in automatically and suggested, so defaults don't change as brands are added */
+const DEFB=RP.insulation.byMember.brand,prodDef=(member,depth)=>prodList(member,depth).filter(p=>!p[3]||p[3]===DEFB);
+/* an insulation product's brand and where its declared value comes from, for the report */
+const INS_BR=(()=>{const I=RP.insulation,m={};[].concat(I.ceiling||[],I.skillion||[]).forEach(p=>{m[p.name]=p.brand});
+  Object.entries(I.byMember).forEach(([k,L])=>{if(Array.isArray(L))L.forEach(p=>{if(p[2])m[p[2]]=p[3]||DEFB})});return m})();
+function insSrc(prod){const I=RP.insulation,S=I.sources||{};if(!prod)return'';const b=INS_BR[prod]||Object.keys(S).find(k=>prod.indexOf(k.replace(/®/g,''))===0||prod.indexOf(k)===0);return b&&S[b]?S[b].replace(/^.*?declared values — /,''):''}
 
 /* ---------- templates: every construction type is the same grammar of slots ---------- */
 const mat=(id,label,lib,x)=>Object.assign({k:'mat',id,label,lib},x||{}), ins=(id,label,x)=>Object.assign({k:'ins',id,label},x||{}),
@@ -181,7 +190,7 @@ const DEFAULTS={
  wall:{kind:'frame',name:'Wall – 90@600',v:{clad:{m:5},ab:{m:1},fr:{d:90,w:45,s:600,dw:800,insR:2.8,insT:90,prod:'Pink® Batts®'},lin:{m:1}}},
  roof:{kind:'truss',name:'Roof – truss',v:{roof:{m:0},over:{on:false,r:3.6,t:180,prod:'Pink® Batts® Ceiling'},fr:{d:90,w:45,s:900,insR:3.6,insT:180,cover:true,prod:'Pink® Batts® Ceiling'},st:{d:35,w:70,s:450,s450:1},ceil:{m:1},
    edge:{pitch:20,heel:null,width:500,fsel:'auto',psel:'auto',pprod:'Pink® Batts® Perimeter',pR:2.7,pT:100,pW:560,cpName:'Pink® Superbatts®',cpR:7.0,cpT:275,n:0.24,rOver:null,area:null,perim:null}}},
- floor:{kind:'susp',name:'Floor – 240@400',v:{floor:{m:0},fr:{d:240,w:45,s:400,insR:3.6,insT:180,prod:'Pink® Batts®'},flin:{m:3}}}};
+ floor:{kind:'susp',name:'Floor – 240@400',v:{floor:{m:0},fr:{d:240,w:45,s:400,insR:3.2,insT:140,prod:'Pink® Batts® SnugFloor®'},flin:{m:3}}}};
 const newC=el=>JSON.parse(JSON.stringify(Object.assign({el,o:{}},DEFAULTS[el])));
 const LATER={wall:['Steel frame','Masonry veneer on steel','Double brick','Solid concrete','ICF blocks','Pre-insulated blocks or panels','Solid timber','AAC double layer'],
  roof:['Steel truss','Steel skillion','Concrete'],
@@ -512,13 +521,13 @@ function matRows(c,r){
       else if(e.pr)add({name:e.mat,d:null,k:null,key:'pr:'+e.mat,r:e.raw,how:'Product R',src:PBSRC,unconf:1});
       else if(e.k)add({name:e.mat,d:e.t,k:e.k,key:'k:'+e.mat,r:e.t/1000/e.k,src:e.vsrc||null,unconf:e.vsrc?1:0});
       else fixed(e.mat,e.raw,'r:'+e.mat)}
-    else if(e.kind==='ins'){if(e.raw)fixed(e.label+' · '+e.mat+(e.t?' · '+e.t+' mm':''),e.raw,null,'Declared R',v.prod?'Manufacturer’s declared R-value':'Entered on this sheet')}
+    else if(e.kind==='ins'){if(e.raw)fixed(e.label+' · '+e.mat+(e.t?' · '+e.t+' mm':''),e.raw,null,'Declared R',v.prod?'Manufacturer’s declared R-value'+(insSrc(v.prod)?' — '+insSrc(v.prod):''):'Entered on this sheet')}
     else if(e.kind==='air'){if(!e.raw)return;const ent=s.k==='fix'&&v.r!=null;fixed(e.label+(e.mat?' · '+e.mat:''),e.raw,ent?null:'air:'+e.label,ent?'Entered':'Fixed value',ent?'Entered on this sheet':null)}
     else if(e.kind==='frame'){const mb=e.members[0],Rv=+v.insR,T=+v.insT,fm=x=>x.toFixed(1);
       add({name:mb.name+' '+mb.depth+' × '+mb.width+' mm timber',d:mb.depth,k:D.kTimber,key:'kTimber',r:mb.depth/1000/D.kTimber});
       if(s.brk&&+v.brkR)fixed('Thermal break strip'+(+v.brkT?' · '+v.brkT+' mm':''),+v.brkR,null,'Entered','Entered on this sheet');
-      if(Rv){const ed=c.v.edge||{},src=peri&&/perimeter/i.test(v.prod||'')?'Manufacturer’s declared R-value — Pink® Batts® Ceiling Product and Installation Guide (March 2026), “Pink® Batts® Perimeter”':(v.prod?'Manufacturer’s declared R-value':'Entered on this sheet');
-        fixed((peri&&v.prod?v.prod+' ':'Insulation ')+'R'+fm(Rv)+(T?' · '+T+' mm':''),Rv,null,'Declared R',src);
+      if(Rv){const ed=c.v.edge||{},src=peri&&/perimeter/i.test(v.prod||'')?'Manufacturer’s declared R-value — Pink® Batts® Ceiling Product and Installation Guide (March 2026), “Pink® Batts® Perimeter”':(v.prod?'Manufacturer’s declared R-value'+(insSrc(v.prod)?' — '+insSrc(v.prod):''):'Entered on this sheet');
+        fixed((v.prod?v.prod+' ':'Insulation ')+'R'+fm(Rv)+(T?' · '+T+' mm':''),Rv,null,'Declared R',src);
         if(s.cover&&v.cover&&T>mb.depth){const nm=mb.name.toLowerCase(),sp='Split by thickness — basis of calculation item 9';
           fixed('… '+mb.depth+' mm of it between the '+nm,Rv*mb.depth/T,null,'R'+fm(Rv)+' × '+mb.depth+' / '+T,sp);
           fixed('… '+(T-mb.depth)+' mm of it over the '+nm,Rv*(T-mb.depth)/T,null,'R'+fm(Rv)+' × '+(T-mb.depth)+' / '+T,sp)}}

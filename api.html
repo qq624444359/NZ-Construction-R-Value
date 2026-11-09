@@ -69,7 +69,8 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-seri
 <h2>Revit (pyRevit)</h2>
 <p>A pyRevit button that sums the areas in your model, sends them with each type’s R-value to <code>check_h1</code>, and shows PASS / FAIL and the heat-loss table.</p>
 <ol>
-<li>Install <a href="https://github.com/pyrevitlabs/pyRevit" rel="noopener">pyRevit</a>, then put <a href="revit/H1Check.pushbutton/script.py" download>script.py</a> in a pushbutton folder, e.g. <code>EZbuild.extension/EZbuild.tab/H1.panel/H1Check.pushbutton/</code>, and add the extension folder in pyRevit’s settings.</li>
+<li>Install <a href="https://github.com/pyrevitlabs/pyRevit" rel="noopener">pyRevit</a>. Download <a href="revit/EZbuild.extension.zip" download>EZbuild.extension.zip</a> and unzip it into a folder of your own, e.g. <code>C:\pyRevit-extensions</code>, so that the folder holds <code>EZbuild.extension</code>.</li>
+<li>In Revit: <b>pyRevit</b> tab → <b>Settings</b> → <b>Custom Extension Directories</b> → add that folder → <b>Save Settings and Reload</b>. An <b>EZbuild</b> tab appears with the <b>H1 Check</b> button.</li>
 <li>Add two parameters to the wall, roof, floor, ceiling, window and door types you want counted: <b>H1 Element</b> (text: <code>roof</code>, <code>wall</code>, <code>slab</code>, <code>floor</code>, <code>skylight</code>, <code>glazing</code> or <code>door</code>) and <b>H1 R-value</b> (number — from the calculator). Optional: <b>H1 Heated</b> and, on roofs, <b>H1 Ceiling Perimeter</b> (yes/no).</li>
 <li>Add <b>H1 Climate Zone</b> (integer, 1–6) to Project Information, or pick it when asked.</li>
 </ol>

@@ -9,7 +9,7 @@ ctx.window = ctx; ctx.globalThis = ctx;
 vm.createContext(ctx);
 for (const f of ['products.js', 'h1-data.js', 'slab-appendix-e.js', 'rvalue-model.js'])
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f), 'utf8'), ctx, { filename: f });
-vm.runInContext('globalThis.__M={calc,tpl,newC,LIB,D,KINDS,MEMBER,prodList,SLABU,strategy:typeof strategy==="function"?strategy:null}', ctx);
+vm.runInContext('globalThis.__M={calc,tpl,newC,LIB,D,KINDS,MEMBER,prodList,prodDef,SLABU,strategy:typeof strategy==="function"?strategy:null}', ctx);
 const M = ctx.__M, H = ctx.H1;
 const VERSION = '1.0.0';
 const r2 = x => Math.round(x * 100) / 100, r3 = x => Math.round(x * 1000) / 1000;
@@ -44,7 +44,7 @@ function build(el, kind, options) {
 }
 /* the starting value of every layer, as a new construction gets on the website (rvc-v6.js ensure) */
 const DEFM = { clad: 5, ab: 1, lin: 1, lin0: 1, roof: 0, ceil: 1, sark: 0, floor: 0, floor2: 0, flin: 0 }, WALL_ST = { d: 90, w: 45, s: 600 };
-function fitIns(member, depth) { const L = M.prodList(member, depth).filter(([, t]) => t <= depth), b = L.length ? L.reduce((a, x) => x[0] > a[0] ? x : a) : null; return b ? { insR: b[0], insT: b[1] } : {}; }
+function fitIns(member, depth) { const L = M.prodDef(member, depth).filter(([, t]) => t <= depth), b = L.length ? L.reduce((a, x) => x[0] > a[0] ? x : a) : null; return b ? { insR: b[0], insT: b[1] } : {}; }
 function fill(c) {
   const t = M.tpl(c); if (t.manual) return;
   (t.slots || []).forEach(s => {

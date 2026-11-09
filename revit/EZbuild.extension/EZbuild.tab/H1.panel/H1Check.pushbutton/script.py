@@ -20,6 +20,8 @@ on the result. The BRANZ tool's own result is the one for the consent.
 
 Put this file in a pushbutton folder of a pyRevit extension, e.g.
   EZbuild.extension/EZbuild.tab/H1.panel/H1Check.pushbutton/script.py
+(download the whole folder from https://rvalue.ezbuild.co.nz/revit/EZbuild.extension.zip and add the
+folder that holds EZbuild.extension in pyRevit Settings > Custom Extension Directories)
 """
 import json
 from pyrevit import revit, DB, forms, script

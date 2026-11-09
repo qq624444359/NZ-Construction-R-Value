@@ -220,3 +220,7 @@ div.sb-r{display:flex;flex-direction:column;gap:2px}
 /* client / owner under the address; an empty openings group on the Project page */
 .pj-cli{margin-top:8px}
 .pa-none{margin:2px 0 0}
+/* insulation list: narrow to one brand (all brands stay in one list by R-value otherwise) */
+.pbf{display:flex;flex-wrap:wrap;gap:6px;margin:10px 12px 2px}
+.pbf-c{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-2);font:600 12px/1 Inter;cursor:pointer}
+.pbf-c:hover{color:var(--text)}.pbf-c.on{background:var(--brand);border-color:var(--brand);color:#fff}
