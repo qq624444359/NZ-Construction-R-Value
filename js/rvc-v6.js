@@ -576,6 +576,12 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
   if(key==='gap'){o.gap=+raw;return}
   if(key==='addIns'){o.addIns=raw?'1':'';if(!raw){o.insR='';o.insT=''}return}
   if(key==='cover'){o.cover=raw;return}
+  /* ceiling perimeter: an R typed for the perimeter product or the compressed product takes that product's thickness (and width) and name,
+     from the brand of the product already there — a perimeter batt first for the strip, Superbatts first for edge compression */
+  if(id==='edge'&&(key==='pR'||key==='cpR')){o[key]=val0;const pr=key==='pR',nk=pr?'pprod':'cpName',tk=pr?'pT':'cpT',L=[['Pink® Batts® Perimeter',2.7,100,560,null,'Pink® Batts®']].concat(PB_CEIL),
+      nm=String(o[nk]!=null&&o[nk]!==''?o[nk]:pr?'Pink® Batts® Perimeter':'Pink® Superbatts®'),br=brandsOf(L).find(b=>nm.indexOf(b)===0)||RPI.byMember.brand,pref=pr?/Perimeter/:/Superbatts/;
+    const M=val0>0&&L.filter(p=>p[5]===br&&Math.abs(p[1]-val0)<1e-9).sort((a,b)=>pref.test(b[0])-pref.test(a[0])||(b[2]===+o[tk])-(a[2]===+o[tk])||a[2]-b[2])[0];
+    if(M){o[tk]=M[2];o[nk]=M[0];if(pr&&M[3])o.pW=M[3]}else if(val0>0)o[nk]='Custom';return}
   /* an R typed in: that R's product in the brand the list is showing takes its thickness and name, as if picked from the list
      (the one at the thickness already there, else the thinnest); an R no product has keeps the thickness and drops the name */
   if((id==='over'&&key==='r')||key==='insR'){o[key]=val0;const L=layerProds(c,id);if(L&&val0>0){const tk=id==='over'?'t':'insT',br=layerBrand(c,id,L),
