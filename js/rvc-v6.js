@@ -436,10 +436,47 @@ function seedMerge(pick,ops){const pr=S.pdf.proj;['address','legal','client','de
     if(!c){c=mk('floor',x=>{x.kind='slab';x.name='Floor – concrete slab';x.v={slab:SLAB0()}});ensure(c);S.list.push(c)}
     if(+pick.area>0)c.area=+pick.area;if(+pick.perimeter>0){c.v.slab=c.v.slab||SLAB0();c.v.slab.sP=+pick.perimeter}}
   if(ops.length){seedOpen(XP.state(),ops);XP.syncOpen()}S.cur='project';if(XP)XP.after()}
+/* constructions from the drawings' text: each named cladding in the notes is a wall (vertical if the note says so), the insulation summary fills
+   the walls' and roof's insulation, and a RibRaft / slab note makes the slab. Brands are matched against the cladding list; a generic word alone is not enough */
+const CL_OWN=/^(Linea|Stria|Oblique|Axon|HardieFlex|ExoTec|Hardie Plank|Shera|Shadowclad|RustiClad|VertiClad|Territory|Barestone)$/i;
+function cladFams(){const L=LIB.cladding,F={};L.forEach((o,j)=>{if(o.old||!o.brand||o.brand==='Generic'||!/^(fc|tb)$/.test(o.grp||''))return;
+  const inner=((o.dn||'').split(' (')[1]||'').replace(/\)$/,'').split(',')[0],rest=inner.slice(o.brand.length).trim(),w=rest.split(' '),prod=/^Hardie$/i.test(w[0])?w.slice(0,2).join(' '):w[0];if(!prod)return;
+  const k=o.brand+'|'+prod;(F[k]=F[k]||{brand:o.brand,prod,items:[]}).items.push(j)});return Object.values(F)}
+function seedCons(F){const out=[],ins=F.ins||{},pages={};(F.lines||[]).forEach(l=>{(pages[l.pg]=pages[l.pg]||[]).push(l)});
+  const studFill=r=>{const p=prodDef('stud',90).find(x=>Math.abs(x[0]-r)<1e-9&&x[1]<=90)||prodDef('stud',140).find(x=>Math.abs(x[0]-r)<1e-9);return p?{insR:p[0],insT:p[1],prod:p[2]||RPI.byMember.brand}:{insR:r,insT:90,prod:''}};
+  const ceilFill=r=>{const p=PB_CEIL.find(x=>Math.abs(x[1]-r)<1e-9&&x[5]===RPI.byMember.brand)||PB_CEIL.find(x=>Math.abs(x[1]-r)<1e-9);return p?{r:p[1],t:p[2],prod:p[0]}:{r,t:Math.round(r*50),prod:''}};
+  const wi=ins.wall&&ins.wall.r?studFill(ins.wall.r):null;
+  /* a cladding counts where a note names it with its brand or its thickness ("14mm James Hardie Oblique …"), not in a detail title.
+     Its note runs to the next keynote ID (E-02, R-01 …); it is vertical if any of its notes says so and none says horizontal */
+  cladFams().forEach(fam=>{const B=fam.brand.replace(/\s+/g,'\\s+'),P=fam.prod.replace(/\s+/g,'\\s+'),own=CL_OWN.test(fam.prod),G0=new RegExp('(?:\\b(\\d{1,2}(?:\\.\\d)?)\\s*mm\\s+)?('+B+'\\s+)?'+P+'\\b','gi'),hits=[];
+    Object.keys(pages).forEach(pg=>{const txt=pages[pg].map(l=>l.t).join(' '),G=new RegExp(G0.source,'gi');let m;
+      while((m=G.exec(txt))){if(own?!m[1]&&!m[2]:!m[2])continue;   /* a generic word ("Vertical", "Rusticated") needs its brand */
+const note=txt.slice(m.index,m.index+200).split(/\s(?=[A-Z]-\d{2}\b)/)[0];
+        hits.push({th:m[1],note,v:/vertical/i.test(note),h:/horizontal/i.test(note),src:'p.'+(+pg+1)+': “'+note.slice(0,90).trim()+'”'})}});
+    if(!hits.length)return;const anyV=hits.some(x=>x.v),anyH=hits.some(x=>x.h&&!x.v);
+    [true,false].forEach(vert=>{if(vert?!anyV:(anyV&&!anyH))return;const hs=hits.filter(x=>vert?x.v:!x.v),hh=hs[0]||hits[0],th=(hs.find(x=>x.th)||{}).th;
+      const its=fam.items.filter(j=>/^Board — vertical/.test(LIB.cladding[j].dn)===vert),pick=(th&&its.find(j=>+LIB.cladding[j].t===+th))||its[0];if(pick==null)return;
+      const o=LIB.cladding[pick],short=((o.dn||'').split(' (')[1]||'').replace(/\)$/,'');
+      out.push({el:'wall',label:'Wall – '+short+(vert?' (vertical)':'')+(wi?' · R'+wi.insR+' / '+wi.insT+' mm':''),src:hh.src,
+        build:c=>{c.name='Wall – '+short.replace(/,.*/,'')+(vert?' vertical':'');c.v.clad={m:pick};if(wi)Object.assign(c.v.fr,wi)}})})});
+  const ro=ins['truss roof']||ins.roof||ins.ceiling;
+  if(ro&&ro.r){const a=ceilFill(ro.r),b=ro.r2?ceilFill(ro.r2):null;
+    out.push({el:'roof',label:'Roof – truss, flat ceiling · R'+a.r+(b?' + R'+b.r+' over the chords':''),src:ro.src,build:c=>{c.name='Roof – truss'+(b?', two layers':'');Object.assign(c.v.fr,{insR:a.r,insT:a.t,prod:a.prod});if(b)c.v.over={on:true,r:b.r,t:b.t,prod:b.prod}}})}
+  const all=(F.lines||[]).map(l=>l.t).join(' '),raft=/rib\s?raft|waffle|pod\s?(?:slab|raft)|raft\s+(?:slab|foundation)/i.exec(all);
+  if(raft||ins['slab floor']||ins.slab){const sl=(F.lines||[]).find(l=>raft&&l.t.indexOf(raft[0])>=0);
+    out.push({el:'slab',label:'Floor – concrete slab'+(raft?' (raft: '+raft[0]+')':'')+(ins['slab floor']&&ins['slab floor'].none?' · no insulation':''),src:sl?sl.src:(ins['slab floor']||{}).src,
+      build:c=>{c.name='Floor – '+(raft?raft[0].replace(/rib\s?raft/i,'RibRaft')+' concrete slab':'concrete slab');c.v.slab.sF=raft?'raft':'slab'}})}
+  if(ins['timber floor']&&ins['timber floor'].none)out.noSusp=ins['timber floor'].src;
+  return out}
+/* the ticked constructions into the project: with "replace" ticked, the project's walls / roofs / slab (and suspended floors, when the drawings say there are none) give way to them */
+function seedConsApply(props,ci,repl){if(!ci.length)return;const ch=ci.map(i=>props[i]),els=new Set(ch.map(p=>p.el));
+  if(repl){S.list=S.list.filter(c=>!(els.has(c.el)||(c.el==='floor'&&(c.kind==='slab'?els.has('slab'):!!props.noSusp))))}
+  ch.forEach(p=>{const c=p.el==='slab'?mk('floor',x=>{x.kind='slab';x.v={slab:SLAB0()}}):mk(p.el);p.build(c);ensure(c);S.list.push(c)})}
 function pdfFill(){let f=document.getElementById('v6dfile');if(!f){f=document.createElement('input');f.type='file';f.id='v6dfile';f.accept='.pdf,application/pdf';f.style.display='none';document.body.appendChild(f);
     f.addEventListener('change',async()=>{const file=f.files[0];f.value='';if(!file)return;EZSeed.busy(true,'Reading the drawings — calculating…');
       try{const r=await EZSeed.readDrawings(file);EZSeed.busy('lock');
-        EZSeed.review(r.found,file.name,(pick,ops)=>{EZSeed.busy(true,'Filling in…');hPush();seedMerge(pick,ops);render();EZSeed.busy(false)},()=>EZSeed.busy(false))}
+        const props=seedCons(r.found);
+        EZSeed.review(r.found,file.name,(pick,ops,ci,repl)=>{EZSeed.busy(true,'Filling in…');hPush();seedConsApply(props,ci||[],repl);seedMerge(pick,ops);render();EZSeed.busy(false)},()=>EZSeed.busy(false),props)}
       catch(e){EZSeed.busy(false);projMsg(`<div class="pd-in bad"><span class="ms s18">error</span><span>${esc(e.message)}</span><button class="v6btn" data-a="pdlg" data-v="x">OK</button></div>`)}})}
   f.click()}
 /* ---------- New project ---------- */
