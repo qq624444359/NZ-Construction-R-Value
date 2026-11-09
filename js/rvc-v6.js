@@ -466,6 +466,10 @@ const note=txt.slice(m.index,m.index+200).split(/\s(?=[A-Z]-\d{2}\b)/)[0];
   if(raft||ins['slab floor']||ins.slab){const sl=(F.lines||[]).find(l=>raft&&l.t.indexOf(raft[0])>=0);
     out.push({el:'slab',label:'Floor – concrete slab'+(raft?' (raft: '+raft[0]+')':'')+(ins['slab floor']&&ins['slab floor'].none?' · no insulation':''),src:sl?sl.src:(ins['slab floor']||{}).src,
       build:c=>{c.name='Floor – '+(raft?raft[0].replace(/rib\s?raft/i,'RibRaft')+' concrete slab':'concrete slab');c.v.slab.sF=raft?'raft':'slab'}})}
+  /* the wall between the house and the garage, measured on the plan: lined on the house side, its garage face into still air (2.1.3.4) */
+  if(F.garWall){const pb=LIB.cladding.findIndex(m=>/^Plasterboard 10 mm into still air/.test(m.n));
+    out.push({el:'wall',gar:F.garWall,label:'Wall – internal garage'+(wi?' · R'+wi.insR+' / '+wi.insT+' mm':''),src:F.garWall.src,
+      build:function(c){c.name='Wall – internal garage';c.nh='int';c.o.cav=false;c.v.clad.m=pb<0?16:pb;c.v.ab.m=0;c.side='unc';if(wi)Object.assign(c.v.fr,wi);if(this.area>0)c.area=this.area}})}
   if(ins['timber floor']&&ins['timber floor'].none)out.noSusp=ins['timber floor'].src;
   return out}
 /* the ticked constructions into the project: with "replace" ticked, the project's walls / roofs / slab (and suspended floors, when the drawings say there are none) give way to them */

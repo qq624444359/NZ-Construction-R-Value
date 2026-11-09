@@ -232,18 +232,21 @@ div.sb-r{display:flex;flex-direction:column;gap:2px}
 @keyframes ezspin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){#ezbusy .ezb-spin{animation-duration:2.4s}}
 #ezrev{position:fixed;inset:0;z-index:1050;display:grid;place-items:center;padding:16px}
 #ezrev .np-bg{position:absolute;inset:0;background:rgba(15,23,42,.45)}
-#ezrev .ezr-box{position:relative;max-width:620px;width:100%;max-height:calc(100vh - 32px);overflow:auto;background:var(--card,#fff);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+#ezrev .ezr-box{position:relative;max-width:760px;width:100%;max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden;background:var(--card,#fff);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:0;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+#ezrev .ezr-hd{padding:20px 24px 4px;border-bottom:1px solid var(--border)}#ezrev .ezr-bd{flex:1 1 auto;min-height:0;overflow:auto;padding:4px 24px 16px}
+.ezr-h{margin:18px 0 2px;font:700 12px/1.4 Inter;letter-spacing:.06em;text-transform:uppercase;color:var(--accent,#2563eb)}.ezr-h span{display:block;margin-top:2px;font:400 12.5px/1.45 Inter;letter-spacing:0;text-transform:none;color:var(--text-3)}
+.ezr-gw{margin:-2px 0 8px 26px;padding:10px 12px;background:var(--surface-2);border-radius:8px;font:500 13px/2 Inter;color:var(--text-2)}.ezr-gw .ezr-v{width:72px;height:30px;margin:0 2px}.ezr-gw b{color:var(--text)}.ezr-gw em{display:block;font:400 11.5px/1.4 Inter;font-style:normal;color:var(--text-3)}
 #ezrev h3{margin:0 0 6px;font:700 18px/1.3 Inter;overflow-wrap:anywhere}#ezrev p{margin:0 0 12px;font:400 14px/1.5 Inter;color:var(--text-2)}
-.ezr-r{display:grid;grid-template-columns:auto 130px minmax(0,1fr);gap:4px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--border)}
+.ezr-r{display:grid;grid-template-columns:auto 150px minmax(0,1fr);gap:4px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--border)}
 .ezr-l{font:600 13px/1.3 Inter}.ezr-v{height:34px;border:1px solid var(--border-strong);border-radius:8px;padding:0 10px;background:var(--surface);color:var(--text);font:500 13px/1 Inter;min-width:0}
 .ezr-r em{grid-column:2/-1;font:400 11.5px/1.4 Inter;color:var(--text-3);font-style:normal;overflow-wrap:anywhere}
-.ezr-sub{margin-top:14px!important}.ezr-tw{max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:10px;margin-bottom:14px}
+.ezr-t{margin-top:8px;border:1px solid var(--border);border-radius:10px;border-collapse:separate!important;border-spacing:0}
 .ezr-t{width:100%;border-collapse:collapse;font:500 13px/1.35 Inter}.ezr-t th,.ezr-t td{padding:6px 10px;border-bottom:1px solid var(--border);text-align:left}
-.ezr-t th{position:sticky;top:0;background:var(--surface-2);font:700 11px/1.3 Inter;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3)}
+.ezr-t th{position:sticky;top:-4px;z-index:1;background:var(--surface-2);font:700 11px/1.3 Inter;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3)}
 .ezr-t select{height:30px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--text);font:500 12.5px/1 Inter}
-#ezrev .np-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-@media (max-width:560px){.ezr-r{grid-template-columns:auto minmax(0,1fr)}.ezr-r .ezr-v{grid-column:1/-1}}
+#ezrev .np-act{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:0;padding:14px 24px;border-top:1px solid var(--border);background:var(--surface-2,#f8fafc)}#ezrev .np-act button{min-width:96px;height:38px;justify-content:center}
+@media (max-width:560px){.ezr-r{grid-template-columns:auto minmax(0,1fr)}.ezr-r .ezr-v{grid-column:1/-1}.ezr-t{display:block;overflow-x:auto}#ezrev .ezr-hd,#ezrev .ezr-bd,#ezrev .np-act{padding-left:16px;padding-right:16px}.ezr-gw{margin-left:0}}
 .ezr-c{grid-template-columns:auto minmax(0,1fr)}.ezr-c em{grid-column:2}
-.ezr-t td small{display:block;font:400 11px/1.3 Inter;color:var(--text-3)}
+.ezr-t td b{font-weight:600}.ezr-t tr:last-child td{border-bottom:0}.ezr-t td small{display:block;font:400 11px/1.3 Inter;color:var(--text-3)}
 .ezr-rep{background:var(--surface-2);border-radius:8px;padding:8px 10px;margin-top:4px}
 .ezr-t td:nth-child(3),.ezr-t td:nth-child(4){white-space:nowrap}
