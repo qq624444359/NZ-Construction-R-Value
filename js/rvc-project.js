@@ -12,7 +12,7 @@ const DEF={ta:'Auckland',zone:null,housing:'yes',occ:'',q2:'no',q3:'no',glzA:'35
 let P=Object.assign({},DEF);const LZ=o=>{Object.keys(o).forEach(k=>{if(typeof o[k]==='string'&&/^\.\d/.test(o[k]))o[k]='0'+o[k]})};
 /* the saved project's fields — in test mode from the test project (before, a test project lost them on reload) */
 /* a new project's windows and doors: ten windows at the default (Table D.1.1.1, R0.37), the front door and the door to the garage */
-const NEWOPEN=()=>({glzA:'',doorA:'',skyA:'',wm:'tab',wdk:'r037',wdefR:'',wfr:'tbal',wgl:'double',wug:'',
+const NEWOPEN=()=>({glzA:'',doorA:'',skyA:'',wm:'tab',wdk:'r037',wdefR:'',wownR:'',wfr:'tbal',wgl:'double',wug:'',
   wins:Array.from({length:10},(_,i)=>({n:'W'+String(i+1).padStart(2,'0'),a:'',h:'',wd:'',own:''})),doors:[{n:'Front door',a:'',h:'',wd:''},{n:'Door to garage',a:'',h:'',wd:''}],skys:[],skyR:''});
 let had=false;if(SK){try{const s=JSON.parse(localStorage.getItem(SK));if(s&&s.P){had=true;P=Object.assign({},DEF,s.P);LZ(P)}}catch(e){}}
 if(!had)Object.assign(P,NEWOPEN());
@@ -60,7 +60,7 @@ function doors(){if(!Array.isArray(P.doors))P.doors=[{n:'Opaque doors',a:P.doorA
    lot's copy (refreshed after each change) and P.lot is the current one. A project with no P.lots is a single lot. ---------- */
 /* per lot: the window, door and skylight rows and every setting of the Windows & doors page (window R method and default,
    default door R, skylight R) */
-const LOT_P=['wins','doors','skys','glzA','glzR','doorA','skyA','slabA','slabP','doorR','skyR','skyU','wm','wdk','wdefR','wfr','wgl','wug'],cl=x=>x==null?x:JSON.parse(JSON.stringify(x));
+const LOT_P=['wins','doors','skys','glzA','glzR','doorA','skyA','slabA','slabP','doorR','skyR','skyU','wm','wdk','wdefR','wownR','wfr','wgl','wug'],cl=x=>x==null?x:JSON.parse(JSON.stringify(x));
 function lotGrab(){const a={};list().forEach(c=>{const e=c.v.edge||{},sb=c.v.slab||{};a[c.id]={area:c.area,ra:e.area,rp:e.perim,sP:sb.sP,parts:cl(sb.parts)}});
   const o={};LOT_P.forEach(k=>{o[k]=P[k]===undefined?null:cl(P[k])});return{area:a,open:o,legal:R().S.pdf.proj.legal||''}}
 function lotPut(L){list().forEach(c=>{const x=(L.area||{})[c.id]||{},u=v=>v===undefined?null:v;c.area=x.area==null?'':x.area;
@@ -84,15 +84,18 @@ function lotBar(side){const L=lots();if(side&&!(L&&L.length>1))return'';const st
 const isHW=o=>+o.h>0&&+o.wd>0,qty=o=>+o.q>0?+o.q:1,unitA=o=>isHW(o)?(+o.h)*(+o.wd)/1e6:(+o.a||0),opA=o=>unitA(o)*qty(o),doorRv=d=>d&&d.own&&+d.r>0?+d.r:(+P.doorR||0.18);   /* a door's own R, else the project default */
 /* window R-values: one method for the section (P.wm: Table D.1.1.1 'tab' or H1/VM1 Appendix D 'calc') and one default every
    window takes; a window set to Custom (w.own) has its own. R0.37 / R0.46 are the usual market windows, both rows of Table D.1.1.1. */
-const WPRE={r037:['al','double','1.1'],r046:['tbal','double','1.3']};
+const WPRE={r037:['al','double','1.1'],r046:['tbal','double','1.3'],r050:['tbal','double','1.1']};   /* R0.50: thermally broken aluminium, double glazing, Ug 1.1 (low-E, argon) */
+/* an R entered directly: the manufacturer's figure for that window, calculated to H1/VM1 Appendix D (D.1.1.1 b)) */
+const OWNSRC='Entered — the manufacturer’s R, calculated to H1/VM1 Appendix D',ownR=r=>+r>0?{r:+r,src:OWNSRC}:{r:null,why:'Enter the window R from the manufacturer (H1/VM1 Appendix D).'};
 function wset(){if(P.wm)return;const w0=wins()[0]||{},tab=w0.mode==='tab';   /* older projects: the first window's settings become the default */
   P.wm=tab?'tab':'calc';P.wdefR=tab?'':String(w0.r||'');P.wfr=w0.fr||'tbal';P.wgl=w0.gl||'double';P.wug=w0.ug||'';
   P.wdk=tab?(Object.keys(WPRE).find(k=>WPRE[k][0]===w0.fr&&WPRE[k][1]===w0.gl&&+WPRE[k][2]===+w0.ug)||'custom'):'r037';
   const same=w=>(w.mode==='tab')===tab&&(tab?w.fr===w0.fr&&w.gl===w0.gl&&+w.ug===+w0.ug:+w.r===+w0.r);
   wins().forEach(w=>{if(w.own==null)w.own=same(w)?'':'1'})}
-function wdefR(){wset();if(P.wm==='tab'){const d=P.wdk==='custom'?[P.wfr,P.wgl,P.wug]:WPRE[P.wdk]||WPRE.r037,x=d111(d[0],d[1],d[2]);return{r:x.r||null,src:x.src,why:x.why}}
+function wdefR(){wset();if(P.wm==='tab'&&P.wdk==='own')return ownR(P.wownR);if(P.wm==='tab'){const d=P.wdk==='custom'?[P.wfr,P.wgl,P.wug]:WPRE[P.wdk]||WPRE.r037,x=d111(d[0],d[1],d[2]);return{r:x.r||null,src:x.src,why:x.why}}
   return +P.wdefR>0?{r:+P.wdefR,src:'H1/VM1 Appendix D calculation'}:{r:0.15,src:'2.1.2.13 default',def:1}}
 function winR(w){wset();if(!w.own)return wdefR();
+  if(P.wm==='tab'&&w.rk==='r')return ownR(w.r);
   if(P.wm==='tab'){const x=d111(w.fr,w.gl,w.ug);return{r:x.r||null,src:x.src,why:x.why}}
   return +w.r>0?{r:+w.r,src:'H1/VM1 Appendix D calculation'}:{r:null,why:'Enter this window’s R (H1/VM1 Appendix D).'}}
 /* skylights: R = 1/Uw rounded down to two significant figures (D.2.1.1) */
@@ -297,9 +300,9 @@ const hwIn=(f,o)=>{const lock=!isHW(o)&&+o.a>0?'Clear the area to enter height a
   return `${isHW(o)?`<span class="sb-ro mono">${f2(unitA(o))} m²</span>`:ib(f+'a',o.a,'m²',{w:'72px'})}<span class="hw-or">or</span>${ib(f+'h',o.h,'mm',{w:'66px',ph:'Height',dis:lock})}<span class="hw-or">×</span>${ib(f+'wd',o.wd,'mm',{w:'66px',ph:'Width',dis:lock})}<span class="hw-or">Qty</span>${ib(f+'q',o.q,'',{w:'44px',ph:'1'})}${qty(o)>1&&unitA(o)?`<span class="hw-t mono">= ${f2(opA(o))} m²</span>`:''}`};
 /* top of Windows & doors: how window R-values are found, and the default every window takes */
 function wTop(){wset();const tab=P.wm==='tab',D=wdefR(),opt=(k,o,v)=>`<div class="pseg">${o.map(([x,l])=>`<button data-a="pseg" data-v="${k}:${x}" class="${String(v)===x?'on':''}">${l}</button>`).join('')}</div>`;
-  const tip=(D.r?D.src:D.why)+'. Most housing uses Table D.1.1.1; windows not in the table are modelled to H1/VM1 Appendix D. A window set to Custom (tune icon) has its own R.';
+  const tip=(D.r?D.src:D.why)+'. Most housing uses Table D.1.1.1 (R0.50 = thermally broken aluminium, double glazing, Ug 1.1); Enter R takes the manufacturer’s figure calculated to H1/VM1 Appendix D. A window set to Custom (tune icon) has its own R.';
   return `<div class="wtop"><div class="wtop-r"><span class="glbl">Window R</span>${opt('wm',[['tab','Table D.1.1.1'],['calc','H1/VM1 calc.']],P.wm)}
-    <span class="glbl">Default</span>${tab?opt('wdk',[['r037','R0.37'],['r046','R0.46'],['custom','Custom']],P.wdk):opt('wdefR',[['0.37','R0.37'],['0.46','R0.46']],P.wdefR)+ib('wdefR',P.wdefR,'R',{w:'64px',ph:'0.15'})}
+    <span class="glbl">Default</span>${tab?opt('wdk',[['r037','R0.37'],['r046','R0.46'],['r050','R0.50'],['own','Enter R'],['custom','Frame + glass']],P.wdk)+(P.wdk==='own'?ib('wownR',P.wownR,'R',{w:'64px',ph:'0.50',bad:!(+P.wownR>0)}):''):opt('wdefR',[['0.37','R0.37'],['0.46','R0.46']],P.wdefR)+ib('wdefR',P.wdefR,'R',{w:'64px',ph:'0.15'})}
     <b class="mono wtop-v${D.r?'':' neg'}" title="${esc(tip)}">${D.r?'R'+f2(D.r):'—'}<span class="ms s16">info</span></b></div>
     ${tab&&P.wdk==='custom'?`<div class="wtop-r">${sel('wfr',FRAMES,P.wfr,'100%')}${sel('wgl',[['double','Double glazing'],['triple','Triple glazing']],P.wgl,'100%')}${ib('wug',P.wug,'Ug W/m²K',{w:'90px',bad:!(+P.wug>0)})}</div>`:''}
     ${D.r?'':`<span class="pa-why pa-amb">${esc(D.why)}</span>`}</div>`}
@@ -308,7 +311,7 @@ function openMid(){return `<div class="card pj"><div class="pj-hd"><p class="kic
     <div class="wlist"><div class="wrow wrow-h"><span>Window · glazed door</span><span>Area m² — or Height × Width mm · Qty</span><span></span><span>R</span></div>
       ${wins().map((w,i)=>{const x=winR(w),wf=k=>'w.'+i+'.'+k;return `<div class="wrow${w.own?' own':''}"><span class="wname">${ib(wf('n'),w.n,'',{text:1,w:'100%',ph:'e.g. EXW101'})}</span><span class="wsz">${hwIn('w.'+i+'.',w)}</span>
         <button class="wic${w.own?' on':''}" data-a="pwown" data-v="${i}" title="${w.own?'Custom R — click to use the default':'Default R — click for a custom R'}"><span class="ms s16">tune</span></button><span class="wv mono">${x.r?'R'+f2(x.r):'—'}${delB('pwdel',i,wins().length,'window')}</span>
-        ${w.own?`<div class="wown">${P.wm==='tab'?sel(wf('fr'),FRAMES,w.fr||P.wfr,'100%')+sel(wf('gl'),[['double','Double glazing'],['triple','Triple glazing']],w.gl||P.wgl,'100%')+ib(wf('ug'),w.ug,'Ug W/m²K',{w:'90px',bad:!(+w.ug>0)}):ib(wf('r'),w.r,'R',{w:'64px',ph:'0.37',bad:!(+w.r>0)})}<span class="pa-why ${x.r?'sb-n':'pa-amb'}">${esc(x.r?x.src:x.why)}</span></div>`:''}</div>`}).join('')}
+        ${w.own?`<div class="wown">${P.wm==='tab'?`<div class="pseg"><button data-a="pwrk" data-v="${i}:r" class="${w.rk==='r'?'on':''}">Enter R</button><button data-a="pwrk" data-v="${i}:t" class="${w.rk==='r'?'':'on'}">Frame + glass</button></div>`+(w.rk==='r'?ib(wf('r'),w.r,'R',{w:'64px',ph:'0.50',bad:!(+w.r>0)}):sel(wf('fr'),FRAMES,w.fr||P.wfr,'100%')+sel(wf('gl'),[['double','Double glazing'],['triple','Triple glazing']],w.gl||P.wgl,'100%')+ib(wf('ug'),w.ug,'Ug W/m²K',{w:'90px',bad:!(+w.ug>0)})):ib(wf('r'),w.r,'R',{w:'64px',ph:'0.37',bad:!(+w.r>0)})}<span class="pa-why ${x.r?'sb-n':'pa-amb'}">${esc(x.r?x.src:x.why)}</span></div>`:''}</div>`}).join('')}
       <div class="wadd"><button class="v6btn" data-a="pwadd"><span class="ms s16">add</span>Add a window</button><span class="pa-why sb-n">Opaque part of a door is counted separately (D.1.1.2) — put it in Opaque doors.</span></div></div>
     <div class="wlist"><div class="wrow wrow-h"><span>Opaque door</span><span>Area m² — or Height × Width mm · Qty</span><span></span><span>R</span></div>
       ${doors().map((d,i)=>{const ed=d.own&&d.ed;return `<div class="wrow${ed?' own':''}"><span class="wname">${ib('dr.'+i+'.n',d.n,'',{text:1,w:'100%',ph:'Opaque door'})}</span><span class="wsz">${hwIn('dr.'+i+'.',d)}</span>
@@ -360,7 +363,8 @@ function act(a,v,b){
   else if(a==='psadd'){skys().push({n:'Skylight '+(skys().length+1),a:'',h:'',wd:''});syncSky()}
   else if(a==='psdel'){skys().splice(+v,1);syncSky()}
   else if(a==='pwown'){const w=wins()[+v];if(!w)return false;w.own=w.own?'':'1';   /* Custom starts from the default */
-    if(w.own){const d=P.wdk==='custom'||!WPRE[P.wdk]?[P.wfr,P.wgl,P.wug]:WPRE[P.wdk];w.fr=d[0];w.gl=d[1];w.ug=d[2];w.r=P.wdefR}syncGlz()}
+    if(w.own){const d=P.wdk==='custom'||!WPRE[P.wdk]?[P.wfr,P.wgl,P.wug]:WPRE[P.wdk];w.fr=d[0];w.gl=d[1];w.ug=d[2];w.rk=P.wm==='tab'&&P.wdk==='own'?'r':'';w.r=w.rk?P.wownR:P.wdefR}syncGlz()}
+  else if(a==='pwrk'){const [i,k]=String(v).split(':'),w=wins()[+i];if(!w)return false;w.rk=k==='r'?'r':'';if(w.rk&&!(+w.r>0))w.r=String(wdefR().r||'');syncGlz()}
   else if(a==='plotren'){if(!lots()){P.lots=[Object.assign({n:'Lot 1'},lotGrab())];P.lot=0}lotEd=true;setTimeout(()=>{const i=document.querySelector('[data-f="p.lotn"]');if(i){i.focus();i.select()}},0)}
   else if(a==='plotok'){lotEd=false}
   else if(a==='plot'){lotEd=false;const L=lots(),i=+v;if(!L||!L[i]||i===lotNo())return false;lotSave();P.lot=i;lotPut(L[i]);invalidate()}
