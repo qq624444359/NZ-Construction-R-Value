@@ -407,6 +407,41 @@ function projOpen(){let f=document.getElementById('v6pfile');if(!f){f=document.c
       if(!XP.hasContent()){projLoad(r.data);return}
       PEND=r.data;projMsg(`<div class="pd-in"><span class="ms s18">swap_horiz</span><span>The current project will be replaced by “${esc(file.name)}”. Save it first?</span><button class="v6btn" data-a="pdlg" data-v="save">Save first</button><button class="v6pdfb" data-a="pdlg" data-v="replace">Replace</button><button class="v6btn" data-a="pdlg" data-v="x">Cancel</button></div>`)})}
   f.click()}
+/* ---------- Filling from outside: a Revit link (#h1=…) replaces the project, a PDF drawing set fills in what it finds ---------- */
+const opRow=o=>Object.assign({n:o.name||'',a:'',h:o.height_mm?String(o.height_mm):'',wd:o.width_mm?String(o.width_mm):''},+o.qty>1?{q:+o.qty}:{},+o.r_value>0?{own:1,r:String(o.r_value)}:{own:''},!o.height_mm&&+o.area_m2>0?{a:String(o.area_m2)}:{});
+const SLAB0=()=>({sM:'ext',sF:'slab',sU:'none',sE:'none',sWall:'other',sT:90,d9:1});
+/* the openings into the project's Windows & doors rows; windows with their own R switch the page to H1/VM1 R-values */
+function seedOpen(Pn,ops){const G=ops.filter(o=>o.type==='glazing'),D=ops.filter(o=>o.type==='door'),K=ops.filter(o=>o.type==='skylight');
+  if(G.length){Pn.wins=G.map(opRow);if(G.some(o=>+o.r_value>0)){const rs=G.map(o=>+o.r_value).filter(r=>r>0);Pn.wm='calc';Pn.wdefR=String(rs.sort((a,b)=>rs.filter(x=>x===b).length-rs.filter(x=>x===a).length)[0])}}
+  if(D.length)Pn.doors=D.map(opRow);if(K.length){Pn.skys=K.map(opRow);const kr=K.find(o=>+o.r_value>0);if(kr)Pn.skyR=String(kr.r_value)}
+  const sum=L=>{const a=L.reduce((s,o)=>s+(+o.width_mm*+o.height_mm/1e6||+o.area_m2||0)*(+o.qty>1?+o.qty:1),0);return a?String(+a.toFixed(2)):''};   /* the totals the page keeps beside the rows */
+  if(G.length){Pn.glzA=sum(G);Pn.glzR=G[0].r_value?String(G[0].r_value):Pn.glzR||''}if(D.length)Pn.doorA=sum(D);if(K.length)Pn.skyA=sum(K)}
+/* a whole project from a seed: one construction per element (its R-value given → "Custom — enter the R-value", else the calculator's default construction) */
+function seedBuild(sd){const list=[],Pn=Object.assign(XP.newOpen(),{wins:[],doors:[],skys:[]});
+  (sd.elements||[]).forEach(e=>{const sl=e.type==='slab',el=sl?'floor':e.type;if(!['wall','roof','floor'].includes(el))return;
+    const c=mk(el,x=>{if(sl){x.kind='slab';x.name='Floor – concrete slab';x.v={slab:Object.assign(SLAB0(),+e.perimeter_m>0?{sP:+e.perimeter_m}:{},+e.r_value>0?{vm1:true,vmR:+e.r_value,vmSrc:'From the Revit model'}:{})}}
+      else if(+e.r_value>0){x.kind='custom';x.manualR=+e.r_value}
+      if(e.name)x.name=String(e.name);if(+e.area_m2>0){x.area=+(+e.area_m2).toFixed(2);if(el==='roof')x.v.edge=Object.assign(x.v.edge||{},{area:x.area})}if(e.heated)x.heated=true});   /* a roof's area lives with its ceiling-perimeter split */ensure(c);list.push(c)});
+  seedOpen(Pn,sd.openings||[]);if(+sd.climate_zone>=1&&+sd.climate_zone<=6)Pn.zone=+sd.climate_zone;
+  const pr=Object.assign({},sd.proj||{});pr.date=today();
+  return{format:EZFile.FORMAT,version:EZFile.VERSION,savedAt:new Date().toISOString(),project:{P:Pn,proj:pr},list:toSaved(list),guide:{}}}
+async function linkOpen(){EZSeed.busy(true,'Opening the project from Revit — calculating…');let d;
+  try{d=seedBuild(await EZSeed.fromHash())}catch(e){EZSeed.busy(false);EZSeed.clearHash();projMsg(`<div class="pd-in bad"><span class="ms s18">error</span><span>${esc(e.message)} The current project is unchanged.</span><button class="v6btn" data-a="pdlg" data-v="x">OK</button></div>`);return}
+  EZSeed.clearHash();EZSeed.busy(false);
+  if(!XP.hasContent()){projLoad(d);return}
+  PEND=d;projMsg(`<div class="pd-in"><span class="ms s18">swap_horiz</span><span>The current project will be replaced by the one from Revit${d.project.proj.address?' (“'+esc(d.project.proj.address)+'”)':''}. Save it first?</span><button class="v6btn" data-a="pdlg" data-v="save">Save first</button><button class="v6pdfb" data-a="pdlg" data-v="replace">Replace</button><button class="v6btn" data-a="pdlg" data-v="x">Cancel</button></div>`)}
+/* PDF drawings: what is found is ticked in a dialog, then filled into the current project (undo puts it back) */
+function seedMerge(pick,ops){const pr=S.pdf.proj;['address','legal','client','designer'].forEach(k=>{if(pick[k])pr[k]=pick[k]});
+  if(+pick.area>0||+pick.perimeter>0){let c=S.list.find(x=>x.el==='floor'&&x.kind==='slab');
+    if(!c){c=mk('floor',x=>{x.kind='slab';x.name='Floor – concrete slab';x.v={slab:SLAB0()}});ensure(c);S.list.push(c)}
+    if(+pick.area>0)c.area=+pick.area;if(+pick.perimeter>0){c.v.slab=c.v.slab||SLAB0();c.v.slab.sP=+pick.perimeter}}
+  if(ops.length){seedOpen(XP.state(),ops);XP.syncOpen()}S.cur='project';if(XP)XP.after()}
+function pdfFill(){let f=document.getElementById('v6dfile');if(!f){f=document.createElement('input');f.type='file';f.id='v6dfile';f.accept='.pdf,application/pdf';f.style.display='none';document.body.appendChild(f);
+    f.addEventListener('change',async()=>{const file=f.files[0];f.value='';if(!file)return;EZSeed.busy(true,'Reading the drawings — calculating…');
+      try{const r=await EZSeed.readDrawings(file);EZSeed.busy('lock');
+        EZSeed.review(r.found,file.name,(pick,ops)=>{EZSeed.busy(true,'Filling in…');hPush();seedMerge(pick,ops);render();EZSeed.busy(false)},()=>EZSeed.busy(false))}
+      catch(e){EZSeed.busy(false);projMsg(`<div class="pd-in bad"><span class="ms s18">error</span><span>${esc(e.message)}</span><button class="v6btn" data-a="pdlg" data-v="x">OK</button></div>`)}})}
+  f.click()}
 /* ---------- New project ---------- */
 function npOpen(){const nm=((S.pdf&&S.pdf.proj)||{}).address||'untitled project';let el=document.getElementById('v6np');if(!el){el=document.createElement('div');el.id='v6np';document.body.appendChild(el)}
   el.innerHTML=`<div class="np-bg" data-a="np" data-v="x"></div><div class="np-box" role="dialog" aria-modal="true" aria-labelledby="np-t"><h3 id="np-t">Start a new project?</h3><p>The current project (${esc(nm)}) is only kept in this browser. Save it first if you want to come back to it.</p>
@@ -517,7 +552,7 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   const b=e.target.closest('[data-a]');
   if(S.menu&&!e.target.closest('.cx-add')){S.menu=false;render();if(!b)return}
   if(!b){return}
-  if(!/^(theme|pdf|pdfclose|pdfdl|psave|popen|pcopy)$/.test(b.dataset.a))hPush();
+  if(!/^(theme|pdf|pdfclose|pdfdl|psave|popen|pfill|pcopy)$/.test(b.dataset.a))hPush();
   const a=b.dataset.a,v=b.dataset.v,c=cur();
   if(a==='af'){if(e.target.closest('input,select,label,button,.bchip'))return;const row=e.target.closest('.flh');if(S.af!==v){S.af=v;render()}
     if(row){S.pin=S.pin===v?null:v;render()}return}
@@ -548,6 +583,7 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   else if(a==='np'){npAct(v);return}
   else if(a==='psave'){if(window.EZFile)EZFile.save(S,XP.state());return}
   else if(a==='popen'){projOpen();return}
+  else if(a==='pfill'){pdfFill();return}
   else if(a==='pdlg'){projDlg(v);return}
   else if(a==='pdfclose'){closePdf();return}
   else if(a==='pdfdl'){download();return}
@@ -725,4 +761,6 @@ document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;if(
   if(q.get('sheet'))S.pdf.solo=q.get('sheet')==='perim'?'perim':(+q.get('sheet')||1)}
 render();
 if(S.pdf.solo){document.documentElement.classList.add('pdf-solo');openPdf()}else if(q.get('pdf'))openPdf();
+/* a link from the Revit H1 Check button: …/#h1=… opens that project (now, or when a new link is pasted into this tab) */
+if(window.EZSeed&&XP){if(EZSeed.hashSeed())linkOpen();window.addEventListener('hashchange',()=>{if(EZSeed.hashSeed())linkOpen()})}
 })();

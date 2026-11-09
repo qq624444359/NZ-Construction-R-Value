@@ -66,13 +66,14 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-seri
 </tbody></table></div>
 <p>Then ask in plain words, for example: <i>“A 90 × 45 @ 600 wall with brick veneer and R2.8 batts, a truss roof with two layers of R3.6, a 100 m² raft slab with 42 m perimeter, 30 m² of R0.46 windows, Auckland — does it meet H1?”</i></p>
 
-<h2>Revit (pyRevit)</h2>
-<p>A pyRevit button that sums the areas in your model, sends them with each type’s R-value to <code>check_h1</code>, and shows PASS / FAIL and the heat-loss table.</p>
+<h2 id="revit">Revit (pyRevit)</h2>
+<p>One button, <b>H1 Check</b>: it sums the areas in your model, shows PASS / FAIL and the heat-loss table, and opens this calculator <b>filled in from the model</b> — address, client, every construction with its area, every window and door with its size. The project travels in the link itself; nothing is stored on a server.</p>
+<p><a class="btn p" href="revit/EZbuild.extension.zip" download>Download EZbuild.extension.zip</a></p>
 <ol>
 <li>Install <a href="https://github.com/pyrevitlabs/pyRevit" rel="noopener">pyRevit</a>. Download <a href="revit/EZbuild.extension.zip" download>EZbuild.extension.zip</a> and unzip it into a folder of your own, e.g. <code>C:\pyRevit-extensions</code>, so that the folder holds <code>EZbuild.extension</code>.</li>
 <li>In Revit: <b>pyRevit</b> tab → <b>Settings</b> → <b>Custom Extension Directories</b> → add that folder → <b>Save Settings and Reload</b>. An <b>EZbuild</b> tab appears with the <b>H1 Check</b> button.</li>
-<li>Add two parameters to the wall, roof, floor, ceiling, window and door types you want counted: <b>H1 Element</b> (text: <code>roof</code>, <code>wall</code>, <code>slab</code>, <code>floor</code>, <code>skylight</code>, <code>glazing</code> or <code>door</code>) and <b>H1 R-value</b> (number — from the calculator). Optional: <b>H1 Heated</b> and, on roofs, <b>H1 Ceiling Perimeter</b> (yes/no).</li>
-<li>Add <b>H1 Climate Zone</b> (integer, 1–6) to Project Information, or pick it when asked.</li>
+<li>Add two parameters to the wall, roof, floor, ceiling, window and door types you want counted: <b>H1 Element</b> (text: <code>roof</code>, <code>wall</code>, <code>slab</code>, <code>floor</code>, <code>skylight</code>, <code>glazing</code> or <code>door</code>) and <b>H1 R-value</b> (number — from the calculator; leave it out and the calculator starts that type from its own default construction). Optional: <b>H1 Heated</b> and, on roofs, <b>H1 Ceiling Perimeter</b> (yes/no).</li>
+<li>Add <b>H1 Climate Zone</b> (integer, 1–6) to Project Information, or pick it when asked. Project Information’s Project Address, Client Name and Author fill the address, client and designer; an optional <b>H1 DP Lot</b> text parameter fills the DP / Lot.</li>
 </ol>
 <div class="note">Walls, roofs, floors and ceilings use Revit’s computed area; windows and doors use width × height. H1/AS1 2.1.2.10 asks for finished internal-face areas, so check the areas against that before you rely on the result. The script has not yet been tried in every Revit version — tell us if it doesn’t run in yours.</div>
 

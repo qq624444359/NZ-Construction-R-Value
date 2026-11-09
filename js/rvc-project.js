@@ -391,5 +391,5 @@ const hasContent=()=>list().some(c=>areaOf(c)>0)||!!(R().S.pdf.proj||{}).address
 /* Enter in a door's R box, or in the lot name, is Done */
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.f==='p.lotn'){e.preventDefault();const b=document.querySelector('[data-a="plotok"]');if(b)b.click();return}const f=e.key==='Enter'&&e.target.dataset&&e.target.dataset.f,m=f&&/^p\.dr\.(\d+)\.r$/.exec(f);if(!m)return;e.preventDefault();const b=document.querySelector('[data-a="pdok"][data-v="'+m[1]+'"]');if(b)b.click()});
 if(SK)window.addEventListener('storage',e=>{if(e.key!==SK||!e.newValue)return;const sv=load();if(!sv)return;if(sv.P){Object.keys(P).forEach(k=>delete P[k]);Object.assign(P,DEF,sv.P);LZ(P)}R().reload(sv)});
-window.RVP={blank,migSide,SIDES,SIDEQ,SIDEHELP,hasSide,sideOf,replaceWith,hasContent,seed,leftRow,openRow,openMid,mid,right,pdf,set,act,after,load,suggHTML,suggKey,invalidate,state:()=>P,PARAM};
+window.RVP={syncOpen:()=>{syncGlz();syncDoor();syncSky()},newOpen:NEWOPEN,blank,migSide,SIDES,SIDEQ,SIDEHELP,hasSide,sideOf,replaceWith,hasContent,seed,leftRow,openRow,openMid,mid,right,pdf,set,act,after,load,suggHTML,suggKey,invalidate,state:()=>P,PARAM};
 })();
