@@ -369,19 +369,23 @@ function secCard(c){const d=drawing(c);
   <div class="secfoot" id="pinstate">${S.pin?`<span class="ms s16">push_pin</span>${esc(slotLabel(c,S.pin))} pinned — click it again to release`:'<span class="ms s16">touch_app</span>Hover a layer to find it in the section · click to pin'}</div></div>`}
 function slotLabel(c,id){const s=(tpl(c).slots||[]).find(s=>s.id===id);return s?s.label:id}
 function prodCard(c){const t=tpl(c),ovr=isStrat(c)&&S.af==='over'&&(t.slots||[]).find(x=>x.id==='over'),s=ovr||(!t.manual&&(t.slots||[]).find(x=>x.id===S.af&&x.k==='frame'));
-  /* every brand in one list, by R-value then thickness; the chips above only narrow it to one brand. A layer saved with just a brand name is that brand's product */
+  /* brand first, then the R-value: the list shows one brand at a time. It opens on the brand of the product already in the layer, else the brand
+     last picked, else the default brand. A layer saved with just a brand name is that brand's product */
   const DB=RPI.byMember.brand,isSel=(pv,name,brand)=>!pv?brand===DB:(pv===name||pv===brand),
-    bfOf=brs=>brs.includes(S.pbf)?S.pbf:'',bfRow=brs=>brs.length>1?`<div class="pbf">${['',...brs].map(b=>`<button class="pbf-c${bfOf(brs)===b?' on':''}" data-a="pbf" data-v="${esc(b)}">${b?esc(b):'All brands'}</button>`).join('')}</div>`:'',
-    head=brs=>'Insulation · '+brs.join(' · '),brOrd=L=>brandsOf(L).sort((a,b)=>(b===DB)-(a===DB)||a.localeCompare(b)),   /* the default brand first, then A–Z */
+    lay=ovr?'over':(s&&s.id),key=c.id+':'+lay,
+    bfOf=(brs,L,pv,r,th)=>{if(S.pbfK===key&&brs.includes(S.pbf))return S.pbf;const m=(L||[]).find(p=>Math.abs(p[1]-(+r||0))<1e-9&&p[2]===+th&&isSel(pv,p[0],p[5]));
+      return m&&brs.includes(m[5])?m[5]:brs.includes(S.pbf)?S.pbf:brs.includes(DB)?DB:brs[0]},
+    bfRow=(brs,bf)=>brs.length>1?`<div class="pbf"><span class="pbf-s"><i>1</i>Brand</span>${brs.map(b=>`<button class="pbf-c${bf===b?' on':''}" data-a="pbf" data-v="${esc(b)}" data-k="${esc(key)}">${esc(b)}</button>`).join('')}</div><div class="pbf-s pbf-s2"><i>2</i>R-value · ${esc(bf)}</div>`:'',
+    head=brs=>'Insulation',brOrd=L=>brandsOf(L).sort((a,b)=>(b===DB)-(a===DB)||a.localeCompare(b)),   /* the default brand first, then A–Z */
 srcOf=brs=>brs.map(b=>RPI.sources[b]||b+' declared values.').join(' ');
-  if(ovr){const v=c.v.over||{},brs=brOrd(PB_CEIL),bf=bfOf(brs);
+  if(ovr){const v=c.v.over||{},brs=brOrd(PB_CEIL),bf=bfOf(brs,PB_CEIL,v.prod,v.r,v.t);
     const cov=!!(c.v.fr||{}).cover,rows=PB_CEIL.filter(p=>!bf||p[5]===bf).map(p=>{const ch=[];if(Math.abs((+v.r||0)-p[1])<1e-9&&+v.t===p[2]&&isSel(v.prod,p[0],p[5]))ch.push('<i class="pchip on">Selected</i>');if(cov&&p[3]===460)ch.push('<i class="pchip fit">Suits covering the chords</i>');return pbRow(p,ch)}).join('');
-    return `<div class="card prodcard"><div class="prod-hd"><h2>${esc(head(brs))}</h2><p>Click a product to fill ${esc(ovr.label.toLowerCase())} — R-value and thickness together.</p></div>${bfRow(brs)}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(srcOf(bf?[bf]:brs))} Fills the selected layer only.</div></div>`}
+    return `<div class="card prodcard"><div class="prod-hd"><h2>${esc(head(brs))}</h2><p>Pick the brand, then click a product to fill ${esc(ovr.label.toLowerCase())} — R-value and thickness together.</p></div>${bfRow(brs,bf)}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(srcOf(bf?[bf]:brs))} Fills the selected layer only.</div></div>`}
   if(!s)return `<div class="card prodcard"><div class="prod-hd"><h2>Insulation</h2><p>Select a framing layer to fill it from this list.</p></div></div>`;
   const v=c.v[s.id]||{},depth=+v.d||MEMBER[s.member].d,PL=pbList(s.member);
   /* the products for this member as [name, R, thickness, width, note, brand] */
-  const all=PL||prodList(s.member,depth).map(([r,th,n,br])=>[n||br||DB,r,th,null,null,br||DB]),brs=brOrd(all),bf=bfOf(brs),L=all.filter(p=>!bf||p[5]===bf);
-  const hd=`<div class="prod-hd"><h2>${esc(head(brs))}</h2><p>Click a product to fill ${esc(s.label.toLowerCase())} — R-value and thickness together.</p></div>${bfRow(brs)}`;
+  const all=PL||prodList(s.member,depth).map(([r,th,n,br])=>[n||br||DB,r,th,null,null,br||DB]),brs=brOrd(all),bf=bfOf(brs,all,v.prod,v.insR,v.insT),L=all.filter(p=>!bf||p[5]===bf);
+  const hd=`<div class="prod-hd"><h2>${esc(head(brs))}</h2><p>Pick the brand, then click a product to fill ${esc(s.label.toLowerCase())} — R-value and thickness together.</p></div>${bfRow(brs,bf)}`;
   const sk=XP&&s.id==='fr'?XP.suggKey(c):null;
   /* rows in groups by how the product fits this member — thinner, fills it, thicker — each group by R-value, then thickness. Members that let insulation
      rise above them (truss chords) never compress it; whether it is counted over the chords is a separate choice */
@@ -593,7 +597,7 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   const b=e.target.closest('[data-a]');
   if(S.menu&&!e.target.closest('.cx-add')){S.menu=false;render();if(!b)return}
   if(!b){return}
-  if(!/^(theme|pdf|pdfclose|pdfdl|psave|popen|pfill|pcopy)$/.test(b.dataset.a))hPush();
+  if(!/^(theme|pdf|pdfclose|pdfdl|psave|popen|pfill|pcopy|pbf)$/.test(b.dataset.a))hPush();
   const a=b.dataset.a,v=b.dataset.v,c=cur();
   if(a==='af'){if(e.target.closest('input,select,label,button,.bchip'))return;const row=e.target.closest('.flh');if(S.af!==v){S.af=v;render()}
     if(row){S.pin=S.pin===v?null:v;render()}return}
@@ -617,7 +621,7 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   else if(a==='gapauto'){const o=c.v[v];if(o)o.gapMan=false}
   else if(a==='fedit'){const k=c.id+':'+v;FEDIT.has(k)?FEDIT.delete(k):FEDIT.add(k)}
   else if(a==='unlock'){UNL.add(c.id+':'+v)}
-  else if(a==='pbf'){S.pbf=v||''}
+  else if(a==='pbf'){S.pbf=v||'';S.pbfK=b.dataset.k||''}
   else if(a==='prod'){const s=c.v[S.af];if(!s)return;if(S.af==='over'){s.r=+b.dataset.r;s.t=+b.dataset.t;s.on=true}else{s.insR=+b.dataset.r;s.insT=+b.dataset.t}s.prod=b.dataset.n||RPI.byMember.brand}
   else if(a==='pdf'){openPdf();return}
   else if(a==='pnew'){npOpen();return}
