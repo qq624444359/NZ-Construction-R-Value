@@ -178,10 +178,22 @@ async function readDrawings(file) {
   /* the plan's walls: area and perimeter of the heated floor, and which side of the envelope each opening is on */
   var pgs = {}; F.openings.forEach(function (o) { if (o.at && o.at.pg != null) pgs[o.at.pg] = (pgs[o.at.pg] || 0) + 1; });
   var plan = Object.keys(pgs).sort(function (a, b) { return pgs[b] - pgs[a]; })[0];
-  if (plan != null) { try { var page = await doc.getPage(+plan + 1); var G = await planGeom(lib, page, pages[+plan]); readDrawings.plan = G; applyGeom(F, G, +plan); } catch (e) { console.warn('plan walls not read:', e); } }
+  if (plan != null) { try { var page = await doc.getPage(+plan + 1); var G = await planGeom(lib, page, pages[+plan]); readDrawings.plan = G; applyGeom(F, G, +plan); if (F.garWall) F.garWall.h = studHeight(pages); } catch (e) { console.warn('plan walls not read:', e); } }
   return { found: F, pages: doc.numPages };
 }
 
+/* ---------- the stud height: a level on the sections that is FFL + a dimension also written on the drawings (FFL 18300, 21020 → 2720) ---------- */
+function studHeight(pages) {
+  var cnt = {}, ffl = {}, pgOf = {};
+  pages.forEach(function (items, pi) { toLines(items).forEach(function (s) {
+    var m, re = /FFL\s*[=:]?\s*(\d{4,6})\b/gi; while ((m = re.exec(s))) ffl[m[1]] = (ffl[m[1]] || 0) + 1;
+    (s.match(/\b\d{4,6}\b/g) || []).forEach(function (n) { cnt[n] = (cnt[n] || 0) + 1; if (pgOf[n] == null) pgOf[n] = pi; });
+  }); });
+  var f = Object.keys(ffl).sort(function (a, b) { return ffl[b] - ffl[a]; })[0]; if (!f) return null;
+  var best = null;
+  Object.keys(cnt).forEach(function (L) { if (L.length !== f.length) return; var d = +L - +f; if (d < 2100 || d > 3600 || !cnt[d]) return; if (!best || cnt[d] > best.n) best = { d: d, L: L, n: cnt[d] }; });
+  return best ? { v: best.d / 1000, src: 'p.' + (pgOf[best.L] + 1) + ': level ' + best.L + ' − FFL ' + f + ' = ' + best.d + ' mm' } : null;
+}
 /* ---------- the plan's walls ----------
    Revit and most CAD exports draw each wall's cut as a filled band (often one grey). Those bands are found from the page's drawing operations
    (the fill colour whose shapes are mostly long thin rectangles 60–400 mm wide), laid on a 10 mm grid and flood-filled: each closed space between
@@ -308,17 +320,28 @@ async function planGeom(lib, page, items) {
     var hor = best[2] - best[0] > best[3] - best[1], off = 250 / mmU, mx = Math.min(Math.max(px, best[0]), best[2]), my = Math.min(Math.max(py, best[1]), best[3]);
     return hor ? [at(mx, best[1] - off), at(mx, best[3] + off)] : [at(best[0] - off, my), at(best[2] + off, my)];
   };
+  /* the wall between the house and the garage: walked along each wall band in 20 mm steps, looking just past both faces */
+  var garLen = 0, step = 20 / mmU;
+  R.forEach(function (r) {
+    var hor = r[2] - r[0] > r[3] - r[1], A = hor ? 0 : 1, B = 1 - A, off = 60 / mmU;
+    for (var s = r[A] + step / 2; s < r[A + 2]; s += step) {
+      var p0 = [], p1 = []; p0[A] = p1[A] = s; p0[B] = r[B] - off; p1[B] = r[B + 2] + off;
+      var k0 = type(lab[cy(p0[1]) * W + cx(p0[0])]), k1 = type(lab[cy(p1[1]) * W + cx(p1[0])]);
+      if ((k0 === 'house' && k1 === 'garage') || (k0 === 'garage' && k1 === 'house')) garLen += step * mmU / 1000;
+    }
+  });
   var rooms = Object.keys(names).map(function (r) { return { names: names[r], kind: type(+r) }; });
-  return { scale: scale, area: area * 1e-4, perimeter: edges * 0.01, sides: sides, rooms: rooms, walls: R.length, gaps: gaps.length };
+  return { scale: scale, area: area * 1e-4, perimeter: edges * 0.01, sides: sides, rooms: rooms, walls: R.length, gaps: gaps.length, garLen: garLen };
 }
 function applyGeom(F, G, pg) {
   if (!G) return;
   var src = 'p.' + (pg + 1) + ': the plan’s walls (1:' + G.scale + ') — heated floor to the outer face of the framing, ' + (G.rooms.some(function (r) { return r.kind === 'garage'; }) ? 'garage' : '') + (G.rooms.some(function (r) { return r.kind === 'outdoor'; }) ? ' and ' + G.rooms.filter(function (r) { return r.kind === 'outdoor'; }).map(function (r) { return r.names.filter(function (s) { return OUTD.test(s); })[0]; }).join(', ') : '') + ' left out';
   if (G.area > 10) { F.area = { v: +G.area.toFixed(1), src: src }; F.perimeter = { v: +G.perimeter.toFixed(2), src: src }; }
+  if (G.garLen > 1) F.garWall = { len: +G.garLen.toFixed(2), src: 'p.' + (pg + 1) + ': the plan’s walls (1:' + G.scale + ') — wall between the house and the garage, ' + G.garLen.toFixed(2) + ' m long' };
   F.openings.forEach(function (o) {
     var a = o.at; if (!a || a.pg !== pg || a.x == null) return; var s = G.sides(a.cx != null ? a.cx : a.x, a.cy != null ? a.cy : a.y, a.td, o.width_mm); if (!s) return;
     var h = s.indexOf('house') >= 0, oth = s[0] === 'house' ? s[1] : s[0];
-    if (h && oth !== 'house' && oth !== 'wall') { o.inc = true; if (oth === 'garage') { o.note = 'to the garage'; if (a.pre === 'IN') o.type = 'door'; } else o.note = oth === 'outdoor' ? 'to an outdoor space left out of the floor — an external opening' : ''; }
+    if (h && oth !== 'house' && oth !== 'wall') { o.inc = true; if (oth === 'garage') { o.note = 'to the garage'; o.gar = true; if (a.pre === 'IN') o.type = 'door'; } else o.note = oth === 'outdoor' ? 'to an outdoor space left out of the floor — an external opening' : ''; }
     else if (h && oth === 'house') { o.inc = false; o.note = 'inside the house'; }
     else if (!h && s.indexOf('wall') < 0) { o.inc = false; o.note = s.indexOf('garage') >= 0 ? 'garage — outside the envelope' : 'outside the envelope'; }
   });
@@ -331,26 +354,46 @@ function review(F, file, onApply, onCancel, cons) {
     return v == null ? '' : '<label class="ezr-r"><input type="checkbox" data-k="' + k + '" checked><span class="ezr-l">' + esc(label) + '</span><input class="ezr-v" data-v="' + k + '" value="' + esc(v) + '"><em>' + esc(src || '') + '</em></label>';
   };
   var ops = F.openings.map(function (o, i) {
-    return '<tr><td><input type="checkbox" data-op="' + i + '"' + (o.inc === false ? '' : ' checked') + '></td><td>' + esc(o.name) + (o.note ? '<small>' + esc(o.note) + '</small>' : '') + '</td><td>' + o.width_mm + ' × ' + o.height_mm + '</td><td>' + (o.r_value ? 'R' + o.r_value : '') + '</td><td><select data-ot="' + i + '"><option value="glazing"' + (o.type === 'glazing' ? ' selected' : '') + '>Glazing</option><option value="door"' + (o.type === 'door' ? ' selected' : '') + '>Opaque door</option><option value="skylight"' + (o.type === 'skylight' ? ' selected' : '') + '>Skylight</option></select></td></tr>';
+    return '<tr><td><input type="checkbox" data-op="' + i + '"' + (o.inc === false ? '' : ' checked') + '></td><td><b>' + esc(o.name) + '</b>' + (o.note ? '<small>' + esc(o.note) + '</small>' : '') + '</td><td>' + o.width_mm + ' × ' + o.height_mm + '</td><td>' + (o.r_value ? 'R' + o.r_value : '—') + '</td><td><select data-ot="' + i + '"><option value="glazing"' + (o.type === 'glazing' ? ' selected' : '') + '>Glazing</option><option value="door"' + (o.type === 'door' ? ' selected' : '') + '>Opaque door</option><option value="skylight"' + (o.type === 'skylight' ? ' selected' : '') + '>Skylight</option></select></td></tr>';
   }).join('');
-  var cs = cons.map(function (c, i) { return '<label class="ezr-r ezr-c"><input type="checkbox" data-cn="' + i + '" checked><span class="ezr-l">' + esc(c.label) + '</span><em>' + esc(c.src || '') + '</em></label>'; }).join('');
-  var any = F.address || F.legal || F.client || F.designer || F.area || F.perimeter || F.openings.length || cons.length;
-  el.innerHTML = '<div class="np-bg"></div><div class="np-box ezr-box" role="dialog" aria-modal="true" aria-labelledby="ezr-t"><h3 id="ezr-t">Found in ' + esc(file) + '</h3>' +
-    (any ? '<p>Tick what to fill in. Read from the PDF’s text — check each value against the drawings.</p>' +
-      row('address', 'Address', F.address && F.address.v, F.address && F.address.src) + row('legal', 'DP / Lot', F.legal && F.legal.v, F.legal && F.legal.src) +
-      row('client', 'Client / owner', F.client && F.client.v, F.client && F.client.src) + row('designer', 'Designer', F.designer && F.designer.v, F.designer && F.designer.src) +
-      row('area', 'Slab floor area m² (garage and outdoor spaces left out)', F.area && F.area.v, F.area && F.area.src) + row('perimeter', 'Slab perimeter m', F.perimeter && F.perimeter.v, F.perimeter && F.perimeter.src) +
-      (cons.length ? '<p class="ezr-sub"><b>Constructions</b> — from the cladding notes and the insulation summary. Areas are not on the drawings: enter them on the Project page.</p>' + cs +
+  /* the wall to the garage: its length from the plan × the stud height, less the doors into the garage that are ticked */
+  var gw = F.garWall, gh = gw && gw.h ? gw.h.v : 2.4;
+  var cs = cons.map(function (c, i) {
+    var r = '<label class="ezr-r ezr-c"><input type="checkbox" data-cn="' + i + '" checked><span class="ezr-l">' + esc(c.label) + '</span><em>' + esc(c.src || '') + '</em></label>';
+    if (c.gar) r += '<div class="ezr-gw"><input class="ezr-v" data-gl value="' + c.gar.len + '"> m long × <input class="ezr-v" data-gh value="' + gh + '"> m stud height − <span data-gd></span> m² doors = <b data-ga></b> m²' +
+      '<em>' + esc(gw && gw.h ? 'Stud height ' + gw.h.src : 'Stud height not found on the sections — 2.4 m assumed, check it') + '. Doors: the ticked openings into the garage below.</em></div>';
+    return r;
+  }).join('');
+  var sec = function (t, sub) { return '<h4 class="ezr-h">' + t + (sub ? '<span>' + sub + '</span>' : '') + '</h4>'; };
+  var proj = row('address', 'Address', F.address && F.address.v, F.address && F.address.src) + row('legal', 'DP / Lot', F.legal && F.legal.v, F.legal && F.legal.src) +
+    row('client', 'Client / owner', F.client && F.client.v, F.client && F.client.src) + row('designer', 'Designer', F.designer && F.designer.v, F.designer && F.designer.src);
+  var slab = row('area', 'Floor area m²', F.area && F.area.v, F.area && F.area.src) + row('perimeter', 'Perimeter m', F.perimeter && F.perimeter.v, F.perimeter && F.perimeter.src);
+  var any = proj || slab || F.openings.length || cons.length;
+  el.innerHTML = '<div class="np-bg"></div><div class="np-box ezr-box" role="dialog" aria-modal="true" aria-labelledby="ezr-t">' +
+    '<div class="ezr-hd"><h3 id="ezr-t">Found in ' + esc(file) + '</h3><p>' + (any ? 'Tick what to fill in, and check each value against the drawings.' : 'Nothing recognisable was found — no address, Lot / DP, window schedule or areas in the PDF’s text.') + '</p></div>' +
+    (any ? '<div class="ezr-bd">' +
+      (proj ? sec('Project') + proj : '') +
+      (slab ? sec('Slab on ground', 'garage and outdoor spaces left out') + slab : '') +
+      (cons.length ? sec('Constructions', 'from the cladding notes and the insulation summary — the other walls’ and the roof’s areas go on the Project page') + cs +
         '<label class="ezr-r ezr-c ezr-rep"><input type="checkbox" data-repl checked><span class="ezr-l">Replace this project’s walls, roofs and floors with these</span><em>Untick to add them beside the ones already here.</em></label>' : '') +
-      (F.openings.length ? '<p class="ezr-sub"><b>' + F.openings.length + ' windows and doors</b> — the ticked ones replace the rows on the Windows &amp; doors page. Where the plan’s walls could be read, the ones into the garage or between rooms are already unticked — check them.</p><div class="ezr-tw"><table class="ezr-t"><thead><tr><th></th><th>ID</th><th>W × H mm</th><th>R</th><th>BRANZ sheet</th></tr></thead><tbody>' + ops + '</tbody></table></div>' : '')
-      : '<p>Nothing recognisable was found — no address, Lot / DP, window schedule or areas in the PDF’s text.</p>') +
-    '<div class="np-act">' + (any ? '<button class="v6pdfb" data-ezr="ok">Fill in</button>' : '') + '<button class="v6btn" data-ezr="x">' + (any ? 'Cancel' : 'Close') + '</button></div></div>';
+      (F.openings.length ? sec('Windows &amp; doors', F.openings.length + ' found — the ticked ones replace the Windows &amp; doors page. Where the plan’s walls could be read, the ones into the garage or between rooms are already unticked.') +
+        '<table class="ezr-t"><thead><tr><th></th><th>ID</th><th>W × H mm</th><th>R</th><th>BRANZ sheet</th></tr></thead><tbody>' + ops + '</tbody></table>' : '') +
+      '</div>' : '') +
+    '<div class="np-act"><button class="v6btn" data-ezr="x">' + (any ? 'Cancel' : 'Close') + '</button>' + (any ? '<button class="v6pdfb" data-ezr="ok">Fill in</button>' : '') + '</div></div>';
+  var garA = function () {
+    var L = +(el.querySelector('[data-gl]') || {}).value || 0, H = +(el.querySelector('[data-gh]') || {}).value || 0, d = 0;
+    F.openings.forEach(function (o, i) { var c = el.querySelector('[data-op="' + i + '"]'); if (o.gar && c && c.checked) d += o.width_mm * o.height_mm / 1e6; });
+    return { d: d, a: Math.max(0, L * H - d) };
+  };
+  var upd = function () { var g = garA(), a = el.querySelector('[data-ga]'), d = el.querySelector('[data-gd]'); if (a) a.textContent = g.a.toFixed(1); if (d) d.textContent = g.d.toFixed(2); };
+  el.oninput = upd; el.onchange = upd; upd();
   el.onclick = function (e) {
     var b = e.target.closest('[data-ezr]'); if (!b) return;
     if (b.dataset.ezr === 'ok') {
       var pick = {}; el.querySelectorAll('[data-k]').forEach(function (c) { if (c.checked) pick[c.dataset.k] = el.querySelector('[data-v="' + c.dataset.k + '"]').value.trim(); });
       var op = F.openings.map(function (o, i) { var c = el.querySelector('[data-op="' + i + '"]'); return c && c.checked ? Object.assign({}, o, { type: el.querySelector('[data-ot="' + i + '"]').value }) : null; }).filter(Boolean);
       var ci = []; el.querySelectorAll('[data-cn]').forEach(function (c) { if (c.checked) ci.push(+c.dataset.cn); });
+      cons.forEach(function (c) { if (c.gar) c.area = +garA().a.toFixed(1); });
       var rp = el.querySelector('[data-repl]');
       el.remove(); onApply(pick, op, ci, !!(rp && rp.checked));
     } else { el.remove(); if (onCancel) onCancel(); }
