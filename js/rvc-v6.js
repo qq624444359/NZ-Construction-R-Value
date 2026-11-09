@@ -301,6 +301,11 @@ const PB_CEIL=pbT(RPI.ceiling),PB_SKILL=pbT(RPI.skillion);
 /* a list's heading and source line name the brands in it */
 const brandsOf=L=>[...new Set(L.map(p=>p[5]))],pbHead=L=>'Insulation · '+brandsOf(L).join(' · '),pbSrc=L=>brandsOf(L).map(b=>RPI.sources[b]||b+' declared values.').join(' ');
 const pbList=m=>m==='chord'?PB_CEIL:m==='rafter'?PB_SKILL:null;
+/* a layer's products as [name, R, thickness, width, note, brand] — the list on the right for that layer */
+function layerProds(c,id){if(id==='over')return PB_CEIL;const s=(tpl(c).slots||[]).find(x=>x.id===id&&x.k==='frame');if(!s)return null;
+  const v=c.v[id]||{},depth=+v.d||MEMBER[s.member].d,DB=RPI.byMember.brand;return pbList(s.member)||prodList(s.member,depth).map(([r,th,n,br])=>[n||br||DB,r,th,null,null,br||DB])}
+/* a product saved as a brand, or as a brand's generic name ("Pink® Batts® Ceiling"), is that brand's row at the same R and thickness */
+const prodIs=(pv,name,brand,L)=>{const DB=RPI.byMember.brand;if(!pv)return brand===DB;if(pv===name||pv===brand)return true;return pv.indexOf(brand)===0&&!(L||[]).some(p=>p[0]===pv)};
 /* one product row: R · thickness · width, name, chips */
 const pbRow=(p,chips,max)=>`<button class="prow2 v6pr" data-a="prod" data-r="${p[1]}" data-t="${p[2]}" data-n="${esc(p[0])}"><b>R${p[1].toFixed(1)} · ${max?'max ':''}${p[2]} mm</b><em>${esc(p[0])} · ${p[3]} mm wide${p[4]==='two'?'<br>Two-layer system with Superbatts®':''}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`;
 const cntChip=k=>`<span class="v6cnt" title="H1/AS1 2.1.3.2: an insulation layer or air cavity next to framing joins the bridged portion.">Counted in ${k}</span>`;
@@ -371,10 +376,8 @@ function slotLabel(c,id){const s=(tpl(c).slots||[]).find(s=>s.id===id);return s?
 function prodCard(c){const t=tpl(c),ovr=isStrat(c)&&S.af==='over'&&(t.slots||[]).find(x=>x.id==='over'),s=ovr||(!t.manual&&(t.slots||[]).find(x=>x.id===S.af&&x.k==='frame'));
   /* brand first, then the R-value: the list shows one brand at a time. It opens on the brand of the product already in the layer, else the brand
      last picked, else the default brand. A layer saved with just a brand name is that brand's product */
-  const DB=RPI.byMember.brand,isSel=(pv,name,brand)=>!pv?brand===DB:(pv===name||pv===brand),
-    lay=ovr?'over':(s&&s.id),key=c.id+':'+lay,
-    bfOf=(brs,L,pv,r,th)=>{if(S.pbfK===key&&brs.includes(S.pbf))return S.pbf;const m=(L||[]).find(p=>Math.abs(p[1]-(+r||0))<1e-9&&p[2]===+th&&isSel(pv,p[0],p[5]));
-      return m&&brs.includes(m[5])?m[5]:brs.includes(S.pbf)?S.pbf:brs.includes(DB)?DB:brs[0]},
+  const DB=RPI.byMember.brand,lay=ovr?'over':(s&&s.id),key=c.id+':'+lay,LP=lay?layerProds(c,lay):null,isSel=(pv,name,brand)=>prodIs(pv,name,brand,LP),
+    bfOf=brs=>layerBrand(c,lay,LP||[]),
     bfRow=(brs,bf)=>brs.length>1?`<div class="pbf"><span class="pbf-s"><i>1</i>Brand</span>${brs.map(b=>`<button class="pbf-c${bf===b?' on':''}" data-a="pbf" data-v="${esc(b)}" data-k="${esc(key)}">${esc(b)}</button>`).join('')}</div><div class="pbf-s pbf-s2"><i>2</i>R-value · ${esc(bf)}</div>`:'',
     head=brs=>'Insulation',brOrd=L=>brandsOf(L).sort((a,b)=>(b===DB)-(a===DB)||a.localeCompare(b)),   /* the default brand first, then A–Z */
 srcOf=brs=>brs.map(b=>RPI.sources[b]||b+' declared values.').join(' ');
@@ -572,10 +575,24 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
   if(key==='mode'){if(raw==='p38'){o.mode='pct';o.pct=38;o.p38=true}else{o.mode=raw;o.p38=false;if(raw==='dem'&&!(+o.pct>0))o.pct=38}delete c.ffMsg;return}
   if(key==='gap'){o.gap=+raw;return}
   if(key==='addIns'){o.addIns=raw?'1':'';if(!raw){o.insR='';o.insT=''}return}
-  if(id==='over'&&(key==='r'||key==='t'))o.prod='';
   if(key==='cover'){o.cover=raw;return}
-  if(key==='insR')o.prod='';
+  /* ceiling perimeter: an R typed for the perimeter product or the compressed product takes that product's thickness (and width) and name,
+     from the brand of the product already there — a perimeter batt first for the strip, Superbatts first for edge compression */
+  if(id==='edge'&&(key==='pR'||key==='cpR')){o[key]=val0;const pr=key==='pR',nk=pr?'pprod':'cpName',tk=pr?'pT':'cpT',L=[['Pink® Batts® Perimeter',2.7,100,560,null,'Pink® Batts®']].concat(PB_CEIL),
+      nm=String(o[nk]!=null&&o[nk]!==''?o[nk]:pr?'Pink® Batts® Perimeter':'Pink® Superbatts®'),br=brandsOf(L).find(b=>nm.indexOf(b)===0)||RPI.byMember.brand,pref=pr?/Perimeter/:/Superbatts/;
+    const M=val0>0&&L.filter(p=>p[5]===br&&Math.abs(p[1]-val0)<1e-9).sort((a,b)=>pref.test(b[0])-pref.test(a[0])||(b[2]===+o[tk])-(a[2]===+o[tk])||a[2]-b[2])[0];
+    if(M){o[tk]=M[2];o[nk]=M[0];if(pr&&M[3])o.pW=M[3]}else if(val0>0)o[nk]='Custom';return}
+  /* an R typed in: that R's product in the brand the list is showing takes its thickness and name, as if picked from the list
+     (the one at the thickness already there, else the thinnest); an R no product has keeps the thickness and drops the name */
+  if((id==='over'&&key==='r')||key==='insR'){o[key]=val0;const L=layerProds(c,id);if(L&&val0>0){const tk=id==='over'?'t':'insT',br=layerBrand(c,id,L),
+      M=L.filter(p=>p[5]===br&&Math.abs(p[1]-val0)<1e-9).sort((a,b)=>(b[2]===+o[tk])-(a[2]===+o[tk])||a[2]-b[2])[0];
+      if(M){o[tk]=M[2];o.prod=M[0];return}}o.prod='';return}
+  if(id==='over'&&key==='t')o.prod='';
   o[key]=val0}
+/* the brand a layer's list shows: the one picked for it, else its product's brand, else the brand last picked, else the default */
+function layerBrand(c,id,L){const DB=RPI.byMember.brand,brs=brandsOf(L),v=c.v[id]||{},key=c.id+':'+id,r=id==='over'?v.r:v.insR,th=id==='over'?v.t:v.insT;
+  if(S.pbfK===key&&brs.includes(S.pbf))return S.pbf;const m=v.prod&&L.find(p=>Math.abs(p[1]-(+r||0))<1e-9&&p[2]===+th&&prodIs(v.prod,p[0],p[5],L));
+  return m&&brs.includes(m[5])?m[5]:v.prod&&brs.find(b=>v.prod.indexOf(b)===0)||(brs.includes(S.pbf)?S.pbf:brs.includes(DB)?DB:brs[0])}
 /* ---------- undo / redo: Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z — snapshots of the constructions, the Project fields and the
    project details, taken before each change; typing in one field (pauses under 1.5 s) is one step ---------- */
 const HIST={u:[],r:[],f:null,t:0},HMAX=100;
@@ -595,6 +612,9 @@ document.addEventListener('input',e=>{const t=e.target;if(!t.dataset||!t.dataset
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!t.dataset.f)return;hPush();
   if(t.dataset.cl){const L=LIB.cladding,o=L[+t.closest('.v6clad').querySelector('select:not([data-cl])').value]||L[0],g=t.dataset.cl==='g'?t.value:(o.grp||'ot'),b=t.dataset.cl==='b'?t.value:null,j=cladIn(g,b)[0];if(j!=null){setF(t.dataset.f,String(j),false);render()}return}
   if(t.tagName==='SELECT'){setF(t.dataset.f,t.value,false);render()}else if(t.type==='checkbox'){setF(t.dataset.f,t.checked);if(t.dataset.f==='v.over.on'&&isStrat(cur()))S.af=t.checked?'over':firstFrame(cur());render()}});   /* ticking the second layer points the product list at it */
+document.addEventListener('focusin',e=>{const t=e.target,f=t.dataset&&t.dataset.f,m=f&&/^v\.([^.]+)\./.exec(f),c=m&&cur();if(!c||S.af===m[1])return;
+  const id=m[1];if((id==='over'&&isStrat(c)&&(c.v.over||{}).on)||(tpl(c).slots||[]).some(s=>s.id===id&&s.k==='frame')){S.af=id;render();
+    const nx=document.querySelector(`[data-f="${f}"]`);if(nx&&nx.dataset.n&&t.type==='text'){nx._fj=1;setTimeout(()=>{if(document.activeElement===nx)nx.select()},0)}}});   /* still selected, ready to type over */   /* typing in a layer: the product list follows it */
 document.addEventListener('focusout',e=>{const t=e.target;t._sel=0;t._fj=0;if(t.dataset&&t.dataset.f&&RAW[t.dataset.f]!=null){delete RAW[t.dataset.f];const nv2=lz(t.value);if(nv2!==t.value)t.value=nv2}});
 /* clicking into a number selects it, ready to type over: every time it gets focus (not only the first), and the
    mouse-up of that click must not put a caret back. Focus put back after a re-render (_sel set first) keeps the caret. */
