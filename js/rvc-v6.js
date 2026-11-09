@@ -38,7 +38,7 @@ const S={name:'12 Example Street, Auckland',zone:1,cur:null,pin:null,hover:null,
   mk('roof',c=>{c.name='Roof – metal longrun, flat ceiling';c.v.roof.m=libI('roofing','metal-sheet-any-profile')}),
   mk('roof',c=>{c.kind='skillion';c.name='Roof – metal longrun, rafter';c.v={roof:{m:libI('roofing','metal-sheet-any-profile')},fr:{d:290,w:45,s:600,mode:'std',insR:RAFT_R,insT:RAFT_T,gap:0,cover:false,prod:'Pink® Superbatts®'},st:{d:35,w:70,s:450,s450:1},ceil:{m:1}}}),
   mk('floor',c=>{c.name='Floor – timber cantilever 240@400';c.v.flin.m=libI('floorLining','james-hardie-fibre-cement-6.5-mm')}),
-  mk('floor',c=>{c.kind='slab';c.name='Floor – RibRaft concrete slab';c.area=140;c.v={slab:{sP:52,sM:'ext',sF:'raft',sU:'none',sE:'none',sWall:'other',sT:90}}})]};
+  mk('floor',c=>{c.kind='slab';c.name='Floor – RibRaft concrete slab';c.area=140;c.v={slab:{sP:52,sM:'ext',sF:'raft',sU:'none',sE:'none',sWall:'other',sT:90,d9:1}}})]};
 S.cur=S.list[0].id;const DEF_IDS=S.list.map(c=>c.id);
 /* links to the 3D house keep the test-mode ?c= */
 const TQ=q.get('c')!=null?'c='+encodeURIComponent(q.get('c')):'';
@@ -80,7 +80,7 @@ function ensure(c){c.o=c.o||{};const t=tpl(c);if(t.manual)return;ffMig(c);batMig
 /* the note on every wall's internal strapping */
 const STHINT='<p class="lsub v6sth"><span class="ms s16">info</span> Internal strapping starts at 90 × 45 @ 600 with the best-fitting wall batts — change the batten size and the insulation to match your drawings. It is non-structural (no lintels), so its framing fraction is batten width ÷ spacing, not the 38% framed-wall default.</p>';
 /* the highest-R product that fits a member of this depth, as {insR, insT, prod} */
-function fitIns(member,depth){const L=prodList(member,depth).filter(([,t])=>t<=depth),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;return b?{insR:b[0],insT:b[1],prod:b[2]||window.RVC_PRODUCTS.insulation.byMember.brand}:{}}   /* runs at load too: no RPI here */
+function fitIns(member,depth){const L=prodDef(member,depth).filter(([,t])=>t<=depth),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;return b?{insR:b[0],insT:b[1],prod:b[2]||window.RVC_PRODUCTS.insulation.byMember.brand}:{}}   /* runs at load too: no RPI here */
 /* names the calculator gave (not typed by the designer) follow the construction type when it changes */
 const KN={wall:{double:'double stud',it:'intertenancy',block:'concrete block',custom:'custom R-value',exist:'existing wall'},
   roof:{truss:'truss',skillion:'skillion',grid:'suspended grid',self:'self-supporting',custom:'custom R-value',exist:'existing roof'},
@@ -116,7 +116,8 @@ function leftCol(){
 </div>`}
 
 /* concrete slab-on-ground: H1/AS1 Appendix E lookup (slabLookup in the model → window.SlabAppE) */
-function slabMid(c){const s=c.v.slab=c.v.slab||{},L=slabLookup(c),f='v.slab.',sl=(k,o,d)=>selF(f+k,o,s[k]!=null?s[k]:d,'100%'),r2b=x=>(+x).toFixed(2),raft=s.sF==='raft';
+function slabMid(c){if(!c.v.slab||c.v.slab.sM==null){const s0=c.v.slab=c.v.slab||{};s0.sM='ext';if(s0.sT==null||s0.sT==='')s0.sT=90;s0.d9=1}   /* a floor just switched to slab-on-ground: the new defaults */
+  const s=c.v.slab,L=slabLookup(c),f='v.slab.',sl=(k,o,d)=>selF(f+k,o,s[k]!=null?s[k]:d,'100%'),r2b=x=>(+x).toFixed(2),raft=s.sF==='raft';
   const ro=(v,u)=>`<span class="sb-ro mono">${+v?(+v).toFixed(1)+' '+u:'—'}</span>`;
   const ii=t=>`<span class="bchip sb-i" tabindex="0"><span class="ms">info</span><span class="tip">${esc(t)}</span></span>`;
   const sw=slabWarn(c),top=`${grpF('Area',ro(c.area,'m²'),'From Project page')}${grpF('Perimeter',ro(s.sP,'m'),'From Project page')}`,
@@ -233,7 +234,7 @@ function midCol(c,x){const hd=header(c,tpl(c),x),SG=isStrat(c)?strategy(c):null;
         rows.push(lrow(num[i]+1,'roof','Underlay',`<div class="lockrow"><span class="lockval"><span class="ms s16">lock</span>${L[0]}</span>${by}</div>`,''));
         rows.push(lrow(num[i]+2,'roof','Substrate',`<div class="lockrow"><span class="lockval"><span class="ms s16">lock</span>${L[1]}</span>${by}</div>`,''))}}
     else if(s.k==='ins'&&s.opt&&!ovOn(v)){rows.push(lrow(num[i],s.id,s.label,`<label class="tgl v6ovt"><input type="checkbox" data-f="v.over.on">Add a second layer of insulation over the framing</label>`,'','',''))}
-    else if(s.k==='ins'&&SG&&s.id==='over'){const on=S.af==='over';rows.push(lrow(num[i],s.id,s.label,`${s.opt?'<label class="tgl v6ovt"><input type="checkbox" data-f="v.over.on" checked>Add a second layer of insulation over the framing</label>':''}<div class="lctl">${ib('v.over.r',v.r,'R',{w:'74px'})}<label class="v6prod v6thk"><span class="glbl">Thickness</span>${ib('v.over.t',v.t,'mm',{w:'84px'})}</label><label class="v6prod"><span class="glbl">Product (optional)</span><input type="text" data-f="v.over.prod" value="${esc(v.prod)}" autocomplete="off"></label></div><div class="lsub">${on?'<span class="ms s16">arrow_forward</span>Pick a product in the Pink® Batts® list on the right, or enter R and thickness (Custom).':'Click this row to fill it from the Pink® Batts® list.'}</div>`,row?r2(row.r):r2((+v.r||0)*(half?.5:1)),'',chip+cnt).replace('<div class="lrow ',`<div data-a="af" data-v="over" class="lrow v6pick${on?' v6act':''} `))}
+    else if(s.k==='ins'&&SG&&s.id==='over'){const on=S.af==='over';rows.push(lrow(num[i],s.id,s.label,`${s.opt?'<label class="tgl v6ovt"><input type="checkbox" data-f="v.over.on" checked>Add a second layer of insulation over the framing</label>':''}<div class="lctl">${ib('v.over.r',v.r,'R',{w:'74px'})}<label class="v6prod v6thk"><span class="glbl">Thickness</span>${ib('v.over.t',v.t,'mm',{w:'84px'})}</label><label class="v6prod"><span class="glbl">Product (optional)</span><input type="text" data-f="v.over.prod" value="${esc(v.prod)}" autocomplete="off"></label></div><div class="lsub">${on?'<span class="ms s16">arrow_forward</span>Pick a product in the insulation list on the right, or enter R and thickness (Custom).':'Click this row to fill it from the insulation list.'}</div>`,row?r2(row.r):r2((+v.r||0)*(half?.5:1)),'',chip+cnt).replace('<div class="lrow ',`<div data-a="af" data-v="over" class="lrow v6pick${on?' v6act':''} `))}
     else if(s.k==='ins'&&c.fkey&&c.fkey!=='own'){const fi=t.slots.findIndex(z=>z.id==='fr');rows.push(lrow(num[i],s.id,s.label,`<div class="v6from"><span class="mono">R${(+v.r).toFixed(1)} · ${v.t} mm</span><span>${esc(v.prod||'')} — the upper layer of the row ${num[fi]} insulation</span></div>`,row?r2(row.r):'','',chip+cnt))}
     else if(s.k==='ins')rows.push(lrow(num[i],s.id,s.label,`<div class="lctl">${ib('v.'+s.id+'.r',v.r,'R',{w:'74px'})}<label class="v6prod v6thk"><span class="glbl">Thickness</span>${ib('v.'+s.id+'.t',v.t,'mm',{w:'84px'})}</label><label class="v6prod"><span class="glbl">Product (optional)</span><input type="text" data-f="v.${s.id}.prod" value="${esc(v.prod)}" autocomplete="off"></label></div>`,row?r2(row.r):r2((+v.r||0)*(half?.5:1)),'',chip+cnt));
     else if(s.k==='fix'&&s.id==='vcav'&&!isUnl(c,'vcav'))rows.push(lrow(num[i],'vcav',s.label,`<div class="lockrow"><span class="lockval"><span class="ms s16">lock</span>20 mm drained cavity (E2/AS1) · R${r2(v.r!=null?v.r:s.r)}</span>${lockBtn('vcav','unl')}<span class="v6dv">Default value — unlock to change</span></div>`,row?r2(row.r):r2(v.r!=null?v.r:s.r),'',cnt));
@@ -274,7 +275,7 @@ function trussCard(c,t,s,i,v,x,num){
   const on=S.af===s.id,fr=ov0;
   const thick=+fr.insT>depth&&+fr.insR>0,cvr=`<label class="tgl v6cvr${thick?'':' dis'}"><input type="checkbox" data-f="${f}.cover"${thick&&fr.cover?' checked':''}${thick?'':' disabled'}>Insulation covering bottom chord</label><div class="lsub v6cvn">${thick?"When using this option make sure that the insulation product is suitable - typically manufactured at 460mm width":'The insulation is not thicker than the bottom chord — there is nothing to cover the chord.'}</div>`;
   const right=`<div class="v6col"><div class="v6colh">Insulation</div><div class="frow">${grpF('Insulation R',ib(f+'.insR',fr.insR,'R'))}${grpF('Thickness',ib(f+'.insT',fr.insT,'mm'))}</div>${cvr}
-    <div class="lsub">${on?'<span class="ms s16">arrow_forward</span>Pick a product in the Pink® Batts® list on the right, or enter R and thickness (Custom).':'Click this row to fill it from the Pink® Batts® list.'}${fr.prod?' · '+esc(fr.prod):''}</div>
+    <div class="lsub">${on?'<span class="ms s16">arrow_forward</span>Pick a product in the insulation list on the right, or enter R and thickness (Custom).':'Click this row to fill it from the insulation list.'}${fr.prod?' · '+esc(fr.prod):''}</div>
     ${XP?XP.suggHTML(o):''}</div>`;
   const act=S.af===s.id;
   return `<div class="flayer v6fl v6tc${act?' v6act':''}" data-a="af" data-v="${s.id}">
@@ -288,7 +289,7 @@ function trussBody(o,s,ov0,F,depth,row,f,mv,fr,cvr,on,x,i,num,tR){const gn=group
     :`<div class="frow">${grpF('Framing fraction',selF(f+'.mode',[['std','Width ÷ centres'],['pct','Enter a percentage']],mv==='p38'?'pct':mv,'190px'))}${mv!=='std'?grpF('Percentage',ib(f+'.pct',ov0.pct,'%')):''}<b class="mono v6fv">${p1(F.f)}</b></div>`;
   const frame=`<div class="v6wf v6ff1"><div class="frow">${grpF('Depth',ib(f+'.d',ov0.d,'mm'))}${grpF('Width',ib(f+'.w',ov0.w,'mm'))}${grpF('Centres',ib(f+'.s',ov0.s,'mm'))}</div>${fracL}</div>`;
   const ins=`<div class="v6pp cav v6wins"><div class="v6pph"><span>Insulation between the bottom chords</span></div><div class="frow">${grpF('Insulation R',ib(f+'.insR',fr.insR,'R'))}${grpF('Thickness',ib(f+'.insT',fr.insT,'mm'))}</div>
-    <div class="lctl v6tcv">${cvr}</div><div class="lsub">${on?'<span class="ms s16">arrow_forward</span>Pick a product in the Pink® Batts® list on the right, or enter R and thickness (Custom).':'Click this row to fill it from the Pink® Batts® list.'}${fr.prod?' · '+esc(fr.prod):''}</div>${XP?XP.suggHTML(o):''}</div>`;
+    <div class="lctl v6tcv">${cvr}</div><div class="lsub">${on?'<span class="ms s16">arrow_forward</span>Pick a product in the insulation list on the right, or enter R and thickness (Custom).':'Click this row to fill it from the insulation list.'}${fr.prod?' · '+esc(fr.prod):''}</div>${XP?XP.suggHTML(o):''}</div>`;
   let bar='';if(row&&row.regions){const pc=q=>{const p=q*100;return(Math.abs(p-Math.round(p))<.05?Math.round(p):p.toFixed(1))+'%'},two=row.regions.length===2&&!gn,sh=two?row.shared||0:0,t0=two?row.regions[0].r:tR,t1=two?row.regions[1].r:(+fr.insR||0)*(fr.cover&&+fr.insT>depth?depth/(+fr.insT):1);
     bar=`<div class="v6wr"><div class="v6wrb"><i style="width:${(F.f*100).toFixed(1)}%"></i><i></i></div><div class="v6wrl"><span><b>Through the timber ${pc(F.f)}</b> · R${r2(t0+sh)} <em>(chord ${depth} mm ${r2(tR)}${two&&t0-tR>.005?' + '+r2(t0-tR):''}${sh?' + '+r2(sh):''})</em></span><span><b>Through the insulation ${pc(1-F.f)}</b> · R${r2(t1+sh)}${sh?` <em>(${r2(t1)} + ${r2(sh)})</em>`:''}</span></div>
     ${gn?'<p class="lsub">This layer’s own paths — the combined value is below.</p>':`<p class="lsub">Bridged portion (2.1.3.2) — the two paths in parallel: R${r2(row.r)}</p>`}</div>`}
@@ -368,25 +369,30 @@ function secCard(c){const d=drawing(c);
   <div class="secfoot" id="pinstate">${S.pin?`<span class="ms s16">push_pin</span>${esc(slotLabel(c,S.pin))} pinned — click it again to release`:'<span class="ms s16">touch_app</span>Hover a layer to find it in the section · click to pin'}</div></div>`}
 function slotLabel(c,id){const s=(tpl(c).slots||[]).find(s=>s.id===id);return s?s.label:id}
 function prodCard(c){const t=tpl(c),ovr=isStrat(c)&&S.af==='over'&&(t.slots||[]).find(x=>x.id==='over'),s=ovr||(!t.manual&&(t.slots||[]).find(x=>x.id===S.af&&x.k==='frame'));
-  if(ovr){const v=c.v.over||{},sel=(r,th)=>Math.abs((+v.r||0)-r)<1e-9&&+v.t===th;
-    const cov=!!(c.v.fr||{}).cover,rows=PB_CEIL.map(p=>{const ch=[];if(sel(p[1],p[2]))ch.push('<i class="pchip on">Selected</i>');if(cov&&p[3]===460)ch.push('<i class="pchip fit">Suits covering the chords</i>');return pbRow(p,ch)}).join('');
-    return `<div class="card prodcard"><div class="prod-hd"><h2>${esc(pbHead(PB_CEIL))}</h2><p>Click a product to fill ${esc(ovr.label.toLowerCase())} — R-value and thickness together.</p></div><div class="prodscroll">${rows}</div><div class="prodsrc">${esc(pbSrc(PB_CEIL))} Fills the selected layer only.</div></div>`}
-  const PLh=s?pbList(s.member):null,hd=`<div class="prod-hd"><h2>${esc(PLh?pbHead(PLh):'Insulation · '+RPI.byMember.brand)}</h2><p>${s?`Click a product to fill ${esc(s.label.toLowerCase())} — R-value and thickness together.`:'Select a framing layer to fill it from this list.'}</p></div>`;
-  if(!s)return `<div class="card prodcard">${hd}</div>`;
-  const v=c.v[s.id]||{},depth=+v.d||MEMBER[s.member].d,L=prodList(s.member,depth);
-  const sk=XP&&s.id==='fr'?XP.suggKey(c):null,PL=pbList(s.member);
+  /* every brand in one list, by R-value then thickness; the chips above only narrow it to one brand. A layer saved with just a brand name is that brand's product */
+  const DB=RPI.byMember.brand,isSel=(pv,name,brand)=>!pv?brand===DB:(pv===name||pv===brand),
+    bfOf=brs=>brs.includes(S.pbf)?S.pbf:'',bfRow=brs=>brs.length>1?`<div class="pbf">${['',...brs].map(b=>`<button class="pbf-c${bfOf(brs)===b?' on':''}" data-a="pbf" data-v="${esc(b)}">${b?esc(b):'All brands'}</button>`).join('')}</div>`:'',
+    head=brs=>'Insulation · '+brs.join(' · '),brOrd=L=>brandsOf(L).sort((a,b)=>(b===DB)-(a===DB)||a.localeCompare(b)),   /* the default brand first, then A–Z */
+srcOf=brs=>brs.map(b=>RPI.sources[b]||b+' declared values.').join(' ');
+  if(ovr){const v=c.v.over||{},brs=brOrd(PB_CEIL),bf=bfOf(brs);
+    const cov=!!(c.v.fr||{}).cover,rows=PB_CEIL.filter(p=>!bf||p[5]===bf).map(p=>{const ch=[];if(Math.abs((+v.r||0)-p[1])<1e-9&&+v.t===p[2]&&isSel(v.prod,p[0],p[5]))ch.push('<i class="pchip on">Selected</i>');if(cov&&p[3]===460)ch.push('<i class="pchip fit">Suits covering the chords</i>');return pbRow(p,ch)}).join('');
+    return `<div class="card prodcard"><div class="prod-hd"><h2>${esc(head(brs))}</h2><p>Click a product to fill ${esc(ovr.label.toLowerCase())} — R-value and thickness together.</p></div>${bfRow(brs)}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(srcOf(bf?[bf]:brs))} Fills the selected layer only.</div></div>`}
+  if(!s)return `<div class="card prodcard"><div class="prod-hd"><h2>Insulation</h2><p>Select a framing layer to fill it from this list.</p></div></div>`;
+  const v=c.v[s.id]||{},depth=+v.d||MEMBER[s.member].d,PL=pbList(s.member);
+  /* the products for this member as [name, R, thickness, width, note, brand] */
+  const all=PL||prodList(s.member,depth).map(([r,th,n,br])=>[n||br||DB,r,th,null,null,br||DB]),brs=brOrd(all),bf=bfOf(brs),L=all.filter(p=>!bf||p[5]===bf);
+  const hd=`<div class="prod-hd"><h2>${esc(head(brs))}</h2><p>Click a product to fill ${esc(s.label.toLowerCase())} — R-value and thickness together.</p></div>${bfRow(brs)}`;
+  const sk=XP&&s.id==='fr'?XP.suggKey(c):null;
   /* rows in groups by how the product fits this member — thinner, fills it, thicker — each group by R-value, then thickness. Members that let insulation
      rise above them (truss chords) never compress it; whether it is counted over the chords is a separate choice */
   const mw=MEMBER[s.member].name.toLowerCase().replace(/s$/,''),fg=th=>th<depth?0:th===depth?1:2,
     GH=[`Thinner than the ${depth} mm ${mw} — leaves an air gap`,`Fills the ${depth} mm ${mw}`,s.cover?`Thicker than the ${depth} mm ${mw} — rises above it`:`Thicker than the ${depth} mm ${mw} — compressed`],
     grouped=R=>{let g0=-1;return R.map((x,i)=>[x,i]).sort((a,b)=>fg(a[0].th)-fg(b[0].th)||a[1]-b[1]).map(([x])=>{const g=fg(x.th),h=g!==g0?`<div class="pgrp v6fg${g===2&&s.cover?3:g}">${GH[g]}</div>`:'';g0=g;return h+x.html}).join('')};
-  const pick=(r,th)=>{const chips=[];if(Math.abs((+v.insR||0)-r)<1e-9&&+v.insT===th)chips.push('<i class="pchip on">Selected</i>');if(sk===r+'@'+th)chips.push('<i class="pchip sugg">Suggested</i>');return chips};
-  if(PL){const cov=s.member==='chord'&&!!v.cover;const rows=grouped(PL.map(p=>{const chips=pick(p[1],p[2]);
-      if(cov&&p[3]===460)chips.push('<i class="pchip fit">Suits covering the chords</i>');return {th:p[2],html:pbRow(p,chips,s.member==='rafter')}}));
-    return `<div class="card prodcard">${hd}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(pbSrc(PL))} Fills the selected framing layer only.</div></div>`}
-  const rows=grouped(L.map(([r,th,n])=>{const chips=pick(r,th);
-    return {th,html:`<button class="prow2 v6pr" data-a="prod" data-r="${r}" data-t="${th}"${n?` data-n="${esc(n)}"`:''}><b>R${r.toFixed(1)} · ${th} mm</b><em>${esc(n||RPI.byMember.brand)}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`}}));
-  return `<div class="card prodcard">${hd}<div class="prodscroll">${rows||'<div class="pgrp">No products listed for this member — enter the R-value.</div>'}</div><div class="prodsrc">${esc(RPI.byMember.brand)} declared product values. Fills the selected framing layer only.</div></div>`}
+  const pick=p=>{const chips=[];if(Math.abs((+v.insR||0)-p[1])<1e-9&&+v.insT===p[2]&&isSel(v.prod,p[0],p[5]))chips.push('<i class="pchip on">Selected</i>');if(sk===p[1]+'@'+p[2]&&p[5]===DB)chips.push('<i class="pchip sugg">Suggested</i>');return chips};
+  const cov=s.member==='chord'&&!!v.cover;
+  const rows=grouped(L.map(p=>{const chips=pick(p);if(PL&&cov&&p[3]===460)chips.push('<i class="pchip fit">Suits covering the chords</i>');
+    return {th:p[2],html:PL?pbRow(p,chips,s.member==='rafter'):`<button class="prow2 v6pr" data-a="prod" data-r="${p[1]}" data-t="${p[2]}" data-n="${esc(p[0])}"><b>R${p[1].toFixed(1)} · ${p[2]} mm</b><em>${esc(p[0])}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`}}));
+  return `<div class="card prodcard">${hd}<div class="prodscroll">${rows||'<div class="pgrp">No products listed for this member — enter the R-value.</div>'}</div><div class="prodsrc">${esc(srcOf(bf?[bf]:brs))} Fills the selected framing layer only.</div></div>`}
 /* ---------- render ---------- */
 /* ---------- Open project ---------- */
 let PEND=null;
@@ -400,6 +406,78 @@ function projOpen(){let f=document.getElementById('v6pfile');if(!f){f=document.c
       if(err){projMsg(`<div class="pd-in bad"><span class="ms s18">error</span><span>${esc(err)} The current project is unchanged.</span><button class="v6btn" data-a="pdlg" data-v="x">OK</button></div>`);return}
       if(!XP.hasContent()){projLoad(r.data);return}
       PEND=r.data;projMsg(`<div class="pd-in"><span class="ms s18">swap_horiz</span><span>The current project will be replaced by “${esc(file.name)}”. Save it first?</span><button class="v6btn" data-a="pdlg" data-v="save">Save first</button><button class="v6pdfb" data-a="pdlg" data-v="replace">Replace</button><button class="v6btn" data-a="pdlg" data-v="x">Cancel</button></div>`)})}
+  f.click()}
+/* ---------- Filling from outside: a Revit link (#h1=…) replaces the project, a PDF drawing set fills in what it finds ---------- */
+const opRow=o=>Object.assign({n:o.name||'',a:'',h:o.height_mm?String(o.height_mm):'',wd:o.width_mm?String(o.width_mm):''},+o.qty>1?{q:+o.qty}:{},+o.r_value>0?{own:1,r:String(o.r_value)}:{own:''},!o.height_mm&&+o.area_m2>0?{a:String(o.area_m2)}:{});
+const SLAB0=()=>({sM:'ext',sF:'slab',sU:'none',sE:'none',sWall:'other',sT:90,d9:1});
+/* the openings into the project's Windows & doors rows; windows with their own R switch the page to H1/VM1 R-values */
+function seedOpen(Pn,ops){const G=ops.filter(o=>o.type==='glazing'),D=ops.filter(o=>o.type==='door'),K=ops.filter(o=>o.type==='skylight');
+  if(G.length){Pn.wins=G.map(opRow);if(G.some(o=>+o.r_value>0)){const rs=G.map(o=>+o.r_value).filter(r=>r>0);Pn.wm='calc';Pn.wdefR=String(rs.sort((a,b)=>rs.filter(x=>x===b).length-rs.filter(x=>x===a).length)[0])}}
+  if(D.length)Pn.doors=D.map(opRow);if(K.length){Pn.skys=K.map(opRow);const kr=K.find(o=>+o.r_value>0);if(kr)Pn.skyR=String(kr.r_value)}
+  const sum=L=>{const a=L.reduce((s,o)=>s+(+o.width_mm*+o.height_mm/1e6||+o.area_m2||0)*(+o.qty>1?+o.qty:1),0);return a?String(+a.toFixed(2)):''};   /* the totals the page keeps beside the rows */
+  if(G.length){Pn.glzA=sum(G);Pn.glzR=G[0].r_value?String(G[0].r_value):Pn.glzR||''}if(D.length)Pn.doorA=sum(D);if(K.length)Pn.skyA=sum(K)}
+/* a whole project from a seed: one construction per element (its R-value given → "Custom — enter the R-value", else the calculator's default construction) */
+function seedBuild(sd){const list=[],Pn=Object.assign(XP.newOpen(),{wins:[],doors:[],skys:[]});
+  (sd.elements||[]).forEach(e=>{const sl=e.type==='slab',el=sl?'floor':e.type;if(!['wall','roof','floor'].includes(el))return;
+    const c=mk(el,x=>{if(sl){x.kind='slab';x.name='Floor – concrete slab';x.v={slab:Object.assign(SLAB0(),+e.perimeter_m>0?{sP:+e.perimeter_m}:{},+e.r_value>0?{vm1:true,vmR:+e.r_value,vmSrc:'From the Revit model'}:{})}}
+      else if(+e.r_value>0){x.kind='custom';x.manualR=+e.r_value}
+      if(e.name)x.name=String(e.name);if(+e.area_m2>0){x.area=+(+e.area_m2).toFixed(2);if(el==='roof')x.v.edge=Object.assign(x.v.edge||{},{area:x.area})}if(e.heated)x.heated=true});   /* a roof's area lives with its ceiling-perimeter split */ensure(c);list.push(c)});
+  seedOpen(Pn,sd.openings||[]);if(+sd.climate_zone>=1&&+sd.climate_zone<=6)Pn.zone=+sd.climate_zone;
+  const pr=Object.assign({},sd.proj||{});pr.date=today();
+  return{format:EZFile.FORMAT,version:EZFile.VERSION,savedAt:new Date().toISOString(),project:{P:Pn,proj:pr},list:toSaved(list),guide:{}}}
+async function linkOpen(){EZSeed.busy(true,'Opening the project from Revit — calculating…');let d;
+  try{d=seedBuild(await EZSeed.fromHash())}catch(e){EZSeed.busy(false);EZSeed.clearHash();projMsg(`<div class="pd-in bad"><span class="ms s18">error</span><span>${esc(e.message)} The current project is unchanged.</span><button class="v6btn" data-a="pdlg" data-v="x">OK</button></div>`);return}
+  EZSeed.clearHash();EZSeed.busy(false);
+  if(!XP.hasContent()){projLoad(d);return}
+  PEND=d;projMsg(`<div class="pd-in"><span class="ms s18">swap_horiz</span><span>The current project will be replaced by the one from Revit${d.project.proj.address?' (“'+esc(d.project.proj.address)+'”)':''}. Save it first?</span><button class="v6btn" data-a="pdlg" data-v="save">Save first</button><button class="v6pdfb" data-a="pdlg" data-v="replace">Replace</button><button class="v6btn" data-a="pdlg" data-v="x">Cancel</button></div>`)}
+/* PDF drawings: what is found is ticked in a dialog, then filled into the current project (undo puts it back) */
+function seedMerge(pick,ops){const pr=S.pdf.proj;['address','legal','client','designer'].forEach(k=>{if(pick[k])pr[k]=pick[k]});
+  if(+pick.area>0||+pick.perimeter>0){let c=S.list.find(x=>x.el==='floor'&&x.kind==='slab');
+    if(!c){c=mk('floor',x=>{x.kind='slab';x.name='Floor – concrete slab';x.v={slab:SLAB0()}});ensure(c);S.list.push(c)}
+    if(+pick.area>0)c.area=+pick.area;if(+pick.perimeter>0){c.v.slab=c.v.slab||SLAB0();c.v.slab.sP=+pick.perimeter}}
+  if(ops.length){seedOpen(XP.state(),ops);XP.syncOpen()}S.cur='project';if(XP)XP.after()}
+/* constructions from the drawings' text: each named cladding in the notes is a wall (vertical if the note says so), the insulation summary fills
+   the walls' and roof's insulation, and a RibRaft / slab note makes the slab. Brands are matched against the cladding list; a generic word alone is not enough */
+const CL_OWN=/^(Linea|Stria|Oblique|Axon|HardieFlex|ExoTec|Hardie Plank|Shera|Shadowclad|RustiClad|VertiClad|Territory|Barestone)$/i;
+function cladFams(){const L=LIB.cladding,F={};L.forEach((o,j)=>{if(o.old||!o.brand||o.brand==='Generic'||!/^(fc|tb)$/.test(o.grp||''))return;
+  const inner=((o.dn||'').split(' (')[1]||'').replace(/\)$/,'').split(',')[0],rest=inner.slice(o.brand.length).trim(),w=rest.split(' '),prod=/^Hardie$/i.test(w[0])?w.slice(0,2).join(' '):w[0];if(!prod)return;
+  const k=o.brand+'|'+prod;(F[k]=F[k]||{brand:o.brand,prod,items:[]}).items.push(j)});return Object.values(F)}
+function seedCons(F){const out=[],ins=F.ins||{},pages={};(F.lines||[]).forEach(l=>{(pages[l.pg]=pages[l.pg]||[]).push(l)});
+  const studFill=r=>{const p=prodDef('stud',90).find(x=>Math.abs(x[0]-r)<1e-9&&x[1]<=90)||prodDef('stud',140).find(x=>Math.abs(x[0]-r)<1e-9);return p?{insR:p[0],insT:p[1],prod:p[2]||RPI.byMember.brand}:{insR:r,insT:90,prod:''}};
+  const ceilFill=r=>{const p=PB_CEIL.find(x=>Math.abs(x[1]-r)<1e-9&&x[5]===RPI.byMember.brand)||PB_CEIL.find(x=>Math.abs(x[1]-r)<1e-9);return p?{r:p[1],t:p[2],prod:p[0]}:{r,t:Math.round(r*50),prod:''}};
+  const wi=ins.wall&&ins.wall.r?studFill(ins.wall.r):null;
+  /* a cladding counts where a note names it with its brand or its thickness ("14mm James Hardie Oblique …"), not in a detail title.
+     Its note runs to the next keynote ID (E-02, R-01 …); it is vertical if any of its notes says so and none says horizontal */
+  cladFams().forEach(fam=>{const B=fam.brand.replace(/\s+/g,'\\s+'),P=fam.prod.replace(/\s+/g,'\\s+'),own=CL_OWN.test(fam.prod),G0=new RegExp('(?:\\b(\\d{1,2}(?:\\.\\d)?)\\s*mm\\s+)?('+B+'\\s+)?'+P+'\\b','gi'),hits=[];
+    Object.keys(pages).forEach(pg=>{const txt=pages[pg].map(l=>l.t).join(' '),G=new RegExp(G0.source,'gi');let m;
+      while((m=G.exec(txt))){if(own?!m[1]&&!m[2]:!m[2])continue;   /* a generic word ("Vertical", "Rusticated") needs its brand */
+const note=txt.slice(m.index,m.index+200).split(/\s(?=[A-Z]-\d{2}\b)/)[0];
+        hits.push({th:m[1],note,v:/vertical/i.test(note),h:/horizontal/i.test(note),src:'p.'+(+pg+1)+': “'+note.slice(0,90).trim()+'”'})}});
+    if(!hits.length)return;const anyV=hits.some(x=>x.v),anyH=hits.some(x=>x.h&&!x.v);
+    [true,false].forEach(vert=>{if(vert?!anyV:(anyV&&!anyH))return;const hs=hits.filter(x=>vert?x.v:!x.v),hh=hs[0]||hits[0],th=(hs.find(x=>x.th)||{}).th;
+      const its=fam.items.filter(j=>/^Board — vertical/.test(LIB.cladding[j].dn)===vert),pick=(th&&its.find(j=>+LIB.cladding[j].t===+th))||its[0];if(pick==null)return;
+      const o=LIB.cladding[pick],short=((o.dn||'').split(' (')[1]||'').replace(/\)$/,'');
+      out.push({el:'wall',label:'Wall – '+short+(vert?' (vertical)':'')+(wi?' · R'+wi.insR+' / '+wi.insT+' mm':''),src:hh.src,
+        build:c=>{c.name='Wall – '+short.replace(/,.*/,'')+(vert?' vertical':'');c.v.clad={m:pick};if(wi)Object.assign(c.v.fr,wi)}})})});
+  const ro=ins['truss roof']||ins.roof||ins.ceiling;
+  if(ro&&ro.r){const a=ceilFill(ro.r),b=ro.r2?ceilFill(ro.r2):null;
+    out.push({el:'roof',label:'Roof – truss, flat ceiling · R'+a.r+(b?' + R'+b.r+' over the chords':''),src:ro.src,build:c=>{c.name='Roof – truss'+(b?', two layers':'');Object.assign(c.v.fr,{insR:a.r,insT:a.t,prod:a.prod});if(b)c.v.over={on:true,r:b.r,t:b.t,prod:b.prod}}})}
+  const all=(F.lines||[]).map(l=>l.t).join(' '),raft=/rib\s?raft|waffle|pod\s?(?:slab|raft)|raft\s+(?:slab|foundation)/i.exec(all);
+  if(raft||ins['slab floor']||ins.slab){const sl=(F.lines||[]).find(l=>raft&&l.t.indexOf(raft[0])>=0);
+    out.push({el:'slab',label:'Floor – concrete slab'+(raft?' (raft: '+raft[0]+')':'')+(ins['slab floor']&&ins['slab floor'].none?' · no insulation':''),src:sl?sl.src:(ins['slab floor']||{}).src,
+      build:c=>{c.name='Floor – '+(raft?raft[0].replace(/rib\s?raft/i,'RibRaft')+' concrete slab':'concrete slab');c.v.slab.sF=raft?'raft':'slab'}})}
+  if(ins['timber floor']&&ins['timber floor'].none)out.noSusp=ins['timber floor'].src;
+  return out}
+/* the ticked constructions into the project: with "replace" ticked, the project's walls / roofs / slab (and suspended floors, when the drawings say there are none) give way to them */
+function seedConsApply(props,ci,repl){if(!ci.length)return;const ch=ci.map(i=>props[i]),els=new Set(ch.map(p=>p.el));
+  if(repl){S.list=S.list.filter(c=>!(els.has(c.el)||(c.el==='floor'&&(c.kind==='slab'?els.has('slab'):!!props.noSusp))))}
+  ch.forEach(p=>{const c=p.el==='slab'?mk('floor',x=>{x.kind='slab';x.v={slab:SLAB0()}}):mk(p.el);p.build(c);ensure(c);S.list.push(c)})}
+function pdfFill(){let f=document.getElementById('v6dfile');if(!f){f=document.createElement('input');f.type='file';f.id='v6dfile';f.accept='.pdf,application/pdf';f.style.display='none';document.body.appendChild(f);
+    f.addEventListener('change',async()=>{const file=f.files[0];f.value='';if(!file)return;EZSeed.busy(true,'Reading the drawings — calculating…');
+      try{const r=await EZSeed.readDrawings(file);EZSeed.busy('lock');
+        const props=seedCons(r.found);
+        EZSeed.review(r.found,file.name,(pick,ops,ci,repl)=>{EZSeed.busy(true,'Filling in…');hPush();seedConsApply(props,ci||[],repl);seedMerge(pick,ops);render();EZSeed.busy(false)},()=>EZSeed.busy(false),props)}
+      catch(e){EZSeed.busy(false);projMsg(`<div class="pd-in bad"><span class="ms s18">error</span><span>${esc(e.message)}</span><button class="v6btn" data-a="pdlg" data-v="x">OK</button></div>`)}})}
   f.click()}
 /* ---------- New project ---------- */
 function npOpen(){const nm=((S.pdf&&S.pdf.proj)||{}).address||'untitled project';let el=document.getElementById('v6np');if(!el){el=document.createElement('div');el.id='v6np';document.body.appendChild(el)}
@@ -461,7 +539,7 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
     c.vk=c.vk||{};const keep={};frs(c.kind).forEach(s=>{if(c.v[s.id])keep[s.id]=JSON.parse(JSON.stringify(c.v[s.id]))});c.vk[c.kind]=keep;
     c.kind=raw;const back=c.vk[raw];
     frs(raw).forEach(s=>{if(back&&back[s.id]){c.v[s.id]=JSON.parse(JSON.stringify(back[s.id]));return}
-      const d=MEMBER[s.member],bst=c.el==='wall'&&s.id==='st',dd=bst?WALL_ST.d:d.d,SK=s.member==='rafter'?PB_SKILL.filter(p=>/Skillion/.test(p[0])&&p[2]<=d.d).map(p=>[p[1],p[2],p[0]]):null,L=SK||prodList(s.member,dd).filter(([,t])=>t<=dd),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;   /* skillion: the highest-R Pink® Batts® Skillion that fits */
+      const d=MEMBER[s.member],bst=c.el==='wall'&&s.id==='st',dd=bst?WALL_ST.d:d.d,SK=s.member==='rafter'?PB_SKILL.filter(p=>/Skillion/.test(p[0])&&p[5]===RPI.byMember.brand&&p[2]<=d.d).map(p=>[p[1],p[2],p[0]]):null,L=SK||prodDef(s.member,dd).filter(([,t])=>t<=dd),b=L.length?L.reduce((a,x)=>x[0]>a[0]?x:a):null;   /* skillion: the highest-R Pink® Batts® Skillion that fits */
       c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:b?b[0]:null,insT:b?b[1]:null,gap:0,cover:s.member==='chord',prod:b?(b[2]||RPI.byMember.brand):''},d.dw?{dw:d.dw}:{},c.el==='roof'&&s.id==='st'?{d:35,w:70,s:450,lock:true}:{},bst?WALL_ST:{})});
     if(wasAuto)c.name=autoName(c);
     retype(c);return}
@@ -511,14 +589,14 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   const b=e.target.closest('[data-a]');
   if(S.menu&&!e.target.closest('.cx-add')){S.menu=false;render();if(!b)return}
   if(!b){return}
-  if(!/^(theme|pdf|pdfclose|pdfdl|psave|popen|pcopy)$/.test(b.dataset.a))hPush();
+  if(!/^(theme|pdf|pdfclose|pdfdl|psave|popen|pfill|pcopy)$/.test(b.dataset.a))hPush();
   const a=b.dataset.a,v=b.dataset.v,c=cur();
   if(a==='af'){if(e.target.closest('input,select,label,button,.bchip'))return;const row=e.target.closest('.flh');if(S.af!==v){S.af=v;render()}
     if(row){S.pin=S.pin===v?null:v;render()}return}
   if(!c&&['dup','del','reset','prod','af'].includes(a))return;
   if(a==='sel'){S.cur=v;S.pin=null;S.af=cur()?firstFrame(cur()):null}
   else if(a==='add'){S.menu=!S.menu;if(S.menu)setTimeout(()=>{const m=document.querySelector('#c-left .cx-menu');if(m)m.scrollIntoView({block:'nearest'})},0)}   /* the left column scrolls on its own: bring the menu into view */
-  else if(a==='addel'){const nc=v==='slab'?mk('floor',c=>{c.kind='slab';c.name='Floor – concrete slab';c.v={slab:{sM:'ext',sF:'slab',sU:'none',sE:'none',sWall:'other',sT:90}}}):mk(v);ensure(nc);{const L=S.list.filter(z=>z.el===nc.el&&!!tpl(z).slab===!!tpl(nc).slab),nm=L.length&&nextName(L[L.length-1].name);if(nm)nc.name=nm}S.list.push(nc);S.menu=false;S.pin=null;if(b.dataset.stay){setTimeout(()=>{const i=document.querySelector(`[data-f="p.ca.${nc.id}"],[data-f="p.ra.${nc.id}"]`);if(i){i.scrollIntoView({block:'center'});i.focus()}},0)}else{S.cur=nc.id;S.af=firstFrame(nc)}}   /* the Project page + stays on the Project page: areas first */
+  else if(a==='addel'){const nc=v==='slab'?mk('floor',c=>{c.kind='slab';c.name='Floor – concrete slab';c.v={slab:{sM:'ext',sF:'slab',sU:'none',sE:'none',sWall:'other',sT:90,d9:1}}}):mk(v);ensure(nc);{const L=S.list.filter(z=>z.el===nc.el&&!!tpl(z).slab===!!tpl(nc).slab),nm=L.length&&nextName(L[L.length-1].name);if(nm)nc.name=nm}S.list.push(nc);S.menu=false;S.pin=null;if(b.dataset.stay){setTimeout(()=>{const i=document.querySelector(`[data-f="p.ca.${nc.id}"],[data-f="p.ra.${nc.id}"]`);if(i){i.scrollIntoView({block:'center'});i.focus()}},0)}else{S.cur=nc.id;S.af=firstFrame(nc)}}   /* the Project page + stays on the Project page: areas first */
   else if(a==='dup'){const nc=JSON.parse(JSON.stringify(c));nc.id='c'+(++n);nc.name=c.name+' (copy)';S.list.splice(S.list.indexOf(c)+1,0,nc);S.cur=nc.id}
   else if(a==='sbadd'){const sv=c.v.slab=c.v.slab||{};(sv.parts=sv.parts||[]).push({len:'',sE:'none',sWall:'other'})}
   else if(a==='sbbv'){const sv=c.v.slab=c.v.slab||{};(sv.parts=sv.parts||[]).push({name:'Under brick veneer',len:'',sE:sv.sE||'none',sWall:'masonry'});if(sv.sWall==='masonry')sv.sWall='other'}   /* the perimeter under brick veneer: masonry-veneer table; the rest: other cladding */
@@ -535,12 +613,14 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   else if(a==='gapauto'){const o=c.v[v];if(o)o.gapMan=false}
   else if(a==='fedit'){const k=c.id+':'+v;FEDIT.has(k)?FEDIT.delete(k):FEDIT.add(k)}
   else if(a==='unlock'){UNL.add(c.id+':'+v)}
+  else if(a==='pbf'){S.pbf=v||''}
   else if(a==='prod'){const s=c.v[S.af];if(!s)return;if(S.af==='over'){s.r=+b.dataset.r;s.t=+b.dataset.t;s.on=true}else{s.insR=+b.dataset.r;s.insT=+b.dataset.t}s.prod=b.dataset.n||RPI.byMember.brand}
   else if(a==='pdf'){openPdf();return}
   else if(a==='pnew'){npOpen();return}
   else if(a==='np'){npAct(v);return}
   else if(a==='psave'){if(window.EZFile)EZFile.save(S,XP.state());return}
   else if(a==='popen'){projOpen();return}
+  else if(a==='pfill'){pdfFill();return}
   else if(a==='pdlg'){projDlg(v);return}
   else if(a==='pdfclose'){closePdf();return}
   else if(a==='pdfdl'){download();return}
@@ -616,7 +696,8 @@ function layerTable(s,how){const L=s.layers;let rows='';
   return tbl}
 const edgeHTML=P=>P.edge?`<div class="cb-edge"><div class="bp-hd"><span class="bp-t">Heel check and perimeter</span></div><table class="cb-tb etb"><colgroup><col style="width:52mm"><col style="width:26mm"><col></colgroup>
   <thead><tr><th>Quantity</th><th class="n">Value</th><th>How it is found</th></tr></thead><tbody>${P.edge.map(([a,b,h])=>`<tr><td>${esc(a)}</td><td class="n">${esc(b)}</td><td class="mt">${esc(h)}</td></tr>`).join('')}</tbody></table>${P.areaText?`<p class="cb-pn">${esc(P.areaText)}</p>`:''}</div>`:'';
-function fnHTML(s){const fn=(s.ff||[]).map(l=>`<p${l.ok?'':' style="color:#C2410C;font-weight:600"'}>${esc(l.text)}</p>`).concat(s.layers.some(l=>l.halved)?['<p><b>½</b>Counted at half value: outside the vented cavity.</p>']:[]).concat(s.notes.map(n=>`<p${n.startsWith(FFEV)?' style="color:#C2410C;font-weight:600"':''}>Note: ${esc(n)}</p>`)).join('');return fn?`<div class="cb-fn">${fn}</div>`:''}
+function fnHTML(s){const fn=(s.ff||[]).map(l=>`<p${l.ok?'':' style="color:#C2410C;font-weight:600"'}>${esc(l.text)}</p>`).concat(s.layers.some(l=>l.halved)?['<p><b>½</b>Counted at half value: outside the vented cavity.</p>']:[]).concat((s.materials||[]).filter(m=>/^Manufacturer’s declared R-value — /.test(m.src||'')).map(m=>`<p><b>Source</b> ${esc(m.name)} — ${esc(m.src.replace(/^Manufacturer’s declared R-value — /,'manufacturer’s declared R-value: '))}</p>`))   /* each declared R with its manufacturer and document, to cross-check */
+    .concat(s.notes.map(n=>`<p${n.startsWith(FFEV)?' style="color:#C2410C;font-weight:600"':''}>Note: ${esc(n)}</p>`)).join('');return fn?`<div class="cb-fn">${fn}</div>`:''}
 /* one calculation block per construction — a truss roof that does not fit at the edge gets a second block for its perimeter part */
 function block(c,k){const s=toSheet(c,S.list),P=s.perimeter;
   const hd=s.slab?'':cbHead(s,P?'Field':'',null,!(s.checks[0]||{ok:true}).ok);
@@ -717,4 +798,6 @@ document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;if(
   if(q.get('sheet'))S.pdf.solo=q.get('sheet')==='perim'?'perim':(+q.get('sheet')||1)}
 render();
 if(S.pdf.solo){document.documentElement.classList.add('pdf-solo');openPdf()}else if(q.get('pdf'))openPdf();
+/* a link from the Revit H1 Check button: …/#h1=… opens that project (now, or when a new link is pasted into this tab) */
+if(window.EZSeed&&XP){if(EZSeed.hashSeed())linkOpen();window.addEventListener('hashchange',()=>{if(EZSeed.hashSeed())linkOpen()})}
 })();

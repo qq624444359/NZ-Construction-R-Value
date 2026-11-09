@@ -42,7 +42,8 @@ The calculation model is also served as an API and an MCP server, for AI assista
 
 - MCP (Streamable HTTP, stateless): `https://rvalue.ezbuild.co.nz/api/mcp` — tools `list_construction_types`, `describe_construction`, `calculate_construction`, `check_h1`
 - HTTP: `https://rvalue.ezbuild.co.nz/api/v1` — `GET /types`, `GET /describe`, `POST /construction`, `POST /h1-check`
-- Revit: a pyRevit button, [`revit/H1Check.pushbutton/script.py`](revit/H1Check.pushbutton/script.py)
+- PDF drawings: **Fill from drawings** reads the address, Lot / DP, client, designer, window and door schedule and floor area from a PDF's text, in the browser (pdf.js), for you to tick before it fills the project
+- Revit: a pyRevit extension, [`revit/EZbuild.extension`](revit/EZbuild.extension) (download as [`revit/EZbuild.extension.zip`](revit/EZbuild.extension.zip)) — an EZbuild tab with an H1 Check button
 
 The endpoints are Vercel functions in `api/` that load the same `js/` model files as the page (`api/_engine.js`).
 

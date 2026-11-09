@@ -119,8 +119,8 @@ function optionsOf(c){
   const t=tpl(c);if(t.manual)return[];const s=(t.slots||[]).find(x=>x.id==='fr'&&x.k==='frame');if(!s)return[];
   const v=c.v.fr||{},depth=+v.d||MEMBER[s.member].d;
   /* only products that suit the frame depth: at least 70% of it (a 190 stud takes 140 mm or thicker), unless nothing does */
-  const fitL=prodList(s.member,depth).filter(([,th])=>th<=depth||(s.cover&&v.cover)),suit=fitL.filter(([,th])=>th>=0.7*depth),use=suit.length?suit:fitL;
-  return use.map(([r,th])=>({key:r+'@'+th,label:'R'+r.toFixed(1)+' · '+th+' mm'+(th<depth-1?' · leaves a '+(depth-th)+' mm air gap':''),r,th,cost:COST(r),apply:q=>{q.v.fr=Object.assign({},q.v.fr,{insR:r,insT:th,prod:window.RVC_PRODUCTS.insulation.byMember.brand})}}))}
+  const fitL=prodDef(s.member,depth).filter(([,th])=>th<=depth||(s.cover&&v.cover)),suit=fitL.filter(([,th])=>th>=0.7*depth),use=suit.length?suit:fitL;
+  return use.map(([r,th,nm])=>({key:r+'@'+th,label:'R'+r.toFixed(1)+' · '+th+' mm'+(th<depth-1?' · leaves a '+(depth-th)+' mm air gap':''),r,th,cost:COST(r),apply:q=>{q.v.fr=Object.assign({},q.v.fr,{insR:r,insT:th,prod:nm||window.RVC_PRODUCTS.insulation.byMember.brand})}}))}
 function curKey(c){if(isStrat(c)){const fr=c.v.fr||{},ov=OV(c);const o=ROOFOPT.find(o=>+fr.insR===o.fr[0]&&+fr.insT===o.fr[1]&&(+ov.r||0)===o.ov[0]&&(+ov.t||0)===o.ov[1]);return o?o.key:'custom'}
   const v=c.v.fr||{};return(+v.insR)+'@'+(+v.insT)}
 /* R of a (possibly modified) construction: whole / field, and the ceiling perimeter part */
@@ -391,5 +391,5 @@ const hasContent=()=>list().some(c=>areaOf(c)>0)||!!(R().S.pdf.proj||{}).address
 /* Enter in a door's R box, or in the lot name, is Done */
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.f==='p.lotn'){e.preventDefault();const b=document.querySelector('[data-a="plotok"]');if(b)b.click();return}const f=e.key==='Enter'&&e.target.dataset&&e.target.dataset.f,m=f&&/^p\.dr\.(\d+)\.r$/.exec(f);if(!m)return;e.preventDefault();const b=document.querySelector('[data-a="pdok"][data-v="'+m[1]+'"]');if(b)b.click()});
 if(SK)window.addEventListener('storage',e=>{if(e.key!==SK||!e.newValue)return;const sv=load();if(!sv)return;if(sv.P){Object.keys(P).forEach(k=>delete P[k]);Object.assign(P,DEF,sv.P);LZ(P)}R().reload(sv)});
-window.RVP={blank,migSide,SIDES,SIDEQ,SIDEHELP,hasSide,sideOf,replaceWith,hasContent,seed,leftRow,openRow,openMid,mid,right,pdf,set,act,after,load,suggHTML,suggKey,invalidate,state:()=>P,PARAM};
+window.RVP={syncOpen:()=>{syncGlz();syncDoor();syncSky()},newOpen:NEWOPEN,blank,migSide,SIDES,SIDEQ,SIDEHELP,hasSide,sideOf,replaceWith,hasContent,seed,leftRow,openRow,openMid,mid,right,pdf,set,act,after,load,suggHTML,suggKey,invalidate,state:()=>P,PARAM};
 })();
