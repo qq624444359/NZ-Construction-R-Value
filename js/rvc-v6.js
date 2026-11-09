@@ -510,13 +510,20 @@ function undoBar(){let el=document.getElementById('v6undo');if(!S.undo){if(el)el
 function render(){const c=cur();if(XP)XP.after();
   const a=document.activeElement,af=a&&a.dataset&&a.dataset.f,ss=a&&a.selectionStart;
   $('#c-left').innerHTML=leftCol();
-  if(!c){$('#c-mid').innerHTML=S.cur==='openings'?XP.openMid():startCard()+XP.mid();$('#c-right').innerHTML=XP.right();stick();
+  if(!c){$('#c-mid').innerHTML=S.cur==='openings'?XP.openMid():startCard()+XP.mid();$('#c-right').innerHTML=XP.right();stick();hlBadge();
     if(af){const nx=document.querySelector(`[data-f="${af}"]`);if(nx){nx._sel=1;nx.focus();try{if(ss!=null)nx.setSelectionRange(ss,ss)}catch(e){}}}return}
   ensure(c);const x=calc(c);requestAnimationFrame(()=>phys(c).forEach(p=>{const el=document.querySelector(`#c-mid [data-layer="${p.slot}"]`);const box=el&&(el.closest('.flayer')||el.closest('.lrow')||el);if(box)box.classList.add('v6bad')}));$('#c-mid').innerHTML=(c.origin&&c.origin.guide?`<div class="hg-ban"><span class="ms s18">cottage</span><span>Created by the House Guide — edit here or in the guide</span><a href="house-guide.html#part=${encodeURIComponent(c.origin.guide)}">Open in the House Guide</a></div>`:'')+`<div class="card" id="stack">${midCol(c,x)}</div>`;
-  $('#c-right').innerHTML=secCard(c)+prodCard(c);stick();
+  $('#c-right').innerHTML=secCard(c)+prodCard(c);stick();hlBadge();
   const sj=$('#statejson');if(sj)sj.textContent=JSON.stringify(S,null,2);
   if(af){const nx=document.querySelector(`[data-f="${af}"]`);if(nx){nx._sel=1;nx.focus();try{if(ss!=null)nx.setSelectionRange(ss,ss)}catch(e){}}}
   hl()}
+/* the H1 result, floating over a construction's page so a change of insulation shows at once whether the house still passes.
+   The same check as BRANZ input on the Project page; it hides there, where the full result is shown */
+function hlBadge(){let el=document.getElementById('ezhl');if(!el){el=document.createElement('button');el.id='ezhl';el.dataset.a='sel';el.dataset.v='project';el.title='Open the Project page for the full result';document.body.appendChild(el)}
+  const V=XP&&XP.check?XP.check():null;if(!V||!cur()){el.hidden=true;return}el.hidden=false;el.className='ezhl '+(V.state==='need'?'open':V.state);
+  const d=V.hr-V.hp;
+  el.innerHTML=V.state==='need'?`<b>H1</b><span>Incomplete — ${esc(V.miss.slice(0,2).join('; '))}${V.miss.length>2?'…':''}</span>`
+    :`<b>${V.state==='pass'?'PASS':'FAIL'}</b><span><i class="mono">${V.hp.toFixed(1)}</i> ${V.hp<=V.hr+1e-9?'≤':'>'} <i class="mono">${V.hr.toFixed(1)}</i> W/K<em>${V.err.length?esc(V.err[0]):(d>=0?'margin ':'over by ')+Math.abs(d).toFixed(1)+' W/K'}</em></span>`}
 function svgFor(id){const c=cur();return c?(SVGMAP[c.el]||{})[id]||[]:[]}
 function hl(){const k=S.hover||S.pin,parts=new Set(k?svgFor(k):[]);
   document.querySelectorAll('#c-mid [data-layer]').forEach(n=>{n.classList.toggle('row-hl',!!k&&n.dataset.layer===k);n.classList.toggle('pinned',!!S.pin&&n.dataset.layer===S.pin)});
