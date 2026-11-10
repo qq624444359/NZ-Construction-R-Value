@@ -397,18 +397,22 @@ function slabProdCard(c){const s=c.v.slab||{},raft=s.sF==='raft',P=RPI.slab||{},
     key=c.id+':slab',brs=brandsOf(U.concat(E)).sort(),
     bf=S.pbfK===key&&brs.includes(S.pbf)?S.pbf:s.uProd&&brs.includes(s.uProd.b)?s.uProd.b:s.eProd&&brs.includes(s.eProd.b)?s.eProd.b:brs[0],
     sel=(p,q)=>!!q&&q.n===p[0]&&Math.abs(+q.r-p[1])<1e-9&&+q.t===p[2],
-    row=(p,k,on,dis)=>`<button class="prow2 v6pr" data-a="sprod" data-k="${k}" data-r="${p[1]}" data-t="${p[2]}" data-n="${esc(p[0])}" data-b="${esc(p[5])}"${dis?' disabled':''}><b>R${p[1].toFixed(2)} · ${p[2]} mm</b><em>${esc(p[0])}</em>${on?'<span class="pchips"><i class="pchip on">Selected</i></span>':''}</button>`,
+    row=(p,k,on,tag)=>{const ch=(on?'<i class="pchip on">Selected</i>':'')+(tag?`<i class="pchip fit">${tag}</i>`:'');return `<button class="prow2 v6pr" data-a="sprod" data-k="${k}" data-r="${p[1]}" data-t="${p[2]}" data-n="${esc(p[0])}" data-b="${esc(p[5])}"><b>R${p[1].toFixed(2)} · ${p[2]} mm</b><em>${esc(p[0])}</em>${ch?`<span class="pchips">${ch}</span>`:''}</button>`},
     grp=t=>`<div class="pgrp">${esc(t)}</div>`,hd=t=>`<div class="card prodcard"><div class="prod-hd"><h2>Insulation</h2><p>${t}</p></div>`;
   if(s.vm1)return hd('This slab uses an H1/VM1 Appendix E calculation — its insulation is part of that calculation. Untick it to fill the slab from this list.')+'</div>';
   if(!brs.length)return hd('No slab insulation products listed yet.')+'</div>';
   const XR=P.raft,RK=p=>!!XR&&p[0]===XR.product&&(XR.masonry['u'+p[2]]||XR.other['u'+p[2]]);
-  const of=L=>L.filter(p=>p[5]===bf),u1=of(U).filter(p=>p[1]<2.4-1e-9),u2=of(U).filter(p=>p[1]>=2.4-1e-9),Ef=of(E),uOn=p=>raft?sel(p,s.uProd):s.sU&&s.sU!=='none'&&sel(p,s.uProd);
+  const of=L=>L.filter(p=>p[5]===bf),Ef=of(E),uOn=p=>raft?sel(p,s.uProd):s.sU&&s.sU!=='none'&&sel(p,s.uProd);
+  /* underslab: one product at a time (its chip), its thicknesses in order, each tagged with the table it counts as */
+  const UL=[...new Set((P.under||[]).filter(x=>x.brand===bf&&x.r>=1.2-1e-9).map(x=>x.name))],   /* in the order the manufacturer lists them */
+    cur=S.splK===c.id&&UL.includes(S.spl)?S.spl:s.uProd&&UL.includes(s.uProd.n)?s.uProd.n:UL[0],
+    short=n=>n.replace(/^EXPOL (?=\S)/,''),
+    chips=`<div class="pbf"><span class="pbf-s"><i>2</i>Product</span>${UL.map(n=>`<button class="pbf-c${n===cur?' on':''}" data-a="spl" data-v="${esc(n)}">${esc(short(n))}</button>`).join('')}</div>`;
   const rows=(Ef.length?grp('Vertical edge insulation · the tables give R1.0')+Ef.map(p=>row(p,'e',s.sE==='r10'&&sel(p,s.eProd))).join(''):'')
     +(raft?(of(U).some(RK)?grp('Under the raft · EXPOL’s own raft values (H1/AS1 has no table)')+of(U).filter(RK).map(p=>row(p,'u',uOn(p))).join(''):grp('Underslab insulation under a raft needs an H1/VM1 calculation'))
-    :(u1.length?grp('Underslab R1.2 to under R2.4 · counted as R1.2')+u1.map(p=>row(p,'u',uOn(p))).join(''):'')
-    +(u2.length?grp('Underslab R2.4 or more · counted as R2.4')+u2.map(p=>row(p,'u',uOn(p))).join(''):''));
-  const bfR=brs.length>1?`<div class="pbf"><span class="pbf-s"><i>1</i>Brand</span>${brs.map(b=>`<button class="pbf-c${bf===b?' on':''}" data-a="pbf" data-v="${esc(b)}" data-k="${esc(key)}">${esc(b)}</button>`).join('')}</div><div class="pbf-s pbf-s2"><i>2</i>R-value · ${esc(bf)}</div>`:'';
-  return hd('Click a product to fill this slab — the Appendix E table follows its R-value. Underslab keeps the layout chosen (1.2 m strip or full cover).')+`${bfR}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(RPI.sources[bf]||bf+' declared values.')} Underslab under R1.2 and edge under R1.0 are not listed — the Appendix E tables start there.</div></div>`}
+    :grp('Underslab insulation')+chips+of(U).filter(p=>p[0]===cur).sort((a,b)=>a[2]-b[2]).map(p=>row(p,'u',uOn(p),p[1]>=2.4-1e-9?'R2.4 table':'R1.2 table')).join(''));
+  const bfR=`<div class="pbf"><span class="pbf-s"><i>1</i>Brand</span>${brs.map(b=>`<button class="pbf-c${bf===b?' on':''}" data-a="pbf" data-v="${esc(b)}" data-k="${esc(key)}">${esc(b)}</button>`).join('')}</div>`;   /* brand first, as for walls and roofs — even with one brand listed */
+  return hd(raft?'Click a product to fill this slab.':'Click a product to fill this slab. Underslab: the tables have R1.2 and R2.4 only — each thickness shows the one it counts as; the layout (1.2 m strip or full cover) stays as chosen.')+`${bfR}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(RPI.sources[bf]||bf+' declared values.')} Underslab under R1.2 and edge under R1.0 are not listed — the Appendix E tables start there.</div></div>`}
 function prodCard(c){const t=tpl(c);if(t.slab)return slabProdCard(c);const edg=S.af==='edge'&&edgeOn(c),af=S.af==='edge'&&!edg?firstFrame(c):S.af,
     ovr=!edg&&isStrat(c)&&af==='over'&&(t.slots||[]).find(x=>x.id==='over'),s=ovr||(!edg&&!t.manual&&(t.slots||[]).find(x=>x.id===af&&x.k==='frame'));
   /* brand first, then the R-value: the list shows one brand at a time. It opens on the brand of the product already in the layer, else the brand
@@ -671,7 +675,7 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   const b=e.target.closest('[data-a]');
   if(S.menu&&!e.target.closest('.cx-add')){S.menu=false;render();if(!b)return}
   if(!b){return}
-  if(!/^(theme|pdf|pdfclose|pdfdl|psave|popen|pfill|pcopy|pbf)$/.test(b.dataset.a))hPush();
+  if(!/^(theme|pdf|pdfclose|pdfdl|psave|popen|pfill|pcopy|pbf|spl)$/.test(b.dataset.a))hPush();
   const a=b.dataset.a,v=b.dataset.v,c=cur();
   if(a==='af'){if(e.target.closest('input,select,label,button,.bchip'))return;const row=e.target.closest('.flh');if(S.af!==v){S.af=v;render()}
     if(row){S.pin=S.pin===v?null:v;render()}return}
@@ -697,6 +701,7 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   else if(a==='unlock'){UNL.add(c.id+':'+v)}
   else if(a==='sprod'){const sv=c.v.slab=c.v.slab||{},p={n:b.dataset.n,r:+b.dataset.r,t:+b.dataset.t,b:b.dataset.b};
     if(b.dataset.k==='e'){sv.eProd=p;sv.sE='r10'}else{sv.uProd=p;if(sv.sF!=='raft')sv.sU=((sv.sU||'none')[0]==='s'?'s':'f')+(p.r>=2.4-1e-9?'24':'12')}}   /* underslab: the layout stays, the table follows the R */
+  else if(a==='spl'){S.spl=v;S.splK=c.id}
   else if(a==='sprodx'){const sv=c.v.slab||{};delete sv[v==='e'?'eProd':'uProd']}
   else if(a==='pbf'){S.pbf=v||'';S.pbfK=b.dataset.k||''}
   else if(a==='prod'&&S.af==='edge'){const st=edgeOn(c);if(!st)return;const e=c.v.edge=c.v.edge||{},r=+b.dataset.r,t=+b.dataset.t,nm=b.dataset.n||RPI.byMember.brand;
