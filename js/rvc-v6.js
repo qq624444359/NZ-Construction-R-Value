@@ -141,7 +141,7 @@ function slabMid(c){if(!c.v.slab||c.v.slab.sM==null){const s0=c.v.slab=c.v.slab|
   return `<div class="card sbc"><div class="sb-g">${top}</div>${warnB}
   <div class="sb-q">${grpF('Foundation',sl('sF',[['raft','Concrete raft (waffle / pods)'],['slab','Conventional slab with footings']],'slab'))}
   ${grpF('Vertical edge insulation '+ii('Appendix E tables give R1.0 only. More than R1.0 adds little (E.1.2.1 Comment 4) — for other values use an H1/VM1 Appendix E calculation.'),sl('sE',[['none','None'],['r10','R1.0']],'none'))}
-  ${grpF('Underslab insulation',raft?uSel.replace('<select','<select disabled'):uSel)}
+  ${grpF('Underslab insulation',raft?raftSel(s):uSel)}
   ${grpF('External wall cladding',sl('sWall',[['masonry','Masonry veneer'],['other','Other']],'other'))}</div>
   ${slabPl(s,raft)}
   ${raft?'<p class="sb-n sb-raft">Pods or formers are not insulation — a raft without extra insulation is treated as uninsulated. For insulation under a raft, pick EXPOL SLABX200 in the insulation list (EXPOL’s raft values), or use a manufacturer’s H1/VM1 Appendix E calculation (option below).</p>':''}
@@ -153,6 +153,10 @@ function slabMid(c){if(!c.v.slab||c.v.slab.sM==null){const s0=c.v.slab=c.v.slab|
   ${extra}<div class="sb-btns"><button class="v6btn sb-add" data-a="sbadd"><span class="ms s16">add</span>Add a perimeter part</button>${s.parts.some(p=>p.name==='Wall to garage')?'':'<button class="v6btn sb-add" data-a="sbgar"><span class="ms s16">garage</span>Add the house–garage wall</button>'}${S.list.some(w=>w.el==='wall'&&(LIB.cladding[+((w.v.clad||{}).m)]||{}).grp==='br')&&!s.parts.some(p=>p.name==='Under brick veneer')?'<button class="v6btn sb-add" data-a="sbbv"><span class="ms s16">add</span>Add the brick veneer walls</button>':''}</div>
   <p class="sb-n">Thermally separating the garage slab with vertical edge insulation is recommended (E.1.2.1 Comment 1).</p></div>
   ${res}${L.ok&&L.expol?`<p class="sb-n sb-raft">H1/AS1 Appendix E has no table for a raft with underslab insulation — this R is EXPOL’s own value for its Tuff Pod raft with SLABX200 (details drawn for 90–140 mm framing). ${esc(L.src||'')} Confirm the basis with EXPOL (tech@expol.co.nz) before it goes into a consent.</p>`:''}${notes}${vm}</div>`}
+/* under a raft: only what EXPOL's raft table has — SLABX200 at the thicknesses it lists */
+function raftSel(s){const P=RPI.slab||{},X=P.raft,u=s.uProd;if(!X)return selF('v.slab.rU',[['','None']],'','100%');
+  const L=(P.under||[]).filter(p=>p.name===X.product&&(X.masonry['u'+p.t]||X.other['u'+p.t]));
+  return selF('v.slab.rU',[['','None']].concat(L.map(p=>[String(p.t),p.name+' '+p.t+' mm · R'+p.r.toFixed(2)])),u&&u.n===X.product?String(u.t):'','100%')}
 /* the products picked for the slab from the insulation list on the right */
 function slabPl(s,raft){const f=p=>`${esc(p.n)} · ${p.t} mm · R${(+p.r).toFixed(2)}`,u=s.uProd,e=s.eProd,L=[];
   if(u&&raft)L.push(`<b>Under the raft</b> ${f(u)} — R from EXPOL’s raft table (H1/AS1 has none for this)<button class="link-btn" data-a="sprodx" data-v="u">Remove product</button>`);
@@ -602,6 +606,8 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
     else if(u&&(sv.sU||'none')==='none')sv.sU='f'+(+u.r>=2.4-1e-9?'24':'12');return}
   /* a product picked from the list stays only while the table chosen is one its R reaches */
   if(path==='v.slab.sU'){const sv=c.v.slab=c.v.slab||{},u=SLABU[raw];sv.sU=raw;if(!u||!u[0]||(sv.uProd&&+sv.uProd.r<u[1]-1e-9))delete sv.uProd;return}
+  if(path==='v.slab.rU'){const sv=c.v.slab=c.v.slab||{},P=RPI.slab||{},X=P.raft,p=X&&(P.under||[]).find(q=>q.name===X.product&&String(q.t)===String(raw));
+    if(p)sv.uProd={n:p.name,r:p.r,t:p.t,b:p.brand};else delete sv.uProd;return}
   if(path==='v.slab.sE'){const sv=c.v.slab=c.v.slab||{};sv.sE=raw;if(raw!=='r10')delete sv.eProd;return}
   if(path.startsWith('v.slab.parts.')){const [,,,i,k]=path.split('.'),sv=c.v.slab=c.v.slab||{};sv.parts=sv.parts||[];const pt=sv.parts[+i]=sv.parts[+i]||{};pt[k]=k==='len'?(raw===''?'':parseFloat(raw)):raw;return}
   if(path.startsWith('o.')){c.o[path.slice(2)]=!!raw;retype(c);return}
