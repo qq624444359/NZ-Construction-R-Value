@@ -158,6 +158,35 @@ g.RVC_PRODUCTS = {
       { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 0.53, t: 20 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 0.66, t: 25 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 0.79, t: 30 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 0.92, t: 35 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 1.05, t: 40 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 1.18, t: 45 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 1.32, t: 50 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 1.45, t: 55 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 1.58, t: 60 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 1.71, t: 65 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 1.84, t: 70 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 1.97, t: 75 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 2.11, t: 80 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 2.24, t: 85 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 2.37, t: 90 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 2.50, t: 95 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 2.63, t: 100 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 2.89, t: 110 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 3.16, t: 120 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 3.95, t: 150 }, { brand: 'EXPOL', name: 'EXPOL ThermaSlab S', r: 5.26, t: 200 },
       { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 0.63, t: 20 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 0.78, t: 25 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 0.94, t: 30 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 1.09, t: 35 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 1.25, t: 40 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 1.41, t: 45 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 1.56, t: 50 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 1.72, t: 55 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 1.88, t: 60 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 2.03, t: 65 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 2.19, t: 70 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 2.34, t: 75 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 2.50, t: 80 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 2.66, t: 85 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 2.81, t: 90 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 2.97, t: 95 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 3.13, t: 100 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 3.44, t: 110 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 3.75, t: 120 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 4.69, t: 150 }, { brand: 'EXPOL', name: 'EXPOL Platinum Board', r: 6.25, t: 200 },
       { brand: 'EXPOL', name: 'EXPOL-X', r: 0.36, t: 10 }, { brand: 'EXPOL', name: 'EXPOL-X', r: 1.10, t: 30 }, { brand: 'EXPOL', name: 'EXPOL-X', r: 1.45, t: 40 }, { brand: 'EXPOL', name: 'EXPOL-X', r: 1.80, t: 50 }, { brand: 'EXPOL', name: 'EXPOL-X', r: 2.70, t: 75 }, { brand: 'EXPOL', name: 'EXPOL-X', r: 3.60, t: 100 }],
+      /* EXPOL waffle-pod raft (Tuff Pods) with SLABX200 under the slab — EXPOL's own construction R-values, for what the
+         H1/AS1 Appendix E tables don't cover (a raft with underslab insulation). Read by A/P: the smaller row, no interpolation.
+         Keys: u<mm> = SLABX200 <mm> under the slab; e = with ThermaSlab Edge / MaxEdge. pods and e alone are not used — the
+         H1/AS1 tables cover those. Details drawn for 90–140 mm framing. */
+      raft: {
+        src: 'EXPOL Floor & Slab Calculator, Waffle Pod Raft Slab Tables (brick veneer / lightweight cladding) — expol.co.nz/product-guide, printed 10 November 2026. No calculation method stated by EXPOL for these tables.',
+        product: 'EXPOL SLABX200',
+        ap: [1,1.2,1.4,1.6,1.8,2,2.2,2.4,2.6,2.8,3,3.2,3.4,3.6,3.8,4,4.2,4.4,4.6,4.8,5],
+        masonry: {
+          pods: [null,null,null,1.20,1.30,1.30,1.40,1.50,1.60,1.70,1.70,1.80,1.90,2.00,2.00,2.10,2.20,2.30,2.30,2.40,2.50],
+          e: [1.01,1.10,1.20,1.29,1.38,1.48,1.56,1.63,1.71,1.79,1.87,1.94,2.01,2.08,2.16,2.23,2.30,2.37,2.44,2.51,2.58],
+          u50: [1.23,1.36,1.50,1.64,1.78,1.91,2.02,2.12,2.23,2.33,2.44,2.53,2.62,2.71,2.80,2.89,2.98,3.05,3.14,3.22,3.30],
+          u75: [1.29,1.44,1.59,1.75,1.91,2.06,2.18,2.29,2.41,2.53,2.64,2.74,2.84,2.94,3.04,3.14,3.23,3.31,3.40,3.49,3.58],
+          u100: [1.33,1.50,1.67,1.84,2.01,2.17,2.30,2.43,2.55,2.68,2.81,2.92,3.03,3.13,3.24,3.35,3.44,3.53,3.63,3.72,3.82],
+          u120: [1.37,1.55,1.73,1.90,2.07,2.25,2.39,2.52,2.66,2.80,2.93,3.04,3.16,3.27,3.38,3.50,3.59,3.68,3.80,3.90,4.01],
+          u150: [1.40,1.60,1.80,1.97,2.16,2.35,2.50,2.64,2.79,2.94,3.09,3.21,3.33,3.45,3.57,3.70,3.80,3.88,4.01,4.12,4.24],
+          u50e: [1.33,1.50,1.65,1.82,1.99,2.15,2.25,2.36,2.46,2.56,2.66,2.75,2.84,2.93,3.02,3.10,3.19,3.28,3.36,3.44,3.52],
+          u75e: [1.39,1.54,1.69,1.85,2.01,2.16,2.28,2.39,2.51,2.63,2.74,2.84,2.94,3.04,3.14,3.24,3.33,3.41,3.50,3.59,3.68],
+          u100e: [1.43,1.60,1.77,1.94,2.11,2.27,2.40,2.53,2.65,2.78,2.91,3.02,3.13,3.23,3.34,3.45,3.54,3.63,3.73,3.82,3.92] },
+        other: {
+          pods: [0.80,0.85,0.90,1.00,1.10,1.20,1.20,1.30,1.40,1.40,1.50,1.60,1.60,1.70,1.80,1.90,1.90,2.00,2.00,2.10,2.20],
+          e: [1.00,1.10,1.20,1.30,1.40,1.50,1.54,1.62,1.73,1.82,1.91,2.02,2.05,2.10,2.22,2.29,2.35,2.41,2.46,2.58,2.63],
+          u50: [0.93,1.05,1.17,1.29,1.41,1.53,1.62,1.72,1.81,1.91,2.00,2.08,2.17,2.25,2.33,2.41,2.48,2.56,2.64,2.72,2.79],
+          u75: [0.96,1.09,1.22,1.35,1.48,1.61,1.72,1.82,1.93,2.03,2.13,2.22,2.31,2.40,2.49,2.58,2.66,2.74,2.82,2.90,2.98],
+          u100: [0.99,1.12,1.26,1.40,1.54,1.68,1.80,1.91,2.02,2.13,2.24,2.34,2.44,2.53,2.63,2.73,2.81,2.90,2.98,3.06,3.15],
+          u50e: [1.69,1.84,1.99,2.14,2.29,2.43,2.54,2.65,2.76,2.87,2.98,3.07,3.16,3.25,3.35,3.44,3.52,3.60,3.69,3.77,3.86],
+          u75e: [1.78,1.94,2.10,2.26,2.42,2.56,2.68,2.80,2.91,3.03,3.14,3.24,3.33,3.43,3.53,3.63,3.71,3.80,3.89,3.98,4.07],
+          u100e: [1.86,2.02,2.19,2.35,2.52,2.67,2.79,2.92,3.04,3.16,3.28,3.38,3.48,3.58,3.69,3.78,3.87,3.96,4.06,4.15,4.25] }
+      },
       /* EXPOL Technical Product Guide (2026), ThermaSlab Edge technical specifications */
       edge: [
       { brand: 'EXPOL', name: 'EXPOL ThermaSlab Edge', r: 1.0, t: 30 }]
