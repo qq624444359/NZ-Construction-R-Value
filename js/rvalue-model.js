@@ -223,6 +223,8 @@ function slabLookup(c){const X=(typeof window!=='undefined'?window:globalThis).S
   const ap=ext?X.apExternal(A,P,wt/1000):X.apInternal(A,P);if(ap<=0)return{ok:false,ap,eq:ext?'E.2':'E.1',why:'Check the wall thickness and the area / perimeter — A/P can’t be below zero.'};
   const fl=s.sF||'slab',u=SLABU[s.sU||'none']||SLABU.none,eq=ext?'E.2':'E.1';
   if(fl==='raft'&&u[0])return{ok:false,ap,eq,why:'Underslab insulation applies to slab floors only — no Appendix E table for a raft with underslab insulation.'};
+  /* a product picked for the underslab insulation must reach the R of the table it is looked up in */
+  if(u[0]&&s.uProd&&+s.uProd.r<u[1]-1e-9)return{ok:false,ap,eq,why:'The underslab product '+s.uProd.n+' is R'+(+s.uProd.r).toFixed(2)+' — below the R'+u[1].toFixed(1)+' this table needs. Choose the R1.2 table or a product of R'+u[1].toFixed(1)+' or more.'};
   const look=(edge,wall)=>X.lookup({floor:fl,edge:edge==='r10',under:u[0],underR:u[1],wall:wall||'other'},ap,wt);
   /* perimeter parts (Equations E.3–E.5): extra parts with their own edge insulation / wall; the rest of the perimeter takes the main settings */
   const extra=(s.parts||[]).filter(x=>+x.len>0),used=extra.reduce((a,x)=>a+ +x.len,0),rest=P-used;
