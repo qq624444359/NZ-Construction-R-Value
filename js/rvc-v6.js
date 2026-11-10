@@ -133,7 +133,7 @@ function slabMid(c){if(!c.v.slab||c.v.slab.sM==null){const s0=c.v.slab=c.v.slab|
   const extra=s.parts.map((p,i)=>`<div class="sb-seg">${p.name?`<span class="sb-sl sb-nm">${esc(p.name)}</span>`:''}${grpF('Length',ib(f+'parts.'+i+'.len',p.len,'m'))}${grpF('Vertical edge insulation',segSel(i,'sE',[['none','None'],['r10','R1.0']],'none'))}${grpF('External wall cladding',segSel(i,'sWall',[['other','Other'],['masonry','Masonry veneer']],'other'))}<button class="v6btn sb-x" data-a="sbdel" data-v="${i}" title="Remove this part"><span class="ms s16">close</span></button></div>`).join('');
   const used=s.parts.reduce((a,p)=>a+(+p.len||0),0),rest=(+s.sP||0)-used;
   const segName=g=>g.rest?'Rest of the perimeter':(g.name?g.name+' · ':'')+(g.edge?'R1.0 edge':'no edge insulation')+' · '+(g.wall==='masonry'?'masonry':'other');
-  const res=L.ok?(L.mixed?`<div class="sb-r"><div>A/P = ${r2b(L.ap)} (Eq ${L.eq}) — the same A/P for every part.</div><table class="sb-t"><tr><th>Part</th><th class="n">m</th><th>Table</th><th>A/P row · wall</th><th class="n">R</th></tr>${L.segs.map(g=>`<tr><td>${esc(segName(g))}</td><td class="n">${g.len.toFixed(2)}</td><td>${esc(g.table)}</td><td>${esc(g.apRow)} · ${esc(g.band)}</td><td class="n">${g.R.toFixed(1)}</td></tr>`).join('')}</table>
+  const res=L.ok?(L.mixed?`<div class="sb-r"><div>A/P = ${r2b(L.ap)} (Eq ${L.eq}) — the same A/P for every part.</div><table class="sb-t"><tr><th>Part</th><th class="n">m</th><th>Table</th><th>A/P row · wall</th><th class="n">R</th></tr>${L.segs.map(g=>`<tr><td>${esc(segName(g))}</td><td class="n">${g.len.toFixed(2)}</td><td>${esc(g.table)}</td><td>${esc(g.apRow)} · ${esc(g.band)}</td><td class="n">${g.R.toFixed(L.expol?2:1)}</td></tr>`).join('')}</table>
       <div>Equations E.3–E.5: R = 1 / Σ (Pᵢ/P ÷ Rᵢ) = <b>R${L.Rtxt}</b></div><em>A/P between two rows: the smaller row is used (no interpolation).</em></div>`
     :`<p class="sb-r">A/P = ${r2b(L.ap)} (Eq ${L.eq}) → <b>Table ${esc(L.table)}</b> · A/P row ${esc(L.apRow)} · wall ${esc(L.band)} → <b>R${L.Rtxt}</b><em>A/P between two rows: the smaller row is used (no interpolation).</em></p>`)
     :`<p class="sb-r ${L.none?'':'bad'}"><span class="ms s16">${L.none?'edit':'error'}</span>${L.ap!=null&&!/below 0\.6/.test(L.why)?'A/P = '+r2b(L.ap)+' · ':''}${esc(L.none?L.why:slabMsg(L))}</p>`;
@@ -143,7 +143,8 @@ function slabMid(c){if(!c.v.slab||c.v.slab.sM==null){const s0=c.v.slab=c.v.slab|
   ${grpF('Vertical edge insulation '+ii('Appendix E tables give R1.0 only. More than R1.0 adds little (E.1.2.1 Comment 4) — for other values use an H1/VM1 Appendix E calculation.'),sl('sE',[['none','None'],['r10','R1.0']],'none'))}
   ${grpF('Underslab insulation',raft?uSel.replace('<select','<select disabled'):uSel)}
   ${grpF('External wall cladding',sl('sWall',[['masonry','Masonry veneer'],['other','Other']],'other'))}</div>
-  ${raft?'<p class="sb-n sb-raft">Pods or formers are not insulation — a raft without extra insulation is treated as uninsulated. For insulation under or within a raft, use a manufacturer’s H1/VM1 Appendix E calculation (option below).</p>':''}
+  ${slabPl(s,raft)}
+  ${raft?'<p class="sb-n sb-raft">Pods or formers are not insulation — a raft without extra insulation is treated as uninsulated. For insulation under a raft, pick EXPOL SLABX200 in the insulation list (EXPOL’s raft values), or use a manufacturer’s H1/VM1 Appendix E calculation (option below).</p>':''}
   <div class="sb-g">${grpF('Measured on '+ii('Internal: A/P from the internal floor area and perimeter (Eq E.1). External: A/P − w/2 (Eq E.2), w the effective wall thickness below (entered in mm, used in metres). For masonry veneer, w is measured from the concrete edge below the step (E.1.2.2 Comment 1).'),sl('sM',[['int','Internal dimensions (Eq E.1)'],['ext','External dimensions (Eq E.2)']],'int'))}
   ${grpF('Effective wall thickness',ib(f+'sT',s.sT,'mm',{ph:'100'}))}</div>
   <p class="sb-n">Effective wall thickness: horizontal distance from the outer edge of the slab to the inside face of the wall; for masonry veneer, from the slab edge at floor level.</p>
@@ -151,7 +152,13 @@ function slabMid(c){if(!c.v.slab||c.v.slab.sM==null){const s0=c.v.slab=c.v.slab|
   <div class="sb-seg main"><span class="sb-sl">${s.parts.length?'Rest of the perimeter':'Whole perimeter'} <b class="mono">${rest.toFixed(2)} m</b> · ${s.sE==='r10'?'R1.0 edge':'no edge insulation'} · ${s.sWall==='masonry'?'masonry veneer':'other cladding'} (as above)</span></div>
   ${extra}<div class="sb-btns"><button class="v6btn sb-add" data-a="sbadd"><span class="ms s16">add</span>Add a perimeter part</button>${s.parts.some(p=>p.name==='Wall to garage')?'':'<button class="v6btn sb-add" data-a="sbgar"><span class="ms s16">garage</span>Add the house–garage wall</button>'}${S.list.some(w=>w.el==='wall'&&(LIB.cladding[+((w.v.clad||{}).m)]||{}).grp==='br')&&!s.parts.some(p=>p.name==='Under brick veneer')?'<button class="v6btn sb-add" data-a="sbbv"><span class="ms s16">add</span>Add the brick veneer walls</button>':''}</div>
   <p class="sb-n">Thermally separating the garage slab with vertical edge insulation is recommended (E.1.2.1 Comment 1).</p></div>
-  ${res}${notes}${vm}</div>`}
+  ${res}${L.ok&&L.expol?`<p class="sb-n sb-raft">H1/AS1 Appendix E has no table for a raft with underslab insulation — this R is EXPOL’s own value for its Tuff Pod raft with SLABX200 (details drawn for 90–140 mm framing). ${esc(L.src||'')} Confirm the basis with EXPOL (tech@expol.co.nz) before it goes into a consent.</p>`:''}${notes}${vm}</div>`}
+/* the products picked for the slab from the insulation list on the right */
+function slabPl(s,raft){const f=p=>`${esc(p.n)} · ${p.t} mm · R${(+p.r).toFixed(2)}`,u=s.uProd,e=s.eProd,L=[];
+  if(u&&raft)L.push(`<b>Under the raft</b> ${f(u)} — R from EXPOL’s raft table (H1/AS1 has none for this)<button class="link-btn" data-a="sprodx" data-v="u">Remove product</button>`);
+  if(u&&!raft&&s.sU&&s.sU!=='none'){const tr=+s.sU.slice(1)/10;L.push(`<b>Underslab</b> ${f(u)} — counted as R${tr.toFixed(1)}${+u.r>tr+1e-9?' (the tables give R1.2 and R2.4 only)':''}<button class="link-btn" data-a="sprodx" data-v="u">Remove product</button>`)}
+  if(e&&s.sE==='r10')L.push(`<b>Vertical edge</b> ${f(e)}<button class="link-btn" data-a="sprodx" data-v="e">Remove product</button>`);
+  return `<div class="sb-pl">${L.map(x=>`<p class="sb-n">${x}</p>`).join('')}<p class="sb-n"><span class="ms s16">arrow_forward</span>${L.length?'Change them in':'Pick underslab or edge insulation from'} the insulation list on the right — the table follows the product’s R-value.</p></div>`}
 /* ---------- middle: one grammar for every construction ---------- */
 /* what the user is typing is kept as typed ("3.", "0.", ".") as long as it means the stored number; numbers are shown with a leading zero */
 const RAW={};
@@ -257,6 +264,7 @@ function eavesBox(c,st){const e=c.v.edge=c.v.edge||{},G=st.G,f='v.edge.',r1=x=>(
     h+=st.per==='product'?`<div class="frow">${grpF('Perimeter product',ib(f+'pprod',e.pprod!=null?e.pprod:st.pp.name,'',{text:1,w:'200px'}))}${grpF('R',ib(f+'pR',e.pR,'R',{ph:'2.7'}))}${grpF('Thickness',ib(f+'pT',e.pT,'mm',{ph:'100'}))}${grpF('Width',ib(f+'pW',e.pW,'mm',{ph:'560'}))}</div>`
       :`<div class="frow">${grpF('Compressed product',ib(f+'cpName',e.cpName!=null?e.cpName:st.cp.name,'',{text:1,w:'200px'}))}${grpF('R',ib(f+'cpR',e.cpR,'R',{ph:'7.0'}))}${grpF('Thickness',ib(f+'cpT',e.cpT,'mm',{ph:'275'}))}</div>
       <div class="frow">${grpF('Insulation type',selF(f+'n',[[0.24,'Glass wool · n 0.24'],[0.3,'Polyester or wool · n 0.30'],[0,'Rigid board · n 0']],e.n!=null&&e.n!==''?e.n:0.24,'220px'))}${grpF('Manufacturer compressed R',ib(f+'rOver',e.rOver,'R',{ph:st.cs?r2(st.cs.rAvg):''}))}</div>`;
+    h+=`<div class="v6eh" data-a="af" data-v="edge">${S.af==='edge'?'<span class="ms s16">arrow_forward</span>Pick a product in the insulation list on the right, or enter its R — the thickness and name follow.':'Click into these fields to fill them from the insulation list on the right.'}</div>`;
     h+=`<div class="v6eh">Perimeter part: ${st.per==='product'?esc(st.pp.name+' R'+st.pp.R.toFixed(1)+' · '+st.pp.T+' mm'):'compressed '+esc(st.cp.name+' R'+st.cp.R.toFixed(1))+' under an insulation guard'} · RT <b class="mono">${r2(st.pRT)}</b> · its own sheet in the PDF (2.1.2.9). Areas are entered on the Project page.</div>`}
   return h+'</div>'}
 /* truss roof: framing on the left, insulation on the right */
@@ -301,13 +309,18 @@ const PB_CEIL=pbT(RPI.ceiling),PB_SKILL=pbT(RPI.skillion);
 /* a list's heading and source line name the brands in it */
 const brandsOf=L=>[...new Set(L.map(p=>p[5]))],pbHead=L=>'Insulation · '+brandsOf(L).join(' · '),pbSrc=L=>brandsOf(L).map(b=>RPI.sources[b]||b+' declared values.').join(' ');
 const pbList=m=>m==='chord'?PB_CEIL:m==='rafter'?PB_SKILL:null;
+/* the ceiling perimeter's list: a perimeter batt and the ceiling batts for the strip, the ceiling batts for edge compression */
+const PB_PER=[['Pink® Batts® Perimeter',2.7,100,560,null,'Pink® Batts®']].concat(PB_CEIL);
+const edgeOn=c=>{const st=isStrat(c)&&strategy(c);return st&&st.per!=='none'?st:null};
+/* the perimeter's product in a layer's shape {prod, insR, insT} */
+const edgeV=c=>{const st=edgeOn(c),p=st&&(st.per==='product'?st.pp:st.cp);return p?{prod:p.name,insR:p.R,insT:p.T}:{}};
 /* a layer's products as [name, R, thickness, width, note, brand] — the list on the right for that layer */
-function layerProds(c,id){if(id==='over')return PB_CEIL;const s=(tpl(c).slots||[]).find(x=>x.id===id&&x.k==='frame');if(!s)return null;
+function layerProds(c,id){if(id==='over')return PB_CEIL;if(id==='edge'){const st=edgeOn(c);return st?(st.per==='product'?PB_PER:PB_CEIL):null}const s=(tpl(c).slots||[]).find(x=>x.id===id&&x.k==='frame');if(!s)return null;
   const v=c.v[id]||{},depth=+v.d||MEMBER[s.member].d,DB=RPI.byMember.brand;return pbList(s.member)||prodList(s.member,depth).map(([r,th,n,br])=>[n||br||DB,r,th,null,null,br||DB])}
 /* a product saved as a brand, or as a brand's generic name ("Pink® Batts® Ceiling"), is that brand's row at the same R and thickness */
 const prodIs=(pv,name,brand,L)=>{const DB=RPI.byMember.brand;if(!pv)return brand===DB;if(pv===name||pv===brand)return true;return pv.indexOf(brand)===0&&!(L||[]).some(p=>p[0]===pv)};
 /* one product row: R · thickness · width, name, chips */
-const pbRow=(p,chips,max)=>`<button class="prow2 v6pr" data-a="prod" data-r="${p[1]}" data-t="${p[2]}" data-n="${esc(p[0])}"><b>R${p[1].toFixed(1)} · ${max?'max ':''}${p[2]} mm</b><em>${esc(p[0])} · ${p[3]} mm wide${p[4]==='two'?'<br>Two-layer system with Superbatts®':''}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`;
+const pbRow=(p,chips,max)=>`<button class="prow2 v6pr" data-a="prod" data-r="${p[1]}" data-t="${p[2]}" data-w="${p[3]||''}" data-n="${esc(p[0])}"><b>R${p[1].toFixed(1)} · ${max?'max ':''}${p[2]} mm</b><em>${esc(p[0])} · ${p[3]} mm wide${p[4]==='two'?'<br>Two-layer system with Superbatts®':''}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`;
 const cntChip=k=>`<span class="v6cnt" title="H1/AS1 2.1.3.2: an insulation layer or air cavity next to framing joins the bridged portion.">Counted in ${k}</span>`;
 const MWORD={stud:['Stud','studs'],chord:['Chord','chords'],rafter:['Rafter','rafters'],joist:['Joist','joists'],batten:['Batten','battens']};
 const pline=(n,r,tip)=>`<div class="v6pl"${tip?` title="${esc(tip)}"`:''}><span>${n}</span><b class="mono">${r2(r)}</b></div>`;
@@ -373,14 +386,37 @@ function secCard(c){const d=drawing(c);
   return `<div class="card secpanel"><div class="sechd"><div><h2>${d.h}</h2><p>${d.p}</p></div></div><div class="v6draw ${d.t}">${fitSvg(d.svg)}</div>${ndLine(d)}
   <div class="secfoot" id="pinstate">${S.pin?`<span class="ms s16">push_pin</span>${esc(slotLabel(c,S.pin))} pinned — click it again to release`:'<span class="ms s16">touch_app</span>Hover a layer to find it in the section · click to pin'}</div></div>`}
 function slotLabel(c,id){const s=(tpl(c).slots||[]).find(s=>s.id===id);return s?s.label:id}
-function prodCard(c){const t=tpl(c),ovr=isStrat(c)&&S.af==='over'&&(t.slots||[]).find(x=>x.id==='over'),s=ovr||(!t.manual&&(t.slots||[]).find(x=>x.id===S.af&&x.k==='frame'));
+/* a slab: underslab and vertical edge products. Underslab boards of R1.2 or more count as R1.2, of R2.4 or more as R2.4 —
+   the only underslab values the Appendix E tables have; the layout (1.2 m strip or full cover) stays as chosen */
+function slabProdCard(c){const s=c.v.slab||{},raft=s.sF==='raft',P=RPI.slab||{},A=x=>[x.name,x.r,x.t,null,null,x.brand],
+    U=(P.under||[]).filter(x=>x.r>=1.2-1e-9).map(A).sort((a,b)=>a[1]-b[1]||a[2]-b[2]),E=(P.edge||[]).filter(x=>x.r>=1-1e-9).map(A),
+    key=c.id+':slab',brs=brandsOf(U.concat(E)).sort(),
+    bf=S.pbfK===key&&brs.includes(S.pbf)?S.pbf:s.uProd&&brs.includes(s.uProd.b)?s.uProd.b:s.eProd&&brs.includes(s.eProd.b)?s.eProd.b:brs[0],
+    sel=(p,q)=>!!q&&q.n===p[0]&&Math.abs(+q.r-p[1])<1e-9&&+q.t===p[2],
+    row=(p,k,on,dis)=>`<button class="prow2 v6pr" data-a="sprod" data-k="${k}" data-r="${p[1]}" data-t="${p[2]}" data-n="${esc(p[0])}" data-b="${esc(p[5])}"${dis?' disabled':''}><b>R${p[1].toFixed(2)} · ${p[2]} mm</b><em>${esc(p[0])}</em>${on?'<span class="pchips"><i class="pchip on">Selected</i></span>':''}</button>`,
+    grp=t=>`<div class="pgrp">${esc(t)}</div>`,hd=t=>`<div class="card prodcard"><div class="prod-hd"><h2>Insulation</h2><p>${t}</p></div>`;
+  if(s.vm1)return hd('This slab uses an H1/VM1 Appendix E calculation — its insulation is part of that calculation. Untick it to fill the slab from this list.')+'</div>';
+  if(!brs.length)return hd('No slab insulation products listed yet.')+'</div>';
+  const XR=P.raft,RK=p=>!!XR&&p[0]===XR.product&&(XR.masonry['u'+p[2]]||XR.other['u'+p[2]]);
+  const of=L=>L.filter(p=>p[5]===bf),u1=of(U).filter(p=>p[1]<2.4-1e-9),u2=of(U).filter(p=>p[1]>=2.4-1e-9),Ef=of(E),uOn=p=>raft?sel(p,s.uProd):s.sU&&s.sU!=='none'&&sel(p,s.uProd);
+  const rows=(Ef.length?grp('Vertical edge insulation · the tables give R1.0')+Ef.map(p=>row(p,'e',s.sE==='r10'&&sel(p,s.eProd))).join(''):'')
+    +(raft?(of(U).some(RK)?grp('Under the raft · EXPOL’s own raft values (H1/AS1 has no table)')+of(U).filter(RK).map(p=>row(p,'u',uOn(p))).join(''):grp('Underslab insulation under a raft needs an H1/VM1 calculation'))
+    :(u1.length?grp('Underslab R1.2 to under R2.4 · counted as R1.2')+u1.map(p=>row(p,'u',uOn(p))).join(''):'')
+    +(u2.length?grp('Underslab R2.4 or more · counted as R2.4')+u2.map(p=>row(p,'u',uOn(p))).join(''):''));
+  const bfR=brs.length>1?`<div class="pbf"><span class="pbf-s"><i>1</i>Brand</span>${brs.map(b=>`<button class="pbf-c${bf===b?' on':''}" data-a="pbf" data-v="${esc(b)}" data-k="${esc(key)}">${esc(b)}</button>`).join('')}</div><div class="pbf-s pbf-s2"><i>2</i>R-value · ${esc(bf)}</div>`:'';
+  return hd('Click a product to fill this slab — the Appendix E table follows its R-value. Underslab keeps the layout chosen (1.2 m strip or full cover).')+`${bfR}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(RPI.sources[bf]||bf+' declared values.')} Underslab under R1.2 and edge under R1.0 are not listed — the Appendix E tables start there.</div></div>`}
+function prodCard(c){const t=tpl(c);if(t.slab)return slabProdCard(c);const edg=S.af==='edge'&&edgeOn(c),af=S.af==='edge'&&!edg?firstFrame(c):S.af,
+    ovr=!edg&&isStrat(c)&&af==='over'&&(t.slots||[]).find(x=>x.id==='over'),s=ovr||(!edg&&!t.manual&&(t.slots||[]).find(x=>x.id===af&&x.k==='frame'));
   /* brand first, then the R-value: the list shows one brand at a time. It opens on the brand of the product already in the layer, else the brand
      last picked, else the default brand. A layer saved with just a brand name is that brand's product */
-  const DB=RPI.byMember.brand,lay=ovr?'over':(s&&s.id),key=c.id+':'+lay,LP=lay?layerProds(c,lay):null,isSel=(pv,name,brand)=>prodIs(pv,name,brand,LP),
+  const DB=RPI.byMember.brand,lay=edg?'edge':ovr?'over':(s&&s.id),key=c.id+':'+lay,LP=lay?layerProds(c,lay):null,isSel=(pv,name,brand)=>prodIs(pv,name,brand,LP),
     bfOf=brs=>layerBrand(c,lay,LP||[]),
     bfRow=(brs,bf)=>brs.length>1?`<div class="pbf"><span class="pbf-s"><i>1</i>Brand</span>${brs.map(b=>`<button class="pbf-c${bf===b?' on':''}" data-a="pbf" data-v="${esc(b)}" data-k="${esc(key)}">${esc(b)}</button>`).join('')}</div><div class="pbf-s pbf-s2"><i>2</i>R-value · ${esc(bf)}</div>`:'',
     head=brs=>'Insulation',brOrd=L=>brandsOf(L).sort((a,b)=>(b===DB)-(a===DB)||a.localeCompare(b)),   /* the default brand first, then A–Z */
 srcOf=brs=>brs.map(b=>RPI.sources[b]||b+' declared values.').join(' ');
+  if(edg){const v=edgeV(c),pr=edg.per==='product',brs=brOrd(LP),bf=bfOf(brs),
+      rows=LP.filter(p=>!bf||p[5]===bf).map(p=>pbRow(p,Math.abs(v.insR-p[1])<1e-9&&v.insT===p[2]&&isSel(v.prod,p[0],p[5])?['<i class="pchip on">Selected</i>']:[])).join('');
+    return `<div class="card prodcard"><div class="prod-hd"><h2>Insulation</h2><p>Pick the brand, then click a product to fill the ceiling perimeter — R-value, thickness${pr?' and width':''} together.</p></div>${bfRow(brs,bf)}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(srcOf(bf?[bf]:brs))} Fills the ceiling perimeter only.</div></div>`}
   if(ovr){const v=c.v.over||{},brs=brOrd(PB_CEIL),bf=bfOf(brs,PB_CEIL,v.prod,v.r,v.t);
     const cov=!!(c.v.fr||{}).cover,rows=PB_CEIL.filter(p=>!bf||p[5]===bf).map(p=>{const ch=[];if(Math.abs((+v.r||0)-p[1])<1e-9&&+v.t===p[2]&&isSel(v.prod,p[0],p[5]))ch.push('<i class="pchip on">Selected</i>');if(cov&&p[3]===460)ch.push('<i class="pchip fit">Suits covering the chords</i>');return pbRow(p,ch)}).join('');
     return `<div class="card prodcard"><div class="prod-hd"><h2>${esc(head(brs))}</h2><p>Pick the brand, then click a product to fill ${esc(ovr.label.toLowerCase())} — R-value and thickness together.</p></div>${bfRow(brs,bf)}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(srcOf(bf?[bf]:brs))} Fills the selected layer only.</div></div>`}
@@ -561,7 +597,12 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
       c.v[s.id]=Object.assign({d:d.d,w:d.w,s:d.s,mode:'std',insR:b?b[0]:null,insT:b?b[1]:null,gap:0,cover:s.member==='chord',prod:b?(b[2]||RPI.byMember.brand):''},d.dw?{dw:d.dw}:{},c.el==='roof'&&s.id==='st'?{d:35,w:70,s:450,lock:true}:{},bst?WALL_ST:{})});
     if(wasAuto)c.name=autoName(c);
     retype(c);return}
-  if(path==='v.slab.sF'){const sv=c.v.slab=c.v.slab||{};sv.sF=raw;if(raw==='raft')sv.sU='none';return}
+  if(path==='v.slab.sF'){const sv=c.v.slab=c.v.slab||{},XR=(RPI.slab||{}).raft,u=sv.uProd;sv.sF=raw;
+    if(raw==='raft'){sv.sU='none';if(u&&!(XR&&u.n===XR.product&&(XR.masonry['u'+u.t]||XR.other['u'+u.t])))delete sv.uProd}   /* under a raft only what EXPOL's raft table has */
+    else if(u&&(sv.sU||'none')==='none')sv.sU='f'+(+u.r>=2.4-1e-9?'24':'12');return}
+  /* a product picked from the list stays only while the table chosen is one its R reaches */
+  if(path==='v.slab.sU'){const sv=c.v.slab=c.v.slab||{},u=SLABU[raw];sv.sU=raw;if(!u||!u[0]||(sv.uProd&&+sv.uProd.r<u[1]-1e-9))delete sv.uProd;return}
+  if(path==='v.slab.sE'){const sv=c.v.slab=c.v.slab||{};sv.sE=raw;if(raw!=='r10')delete sv.eProd;return}
   if(path.startsWith('v.slab.parts.')){const [,,,i,k]=path.split('.'),sv=c.v.slab=c.v.slab||{};sv.parts=sv.parts||[];const pt=sv.parts[+i]=sv.parts[+i]||{};pt[k]=k==='len'?(raw===''?'':parseFloat(raw)):raw;return}
   if(path.startsWith('o.')){c.o[path.slice(2)]=!!raw;retype(c);return}
   if(path==='heated'){c.heated=raw;if(!raw)delete c.heatWet;return}
@@ -578,8 +619,8 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
   if(key==='cover'){o.cover=raw;return}
   /* ceiling perimeter: an R typed for the perimeter product or the compressed product takes that product's thickness (and width) and name,
      from the brand of the product already there — a perimeter batt first for the strip, Superbatts first for edge compression */
-  if(id==='edge'&&(key==='pR'||key==='cpR')){o[key]=val0;const pr=key==='pR',nk=pr?'pprod':'cpName',tk=pr?'pT':'cpT',L=[['Pink® Batts® Perimeter',2.7,100,560,null,'Pink® Batts®']].concat(PB_CEIL),
-      nm=String(o[nk]!=null&&o[nk]!==''?o[nk]:pr?'Pink® Batts® Perimeter':'Pink® Superbatts®'),br=brandsOf(L).find(b=>nm.indexOf(b)===0)||RPI.byMember.brand,pref=pr?/Perimeter/:/Superbatts/;
+  if(id==='edge'&&key==='psel'&&S.pbfK===c.id+':edge')S.pbfK='';   /* a new perimeter method: the list opens on its product's brand */
+  if(id==='edge'&&(key==='pR'||key==='cpR')){o[key]=val0;const pr=key==='pR',nk=pr?'pprod':'cpName',tk=pr?'pT':'cpT',L=pr?PB_PER:PB_CEIL,br=layerBrand(c,'edge',L),pref=pr?/Perimeter/:/Superbatts/;
     const M=val0>0&&L.filter(p=>p[5]===br&&Math.abs(p[1]-val0)<1e-9).sort((a,b)=>pref.test(b[0])-pref.test(a[0])||(b[2]===+o[tk])-(a[2]===+o[tk])||a[2]-b[2])[0];
     if(M){o[tk]=M[2];o[nk]=M[0];if(pr&&M[3])o.pW=M[3]}else if(val0>0)o[nk]='Custom';return}
   /* an R typed in: that R's product in the brand the list is showing takes its thickness and name, as if picked from the list
@@ -590,7 +631,7 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
   if(id==='over'&&key==='t')o.prod='';
   o[key]=val0}
 /* the brand a layer's list shows: the one picked for it, else its product's brand, else the brand last picked, else the default */
-function layerBrand(c,id,L){const DB=RPI.byMember.brand,brs=brandsOf(L),v=c.v[id]||{},key=c.id+':'+id,r=id==='over'?v.r:v.insR,th=id==='over'?v.t:v.insT;
+function layerBrand(c,id,L){const DB=RPI.byMember.brand,brs=brandsOf(L),v=id==='edge'?edgeV(c):c.v[id]||{},key=c.id+':'+id,r=id==='over'?v.r:v.insR,th=id==='over'?v.t:v.insT;
   if(S.pbfK===key&&brs.includes(S.pbf))return S.pbf;const m=v.prod&&L.find(p=>Math.abs(p[1]-(+r||0))<1e-9&&p[2]===+th&&prodIs(v.prod,p[0],p[5],L));
   return m&&brs.includes(m[5])?m[5]:v.prod&&brs.find(b=>v.prod.indexOf(b)===0)||(brs.includes(S.pbf)?S.pbf:brs.includes(DB)?DB:brs[0])}
 /* ---------- undo / redo: Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z — snapshots of the constructions, the Project fields and the
@@ -613,7 +654,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!t.datase
   if(t.dataset.cl){const L=LIB.cladding,o=L[+t.closest('.v6clad').querySelector('select:not([data-cl])').value]||L[0],g=t.dataset.cl==='g'?t.value:(o.grp||'ot'),b=t.dataset.cl==='b'?t.value:null,j=cladIn(g,b)[0];if(j!=null){setF(t.dataset.f,String(j),false);render()}return}
   if(t.tagName==='SELECT'){setF(t.dataset.f,t.value,false);render()}else if(t.type==='checkbox'){setF(t.dataset.f,t.checked);if(t.dataset.f==='v.over.on'&&isStrat(cur()))S.af=t.checked?'over':firstFrame(cur());render()}});   /* ticking the second layer points the product list at it */
 document.addEventListener('focusin',e=>{const t=e.target,f=t.dataset&&t.dataset.f,m=f&&/^v\.([^.]+)\./.exec(f),c=m&&cur();if(!c||S.af===m[1])return;
-  const id=m[1];if((id==='over'&&isStrat(c)&&(c.v.over||{}).on)||(tpl(c).slots||[]).some(s=>s.id===id&&s.k==='frame')){S.af=id;render();
+  const id=m[1];if((id==='edge'&&t.tagName==='INPUT'&&/^v\.edge\.(pprod|pR|pT|pW|cpName|cpR|cpT)$/.test(f)&&edgeOn(c))||(id==='over'&&isStrat(c)&&(c.v.over||{}).on)||(tpl(c).slots||[]).some(s=>s.id===id&&s.k==='frame')){S.af=id;render();
     const nx=document.querySelector(`[data-f="${f}"]`);if(nx&&nx.dataset.n&&t.type==='text'){nx._fj=1;setTimeout(()=>{if(document.activeElement===nx)nx.select()},0)}}});   /* still selected, ready to type over */   /* typing in a layer: the product list follows it */
 document.addEventListener('focusout',e=>{const t=e.target;t._sel=0;t._fj=0;if(t.dataset&&t.dataset.f&&RAW[t.dataset.f]!=null){delete RAW[t.dataset.f];const nv2=lz(t.value);if(nv2!==t.value)t.value=nv2}});
 /* clicking into a number selects it, ready to type over: every time it gets focus (not only the first), and the
@@ -648,7 +689,12 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   else if(a==='gapauto'){const o=c.v[v];if(o)o.gapMan=false}
   else if(a==='fedit'){const k=c.id+':'+v;FEDIT.has(k)?FEDIT.delete(k):FEDIT.add(k)}
   else if(a==='unlock'){UNL.add(c.id+':'+v)}
+  else if(a==='sprod'){const sv=c.v.slab=c.v.slab||{},p={n:b.dataset.n,r:+b.dataset.r,t:+b.dataset.t,b:b.dataset.b};
+    if(b.dataset.k==='e'){sv.eProd=p;sv.sE='r10'}else{sv.uProd=p;if(sv.sF!=='raft')sv.sU=((sv.sU||'none')[0]==='s'?'s':'f')+(p.r>=2.4-1e-9?'24':'12')}}   /* underslab: the layout stays, the table follows the R */
+  else if(a==='sprodx'){const sv=c.v.slab||{};delete sv[v==='e'?'eProd':'uProd']}
   else if(a==='pbf'){S.pbf=v||'';S.pbfK=b.dataset.k||''}
+  else if(a==='prod'&&S.af==='edge'){const st=edgeOn(c);if(!st)return;const e=c.v.edge=c.v.edge||{},r=+b.dataset.r,t=+b.dataset.t,nm=b.dataset.n||RPI.byMember.brand;
+    if(st.per==='product'){e.pR=r;e.pT=t;e.pprod=nm;if(+b.dataset.w)e.pW=+b.dataset.w}else{e.cpR=r;e.cpT=t;e.cpName=nm}}
   else if(a==='prod'){const s=c.v[S.af];if(!s)return;if(S.af==='over'){s.r=+b.dataset.r;s.t=+b.dataset.t;s.on=true}else{s.insR=+b.dataset.r;s.insT=+b.dataset.t}s.prod=b.dataset.n||RPI.byMember.brand}
   else if(a==='pdf'){openPdf();return}
   else if(a==='pnew'){npOpen();return}
@@ -698,7 +744,9 @@ const slabSum=L=>!L||!L.ok?['—','—']:L.vm1?['H1/VM1 Appendix E calculation',
 function slabTxt(c){const s=c.v.slab||{},L=calc(c).slab||{};const fl=s.sF==='raft'?'Raft':'Slab floor',U={none:'',s12:'1.2 m strip R1.2',s24:'1.2 m strip R2.4',f12:'full cover R1.2',f24:'full cover R2.4'}[s.sU||'none'];
   if(L.vm1)return[fl,'H1/VM1 Appendix E calculation'+(L.src?' — '+L.src:'')];
   const segs=L.segs||(L.ok?[{len:+s.sP||0,edge:s.sE==='r10'}]:[]),ed=segs.map(g=>(g.edge?'R1.0 edge ':'no edge ')+(+g.len).toFixed(2)+' m').join(' + ');
-  return[fl,(U?'underslab '+U+(ed?' · ':''):'')+(ed||'no edge insulation')]}
+  const pn=p=>' ('+p.n+', '+p.t+' mm, R'+(+p.r).toFixed(2)+')',uP=U&&s.uProd&&s.sF!=='raft'?pn(s.uProd):'',eP=s.eProd&&segs.some(g=>g.edge)?pn(s.eProd):'',
+    rU=L.expol&&s.uProd?'under the raft'+pn(s.uProd)+' — EXPOL raft table':'';
+  return[fl,(rU?rU+(ed?' · ':''):U?'underslab '+U+uP+(ed?' · ':''):'')+(ed?ed+eP:'no edge insulation')]}
 function sumRows(){const out=[];[['roof'],['wall'],['floor',0],['floor',1]].forEach(([el,sl])=>{const L=incl().filter(c=>c.el===el&&(el!=='floor'||!!tpl(c).slab===!!sl));if(!L.length)return;
   out.push(`<tr class="grp"><td colspan="7">${sl?'Slab on ground':esc(EL[el].name)}</td></tr>`);
   L.forEach(c=>{const s=toSheet(c,S.list),ok=s.slab?!!s.slab.ok:s.checks.every(k=>k.ok);
@@ -737,14 +785,15 @@ function fnHTML(s){const fn=(s.ff||[]).map(l=>`<p${l.ok?'':' style="color:#C2410
 function block(c,k){const s=toSheet(c,S.list),P=s.perimeter;
   const hd=s.slab?'':cbHead(s,P?'Field':'',null,!(s.checks[0]||{ok:true}).ok);
   if(s.slab){const L=s.slab;const sv0=c.v.slab||{},UL={none:'None',s12:'1.2 m strip R1.2',s24:'1.2 m strip R2.4',f12:'Full cover R1.2',f24:'Full cover R2.4'};
-    const inp=!L.ok?`<table class="cb-tb sbt"><colgroup><col style="width:52mm"><col></colgroup><thead><tr><th>Known input</th><th>Value</th></tr></thead><tbody>${[['Floor area',(+c.area||0).toFixed(1)+' m² (Project page)'],['Perimeter',(+sv0.sP||0).toFixed(2)+' m (Project page)'],['A/P',L.ap!=null?(+L.ap).toFixed(2)+' m (Eq '+(L.eq||'E.1')+(sv0.sM==='ext'?', external dimensions, w '+sv0.sW+' m':', internal dimensions')+')':'—'],['Floor type',sv0.sF==='raft'?'Concrete raft foundation':'Slab floor'],['Underslab insulation',UL[sv0.sU||'none']],['Vertical edge insulation',[{len:(+sv0.sP||0)-((sv0.parts||[]).reduce((a,x)=>a+(+x.len||0),0)),sE:sv0.sE}].concat(sv0.parts||[]).filter(x=>+x.len>0).map(x=>(x.sE==='r10'?'R1.0':'none')+' '+(+x.len).toFixed(2)+' m').join(' + ')||'none'],['External wall',[sv0.sWall].concat((sv0.parts||[]).map(x=>x.sWall)).map(w=>w==='masonry'?'Masonry veneer':'Other cladding').filter((x,i,a)=>a.indexOf(x)===i).join(' / ')],['Effective wall thickness',(sv0.sT==null||sv0.sT===''?100:+sv0.sT)+' mm']].map(([a,b])=>`<tr><td>${a}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table>`:'';
+    const inp=!L.ok?`<table class="cb-tb sbt"><colgroup><col style="width:52mm"><col></colgroup><thead><tr><th>Known input</th><th>Value</th></tr></thead><tbody>${[['Floor area',(+c.area||0).toFixed(1)+' m² (Project page)'],['Perimeter',(+sv0.sP||0).toFixed(2)+' m (Project page)'],['A/P',L.ap!=null?(+L.ap).toFixed(2)+' m (Eq '+(L.eq||'E.1')+(sv0.sM==='ext'?', external dimensions, w '+sv0.sW+' m':', internal dimensions')+')':'—'],['Floor type',sv0.sF==='raft'?'Concrete raft foundation':'Slab floor'],['Underslab insulation',(sv0.sF==='raft'&&sv0.uProd?'Under the raft':UL[sv0.sU||'none'])+(sv0.uProd&&((sv0.sU||'none')!=='none'||sv0.sF==='raft')?' — '+sv0.uProd.n+', '+sv0.uProd.t+' mm, R'+(+sv0.uProd.r).toFixed(2):'')],['Vertical edge insulation',[{len:(+sv0.sP||0)-((sv0.parts||[]).reduce((a,x)=>a+(+x.len||0),0)),sE:sv0.sE}].concat(sv0.parts||[]).filter(x=>+x.len>0).map(x=>(x.sE==='r10'?'R1.0':'none')+' '+(+x.len).toFixed(2)+' m').join(' + ')||'none'],['External wall',[sv0.sWall].concat((sv0.parts||[]).map(x=>x.sWall)).map(w=>w==='masonry'?'Masonry veneer':'Other cladding').filter((x,i,a)=>a.indexOf(x)===i).join(' / ')],['Effective wall thickness',(sv0.sT==null||sv0.sT===''?100:+sv0.sT)+' mm']].map(([a,b])=>`<tr><td>${a}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table>`:'';
     const txt=!L.ok?'Slab-on-ground R not determined: '+esc(slabMsg(L))+'. The inputs below are what the manufacturer needs for the calculation.':L.vm1?`H1/VM1 Appendix E calculation — source: ${esc(L.src||'not given')} → R${L.Rtxt} (E.1.1.1 b)). BRANZ House Insulation Guide 5th edition or earlier slab values are not acceptable (E.1.1.1 Comment 1).`
+    :L.expol?`Slab-on-ground construction R: a raft with underslab insulation is not covered by the H1/AS1 Appendix E tables, so the R is EXPOL’s own value for its waffle-pod (Tuff Pod) raft with ${esc((sv0.uProd||{}).n||'SLABX200')} ${esc(String((sv0.uProd||{}).t||''))} mm under the slab. Area ${(+L.A).toFixed(1)} m², perimeter ${(+L.P).toFixed(2)} m → A/P = ${(+L.ap).toFixed(2)} (Eq ${L.eq}). ${(L.segs||[L]).map(g=>`${g.len!=null?(+g.len).toFixed(2)+' m ':''}${esc(g.title||'')}: ${esc(g.table)}, A/P row ${esc(g.apRow)} → R${(+g.R).toFixed(2)}`).join('; ')}${L.segs?'. Equations E.3–E.5: R = 1 / Σ (Pᵢ/P ÷ Rᵢ)':''} = R${L.Rtxt}. A/P rows: the smaller row when A/P falls between two — no interpolation. Source: ${esc(L.src||'')}`
     :L.mixed?`Slab-on-ground construction R from H1/AS1 6th edition Appendix E (2.1.3.1 c)). Area ${(+L.A).toFixed(1)} m², perimeter ${(+L.P).toFixed(2)} m → A/P = ${(+L.ap).toFixed(2)} (Eq ${L.eq}), the same for every part. ${L.segs.map(g=>`${g.name?esc(g.name)+' ':''}${g.len.toFixed(2)} m ${g.edge?'with R1.0 edge insulation':'without edge insulation'}, ${g.wall==='masonry'?'masonry veneer':'other cladding'}: Table ${esc(g.table)}, A/P row ${esc(g.apRow)}, wall ${esc(g.band)} → R${g.R.toFixed(1)}`).join('; ')}. Equations E.3–E.5: R = 1 / Σ (Pᵢ/P ÷ Rᵢ) = R${L.Rtxt}. A/P rows: the smaller row when A/P falls between two — no interpolation.`
     :`Slab-on-ground construction R from H1/AS1 6th edition Appendix E (2.1.3.1 c)). Area ${(+L.A).toFixed(1)} m², perimeter ${(+L.P).toFixed(1)} m → A/P = ${(+L.ap).toFixed(2)} (Eq ${L.eq}). ${esc(L.title)}. A/P row ${esc(L.apRow)} (the smaller row when A/P falls between two — no interpolation), effective wall thickness ${esc(L.band)} → R${L.Rtxt}.`;
-    const txt2=txt+(L.ok&&!L.vm1?' Tables for soil conductivity λ = 2.0 W/(m·K) (E.1.2.1 Comment 5); floor coverings not counted.':'');
+    const txt2=txt+(L.ok&&!L.vm1&&!L.expol?' Tables for soil conductivity λ = 2.0 W/(m·K) (E.1.2.1 Comment 5); floor coverings not counted.':'');
     const ED=e=>e?'R1.0':'None',WL=w=>w==='masonry'?'Masonry veneer':'Other cladding',sv=c.v.slab||{};
     const rows=!L.ok||L.vm1?[]:L.segs?L.segs:[{len:+L.P,edge:sv.sE==='r10',wall:sv.sWall||'other',table:L.table,apRow:L.apRow,band:L.band,R:L.R}];
-    const tb=rows.length?`<table class="cb-tb sbt"><colgroup><col style="width:18mm"><col style="width:22mm"><col style="width:28mm"><col style="width:22mm"><col style="width:18mm"><col><col style="width:13mm"></colgroup><thead><tr><th class="n">Length m</th><th>Edge insulation</th><th>External wall</th><th>Table</th><th class="n">A/P row</th><th>Wall thickness</th><th class="n">R</th></tr></thead><tbody>${rows.map(g=>`<tr><td class="n">${g.name?esc(g.name)+' ':''}${(+g.len).toFixed(2)}</td><td>${ED(g.edge)}</td><td>${WL(g.wall)}</td><td class="mono">${esc(g.table)}</td><td class="n">${esc(g.apRow)}</td><td>${esc(g.band)}</td><td class="n">${g.R.toFixed(1)}</td></tr>`).join('')}<tr class="tot"><td colspan="6">${L.segs?'Equations E.3–E.5: R = 1 / Σ (Pᵢ/P ÷ Rᵢ)':'One perimeter part — the table value'} · A/P = ${(+L.ap).toFixed(2)} (Eq ${L.eq})</td><td class="n">R${L.Rtxt}</td></tr></tbody></table>`:'';
+    const tb=rows.length?`<table class="cb-tb sbt"><colgroup><col style="width:18mm"><col style="width:22mm"><col style="width:28mm"><col style="width:22mm"><col style="width:18mm"><col><col style="width:13mm"></colgroup><thead><tr><th class="n">Length m</th><th>Edge insulation</th><th>External wall</th><th>Table</th><th class="n">A/P row</th><th>Wall thickness</th><th class="n">R</th></tr></thead><tbody>${rows.map(g=>`<tr><td class="n">${g.name?esc(g.name)+' ':''}${(+g.len).toFixed(2)}</td><td>${ED(g.edge)}</td><td>${WL(g.wall)}</td><td class="mono">${esc(g.table)}</td><td class="n">${esc(g.apRow)}</td><td>${esc(g.band)}</td><td class="n">${g.R.toFixed(L.expol?2:1)}</td></tr>`).join('')}<tr class="tot"><td colspan="6">${L.segs?'Equations E.3–E.5: R = 1 / Σ (Pᵢ/P ÷ Rᵢ)':'One perimeter part — the table value'} · A/P = ${(+L.ap).toFixed(2)} (Eq ${L.eq})</td><td class="n">R${L.Rtxt}</td></tr></tbody></table>`:'';
     return[`<section class="cb">${cbHead(s,'',null,!L.ok)}${tb}<p class="cb-pn">${txt2}</p>${inp}</section>`]}
   if(s.manual)return[`<section class="cb">${hd}<p class="cb-man">R-value entered directly. Source to be attached.</p></section>`];
   const d=drawing(c,true);

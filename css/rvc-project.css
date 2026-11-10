@@ -263,3 +263,6 @@ div.sb-r{display:flex;flex-direction:column;gap:2px}
 #ezhl:hover{border-color:var(--border-strong)}
 @media (max-width:640px){#ezhl{left:16px;right:16px;transform:none;bottom:12px;max-width:none}}
 @media print{#ezhl{display:none!important}}
+/* slab: the products picked from the insulation list */
+.sb-pl{display:flex;flex-direction:column;gap:4px;margin:2px 0 6px}.sb-pl .link-btn{margin-left:8px}.sb-pl .ms{vertical-align:-3px;margin-right:4px}
+.prodcard .prow2[disabled]{opacity:.45;cursor:not-allowed}

@@ -214,7 +214,7 @@ function slabMsg(L){if(!L||L.ok)return'';if(L.ap!=null&&L.ap<=0)return'Check the
 /* the old separate "wall thickness w" box (Eq E.2): a value over 1 was typed in mm, 1 or less in m — it becomes the effective wall thickness in mm */
 function slabMig(c){const s=c&&c.v&&c.v.slab;if(!s||s.sW==null||s.sW==='')return c;const w=+s.sW;if(w>0&&(s.sT==null||s.sT===''))s.sT=w>1?w:Math.round(w*1000);delete s.sW;return c}
 function slabLookup(c){const X=(typeof window!=='undefined'?window:globalThis).SlabAppE,s=c.v.slab||{},A=+c.area||0,P=+s.sP||0;
-  const fin=L=>{if(L.ok)L.Rtxt=L.mixed?L.R.toFixed(2):L.R.toFixed(1);return L};
+  const fin=L=>{if(L.ok)L.Rtxt=L.mixed||L.expol?L.R.toFixed(2):L.R.toFixed(1);return L};
   /* E.1.1.1 b): a value calculated to H1/VM1 Appendix E (e.g. by the slab system's manufacturer) instead of the tables */
   if(s.vm1){const R=+s.vmR;return fin(R>0?{ok:true,vm1:true,R,src:s.vmSrc||'',A,P}:{ok:false,vm1:true,none:true,why:'Enter the R-value calculated to H1/VM1 Appendix E.'})}
   if(!X)return{ok:false,why:'Appendix E tables not loaded.'};if(!A)return{ok:false,none:true,why:'Enter this slab’s area on the Project page.'};if(!P)return{ok:false,none:true,why:'Enter this slab’s perimeter on the Project page.'};
@@ -222,8 +222,13 @@ function slabLookup(c){const X=(typeof window!=='undefined'?window:globalThis).S
   /* Eq E.2: w is the effective wall thickness, entered in mm */
   const ap=ext?X.apExternal(A,P,wt/1000):X.apInternal(A,P);if(ap<=0)return{ok:false,ap,eq:ext?'E.2':'E.1',why:'Check the wall thickness and the area / perimeter — A/P can’t be below zero.'};
   const fl=s.sF||'slab',u=SLABU[s.sU||'none']||SLABU.none,eq=ext?'E.2':'E.1';
-  if(fl==='raft'&&u[0])return{ok:false,ap,eq,why:'Underslab insulation applies to slab floors only — no Appendix E table for a raft with underslab insulation.'};
-  const look=(edge,wall)=>X.lookup({floor:fl,edge:edge==='r10',under:u[0],underR:u[1],wall:wall||'other'},ap,wt);
+  /* a raft with underslab insulation: no Appendix E table — EXPOL's raft values for SLABX200 under its Tuff Pods (products.js) */
+  const XR=fl==='raft'&&s.uProd?expolRaft(s.uProd):null;
+  if(XR&&XR.why)return{ok:false,ap,eq,why:XR.why};
+  if(fl==='raft'&&u[0]&&!XR)return{ok:false,ap,eq,why:'Underslab insulation applies to slab floors only — no Appendix E table for a raft with underslab insulation. Pick EXPOL SLABX200 in the insulation list (EXPOL’s raft values) or use an H1/VM1 calculation.'};
+  /* a product picked for the underslab insulation must reach the R of the table it is looked up in */
+  if(u[0]&&s.uProd&&+s.uProd.r<u[1]-1e-9)return{ok:false,ap,eq,why:'The underslab product '+s.uProd.n+' is R'+(+s.uProd.r).toFixed(2)+' — below the R'+u[1].toFixed(1)+' this table needs. Choose the R1.2 table or a product of R'+u[1].toFixed(1)+' or more.'};
+  const look=(edge,wall)=>XR?XR.look(edge==='r10',wall||'other',ap):X.lookup({floor:fl,edge:edge==='r10',under:u[0],underR:u[1],wall:wall||'other'},ap,wt);
   /* perimeter parts (Equations E.3–E.5): extra parts with their own edge insulation / wall; the rest of the perimeter takes the main settings */
   const extra=(s.parts||[]).filter(x=>+x.len>0),used=extra.reduce((a,x)=>a+ +x.len,0),rest=P-used;
   if(rest<-1e-9)return{ok:false,ap,eq,why:'The perimeter parts add up to '+used.toFixed(2)+' m, more than the perimeter '+P.toFixed(2)+' m.'};
@@ -231,8 +236,21 @@ function slabLookup(c){const X=(typeof window!=='undefined'?window:globalThis).S
   const bad=segs.find(x=>!x.L.ok);if(bad)return Object.assign({ap,eq},bad.L);
   if(segs.length===1)return fin(Object.assign({ap,eq,A,P},segs[0].L));
   const R=X.mix(segs.map(x=>({f:x.len/P,R:x.L.R})));
-  return fin({ok:true,mixed:true,R,ap,eq,A,P,segs:segs.map(x=>({len:x.len,rest:!!x.rest,name:x.name||'',edge:x.sE==='r10',wall:x.sWall||'other',table:x.L.table,title:x.L.title,apRow:x.L.apRow,band:x.L.band,R:x.L.R}))})}
+  return fin({ok:true,mixed:true,expol:!!XR,src:XR?segs[0].L.src:undefined,R,ap,eq,A,P,segs:segs.map(x=>({len:x.len,rest:!!x.rest,name:x.name||'',edge:x.sE==='r10',wall:x.sWall||'other',table:x.L.table,title:x.L.title,apRow:x.L.apRow,band:x.L.band,R:x.L.R}))})}
 
+/* EXPOL's raft table for the SLABX200 thickness picked: masonry veneer or lightweight cladding, with or without edge insulation.
+   A/P: the smaller row, no interpolation; above the last row (5.0) the last row's value (R rises with A/P); below 1.0 none.
+   A thickness EXPOL gives without edge insulation only is used without it for an edge-insulated part (edge insulation only adds R). */
+function expolRaft(p){const T=(((typeof window!=='undefined'?window:globalThis).RVC_PRODUCTS||{}).insulation||{}).slab;const X=T&&T.raft;
+  if(!X||p.n!==X.product)return{why:'Under a raft only EXPOL SLABX200 has values (EXPOL’s raft tables) — pick it in the insulation list, or use an H1/VM1 calculation.'};
+  const k='u'+(+p.t);if(!X.masonry[k]&&!X.other[k])return{why:'EXPOL gives raft values for SLABX200 50, 75, 100, 120 and 150 mm — not '+p.t+' mm.'};
+  return{look(edge,wall,ap){const W=wall==='masonry'?X.masonry:X.other,col=edge&&W[k+'e']?W[k+'e']:W[k],wn=wall==='masonry'?'brick veneer':'lightweight cladding';
+    if(!col)return{ok:false,why:'EXPOL gives no raft value for SLABX200 '+p.t+' mm with '+wn+' — use 50, 75 or 100 mm, or an H1/VM1 calculation.'};
+    if(ap<X.ap[0]-1e-9)return{ok:false,why:'A/P below '+X.ap[0].toFixed(1)+' is not in EXPOL’s raft table.'};
+    let r=0;X.ap.forEach((a,i)=>{if(ap>=a-1e-9)r=i});const R=col[r];if(R==null)return{ok:false,why:'EXPOL’s raft table has no value at A/P '+X.ap[r].toFixed(1)+'.'};
+    const ed=edge&&W[k+'e'];
+    return{ok:true,expol:true,R,table:'EXPOL raft · '+wn,title:'EXPOL waffle-pod raft, SLABX200 '+p.t+' mm under the slab'+(ed?' + ThermaSlab Edge / MaxEdge':edge?' (EXPOL gives no edge-insulated value for this thickness — taken without it)':'')+', '+wn,
+      apRow:X.ap[r].toFixed(1)+(r===X.ap.length-1&&ap>X.ap[r]+1e-9?' (last row)':''),band:'90–140 mm (EXPOL details)',src:X.src}}}}
 /* ---------- engine: isothermal planes ---------- */
 function matR(slot,v){const m=v.m===-1&&v.lm?v.lm:LIB[slot.lib][v.m||0]||LIB[slot.lib][0];return{m,r:v.r!=null?+v.r:m.r,over:v.r!=null}}
 /* wall studs: the air left in the stud space when the insulation is thinner than the stud. Automatic unless the designer unlocked it.
