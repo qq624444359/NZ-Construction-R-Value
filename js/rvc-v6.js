@@ -257,6 +257,7 @@ function eavesBox(c,st){const e=c.v.edge=c.v.edge||{},G=st.G,f='v.edge.',r1=x=>(
     h+=st.per==='product'?`<div class="frow">${grpF('Perimeter product',ib(f+'pprod',e.pprod!=null?e.pprod:st.pp.name,'',{text:1,w:'200px'}))}${grpF('R',ib(f+'pR',e.pR,'R',{ph:'2.7'}))}${grpF('Thickness',ib(f+'pT',e.pT,'mm',{ph:'100'}))}${grpF('Width',ib(f+'pW',e.pW,'mm',{ph:'560'}))}</div>`
       :`<div class="frow">${grpF('Compressed product',ib(f+'cpName',e.cpName!=null?e.cpName:st.cp.name,'',{text:1,w:'200px'}))}${grpF('R',ib(f+'cpR',e.cpR,'R',{ph:'7.0'}))}${grpF('Thickness',ib(f+'cpT',e.cpT,'mm',{ph:'275'}))}</div>
       <div class="frow">${grpF('Insulation type',selF(f+'n',[[0.24,'Glass wool · n 0.24'],[0.3,'Polyester or wool · n 0.30'],[0,'Rigid board · n 0']],e.n!=null&&e.n!==''?e.n:0.24,'220px'))}${grpF('Manufacturer compressed R',ib(f+'rOver',e.rOver,'R',{ph:st.cs?r2(st.cs.rAvg):''}))}</div>`;
+    h+=`<div class="v6eh" data-a="af" data-v="edge">${S.af==='edge'?'<span class="ms s16">arrow_forward</span>Pick a product in the insulation list on the right, or enter its R — the thickness and name follow.':'Click into these fields to fill them from the insulation list on the right.'}</div>`;
     h+=`<div class="v6eh">Perimeter part: ${st.per==='product'?esc(st.pp.name+' R'+st.pp.R.toFixed(1)+' · '+st.pp.T+' mm'):'compressed '+esc(st.cp.name+' R'+st.cp.R.toFixed(1))+' under an insulation guard'} · RT <b class="mono">${r2(st.pRT)}</b> · its own sheet in the PDF (2.1.2.9). Areas are entered on the Project page.</div>`}
   return h+'</div>'}
 /* truss roof: framing on the left, insulation on the right */
@@ -301,13 +302,18 @@ const PB_CEIL=pbT(RPI.ceiling),PB_SKILL=pbT(RPI.skillion);
 /* a list's heading and source line name the brands in it */
 const brandsOf=L=>[...new Set(L.map(p=>p[5]))],pbHead=L=>'Insulation · '+brandsOf(L).join(' · '),pbSrc=L=>brandsOf(L).map(b=>RPI.sources[b]||b+' declared values.').join(' ');
 const pbList=m=>m==='chord'?PB_CEIL:m==='rafter'?PB_SKILL:null;
+/* the ceiling perimeter's list: a perimeter batt and the ceiling batts for the strip, the ceiling batts for edge compression */
+const PB_PER=[['Pink® Batts® Perimeter',2.7,100,560,null,'Pink® Batts®']].concat(PB_CEIL);
+const edgeOn=c=>{const st=isStrat(c)&&strategy(c);return st&&st.per!=='none'?st:null};
+/* the perimeter's product in a layer's shape {prod, insR, insT} */
+const edgeV=c=>{const st=edgeOn(c),p=st&&(st.per==='product'?st.pp:st.cp);return p?{prod:p.name,insR:p.R,insT:p.T}:{}};
 /* a layer's products as [name, R, thickness, width, note, brand] — the list on the right for that layer */
-function layerProds(c,id){if(id==='over')return PB_CEIL;const s=(tpl(c).slots||[]).find(x=>x.id===id&&x.k==='frame');if(!s)return null;
+function layerProds(c,id){if(id==='over')return PB_CEIL;if(id==='edge'){const st=edgeOn(c);return st?(st.per==='product'?PB_PER:PB_CEIL):null}const s=(tpl(c).slots||[]).find(x=>x.id===id&&x.k==='frame');if(!s)return null;
   const v=c.v[id]||{},depth=+v.d||MEMBER[s.member].d,DB=RPI.byMember.brand;return pbList(s.member)||prodList(s.member,depth).map(([r,th,n,br])=>[n||br||DB,r,th,null,null,br||DB])}
 /* a product saved as a brand, or as a brand's generic name ("Pink® Batts® Ceiling"), is that brand's row at the same R and thickness */
 const prodIs=(pv,name,brand,L)=>{const DB=RPI.byMember.brand;if(!pv)return brand===DB;if(pv===name||pv===brand)return true;return pv.indexOf(brand)===0&&!(L||[]).some(p=>p[0]===pv)};
 /* one product row: R · thickness · width, name, chips */
-const pbRow=(p,chips,max)=>`<button class="prow2 v6pr" data-a="prod" data-r="${p[1]}" data-t="${p[2]}" data-n="${esc(p[0])}"><b>R${p[1].toFixed(1)} · ${max?'max ':''}${p[2]} mm</b><em>${esc(p[0])} · ${p[3]} mm wide${p[4]==='two'?'<br>Two-layer system with Superbatts®':''}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`;
+const pbRow=(p,chips,max)=>`<button class="prow2 v6pr" data-a="prod" data-r="${p[1]}" data-t="${p[2]}" data-w="${p[3]||''}" data-n="${esc(p[0])}"><b>R${p[1].toFixed(1)} · ${max?'max ':''}${p[2]} mm</b><em>${esc(p[0])} · ${p[3]} mm wide${p[4]==='two'?'<br>Two-layer system with Superbatts®':''}</em>${chips.length?`<span class="pchips">${chips.join('')}</span>`:''}</button>`;
 const cntChip=k=>`<span class="v6cnt" title="H1/AS1 2.1.3.2: an insulation layer or air cavity next to framing joins the bridged portion.">Counted in ${k}</span>`;
 const MWORD={stud:['Stud','studs'],chord:['Chord','chords'],rafter:['Rafter','rafters'],joist:['Joist','joists'],batten:['Batten','battens']};
 const pline=(n,r,tip)=>`<div class="v6pl"${tip?` title="${esc(tip)}"`:''}><span>${n}</span><b class="mono">${r2(r)}</b></div>`;
@@ -373,14 +379,18 @@ function secCard(c){const d=drawing(c);
   return `<div class="card secpanel"><div class="sechd"><div><h2>${d.h}</h2><p>${d.p}</p></div></div><div class="v6draw ${d.t}">${fitSvg(d.svg)}</div>${ndLine(d)}
   <div class="secfoot" id="pinstate">${S.pin?`<span class="ms s16">push_pin</span>${esc(slotLabel(c,S.pin))} pinned — click it again to release`:'<span class="ms s16">touch_app</span>Hover a layer to find it in the section · click to pin'}</div></div>`}
 function slotLabel(c,id){const s=(tpl(c).slots||[]).find(s=>s.id===id);return s?s.label:id}
-function prodCard(c){const t=tpl(c),ovr=isStrat(c)&&S.af==='over'&&(t.slots||[]).find(x=>x.id==='over'),s=ovr||(!t.manual&&(t.slots||[]).find(x=>x.id===S.af&&x.k==='frame'));
+function prodCard(c){const t=tpl(c),edg=S.af==='edge'&&edgeOn(c),af=S.af==='edge'&&!edg?firstFrame(c):S.af,
+    ovr=!edg&&isStrat(c)&&af==='over'&&(t.slots||[]).find(x=>x.id==='over'),s=ovr||(!edg&&!t.manual&&(t.slots||[]).find(x=>x.id===af&&x.k==='frame'));
   /* brand first, then the R-value: the list shows one brand at a time. It opens on the brand of the product already in the layer, else the brand
      last picked, else the default brand. A layer saved with just a brand name is that brand's product */
-  const DB=RPI.byMember.brand,lay=ovr?'over':(s&&s.id),key=c.id+':'+lay,LP=lay?layerProds(c,lay):null,isSel=(pv,name,brand)=>prodIs(pv,name,brand,LP),
+  const DB=RPI.byMember.brand,lay=edg?'edge':ovr?'over':(s&&s.id),key=c.id+':'+lay,LP=lay?layerProds(c,lay):null,isSel=(pv,name,brand)=>prodIs(pv,name,brand,LP),
     bfOf=brs=>layerBrand(c,lay,LP||[]),
     bfRow=(brs,bf)=>brs.length>1?`<div class="pbf"><span class="pbf-s"><i>1</i>Brand</span>${brs.map(b=>`<button class="pbf-c${bf===b?' on':''}" data-a="pbf" data-v="${esc(b)}" data-k="${esc(key)}">${esc(b)}</button>`).join('')}</div><div class="pbf-s pbf-s2"><i>2</i>R-value · ${esc(bf)}</div>`:'',
     head=brs=>'Insulation',brOrd=L=>brandsOf(L).sort((a,b)=>(b===DB)-(a===DB)||a.localeCompare(b)),   /* the default brand first, then A–Z */
 srcOf=brs=>brs.map(b=>RPI.sources[b]||b+' declared values.').join(' ');
+  if(edg){const v=edgeV(c),pr=edg.per==='product',brs=brOrd(LP),bf=bfOf(brs),
+      rows=LP.filter(p=>!bf||p[5]===bf).map(p=>pbRow(p,Math.abs(v.insR-p[1])<1e-9&&v.insT===p[2]&&isSel(v.prod,p[0],p[5])?['<i class="pchip on">Selected</i>']:[])).join('');
+    return `<div class="card prodcard"><div class="prod-hd"><h2>Insulation</h2><p>Pick the brand, then click a product to fill the ceiling perimeter — R-value, thickness${pr?' and width':''} together.</p></div>${bfRow(brs,bf)}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(srcOf(bf?[bf]:brs))} Fills the ceiling perimeter only.</div></div>`}
   if(ovr){const v=c.v.over||{},brs=brOrd(PB_CEIL),bf=bfOf(brs,PB_CEIL,v.prod,v.r,v.t);
     const cov=!!(c.v.fr||{}).cover,rows=PB_CEIL.filter(p=>!bf||p[5]===bf).map(p=>{const ch=[];if(Math.abs((+v.r||0)-p[1])<1e-9&&+v.t===p[2]&&isSel(v.prod,p[0],p[5]))ch.push('<i class="pchip on">Selected</i>');if(cov&&p[3]===460)ch.push('<i class="pchip fit">Suits covering the chords</i>');return pbRow(p,ch)}).join('');
     return `<div class="card prodcard"><div class="prod-hd"><h2>${esc(head(brs))}</h2><p>Pick the brand, then click a product to fill ${esc(ovr.label.toLowerCase())} — R-value and thickness together.</p></div>${bfRow(brs,bf)}<div class="prodscroll">${rows}</div><div class="prodsrc">${esc(srcOf(bf?[bf]:brs))} Fills the selected layer only.</div></div>`}
@@ -578,8 +588,8 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
   if(key==='cover'){o.cover=raw;return}
   /* ceiling perimeter: an R typed for the perimeter product or the compressed product takes that product's thickness (and width) and name,
      from the brand of the product already there — a perimeter batt first for the strip, Superbatts first for edge compression */
-  if(id==='edge'&&(key==='pR'||key==='cpR')){o[key]=val0;const pr=key==='pR',nk=pr?'pprod':'cpName',tk=pr?'pT':'cpT',L=[['Pink® Batts® Perimeter',2.7,100,560,null,'Pink® Batts®']].concat(PB_CEIL),
-      nm=String(o[nk]!=null&&o[nk]!==''?o[nk]:pr?'Pink® Batts® Perimeter':'Pink® Superbatts®'),br=brandsOf(L).find(b=>nm.indexOf(b)===0)||RPI.byMember.brand,pref=pr?/Perimeter/:/Superbatts/;
+  if(id==='edge'&&key==='psel'&&S.pbfK===c.id+':edge')S.pbfK='';   /* a new perimeter method: the list opens on its product's brand */
+  if(id==='edge'&&(key==='pR'||key==='cpR')){o[key]=val0;const pr=key==='pR',nk=pr?'pprod':'cpName',tk=pr?'pT':'cpT',L=pr?PB_PER:PB_CEIL,br=layerBrand(c,'edge',L),pref=pr?/Perimeter/:/Superbatts/;
     const M=val0>0&&L.filter(p=>p[5]===br&&Math.abs(p[1]-val0)<1e-9).sort((a,b)=>pref.test(b[0])-pref.test(a[0])||(b[2]===+o[tk])-(a[2]===+o[tk])||a[2]-b[2])[0];
     if(M){o[tk]=M[2];o[nk]=M[0];if(pr&&M[3])o.pW=M[3]}else if(val0>0)o[nk]='Custom';return}
   /* an R typed in: that R's product in the brand the list is showing takes its thickness and name, as if picked from the list
@@ -590,7 +600,7 @@ function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.repl
   if(id==='over'&&key==='t')o.prod='';
   o[key]=val0}
 /* the brand a layer's list shows: the one picked for it, else its product's brand, else the brand last picked, else the default */
-function layerBrand(c,id,L){const DB=RPI.byMember.brand,brs=brandsOf(L),v=c.v[id]||{},key=c.id+':'+id,r=id==='over'?v.r:v.insR,th=id==='over'?v.t:v.insT;
+function layerBrand(c,id,L){const DB=RPI.byMember.brand,brs=brandsOf(L),v=id==='edge'?edgeV(c):c.v[id]||{},key=c.id+':'+id,r=id==='over'?v.r:v.insR,th=id==='over'?v.t:v.insT;
   if(S.pbfK===key&&brs.includes(S.pbf))return S.pbf;const m=v.prod&&L.find(p=>Math.abs(p[1]-(+r||0))<1e-9&&p[2]===+th&&prodIs(v.prod,p[0],p[5],L));
   return m&&brs.includes(m[5])?m[5]:v.prod&&brs.find(b=>v.prod.indexOf(b)===0)||(brs.includes(S.pbf)?S.pbf:brs.includes(DB)?DB:brs[0])}
 /* ---------- undo / redo: Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z — snapshots of the constructions, the Project fields and the
@@ -613,7 +623,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!t.datase
   if(t.dataset.cl){const L=LIB.cladding,o=L[+t.closest('.v6clad').querySelector('select:not([data-cl])').value]||L[0],g=t.dataset.cl==='g'?t.value:(o.grp||'ot'),b=t.dataset.cl==='b'?t.value:null,j=cladIn(g,b)[0];if(j!=null){setF(t.dataset.f,String(j),false);render()}return}
   if(t.tagName==='SELECT'){setF(t.dataset.f,t.value,false);render()}else if(t.type==='checkbox'){setF(t.dataset.f,t.checked);if(t.dataset.f==='v.over.on'&&isStrat(cur()))S.af=t.checked?'over':firstFrame(cur());render()}});   /* ticking the second layer points the product list at it */
 document.addEventListener('focusin',e=>{const t=e.target,f=t.dataset&&t.dataset.f,m=f&&/^v\.([^.]+)\./.exec(f),c=m&&cur();if(!c||S.af===m[1])return;
-  const id=m[1];if((id==='over'&&isStrat(c)&&(c.v.over||{}).on)||(tpl(c).slots||[]).some(s=>s.id===id&&s.k==='frame')){S.af=id;render();
+  const id=m[1];if((id==='edge'&&t.tagName==='INPUT'&&/^v\.edge\.(pprod|pR|pT|pW|cpName|cpR|cpT)$/.test(f)&&edgeOn(c))||(id==='over'&&isStrat(c)&&(c.v.over||{}).on)||(tpl(c).slots||[]).some(s=>s.id===id&&s.k==='frame')){S.af=id;render();
     const nx=document.querySelector(`[data-f="${f}"]`);if(nx&&nx.dataset.n&&t.type==='text'){nx._fj=1;setTimeout(()=>{if(document.activeElement===nx)nx.select()},0)}}});   /* still selected, ready to type over */   /* typing in a layer: the product list follows it */
 document.addEventListener('focusout',e=>{const t=e.target;t._sel=0;t._fj=0;if(t.dataset&&t.dataset.f&&RAW[t.dataset.f]!=null){delete RAW[t.dataset.f];const nv2=lz(t.value);if(nv2!==t.value)t.value=nv2}});
 /* clicking into a number selects it, ready to type over: every time it gets focus (not only the first), and the
@@ -649,6 +659,8 @@ document.addEventListener('click',e=>{if(S.pdf&&S.pdf.open&&(e.target.id==='pdfx
   else if(a==='fedit'){const k=c.id+':'+v;FEDIT.has(k)?FEDIT.delete(k):FEDIT.add(k)}
   else if(a==='unlock'){UNL.add(c.id+':'+v)}
   else if(a==='pbf'){S.pbf=v||'';S.pbfK=b.dataset.k||''}
+  else if(a==='prod'&&S.af==='edge'){const st=edgeOn(c);if(!st)return;const e=c.v.edge=c.v.edge||{},r=+b.dataset.r,t=+b.dataset.t,nm=b.dataset.n||RPI.byMember.brand;
+    if(st.per==='product'){e.pR=r;e.pT=t;e.pprod=nm;if(+b.dataset.w)e.pW=+b.dataset.w}else{e.cpR=r;e.cpT=t;e.cpName=nm}}
   else if(a==='prod'){const s=c.v[S.af];if(!s)return;if(S.af==='over'){s.r=+b.dataset.r;s.t=+b.dataset.t;s.on=true}else{s.insR=+b.dataset.r;s.insT=+b.dataset.t}s.prod=b.dataset.n||RPI.byMember.brand}
   else if(a==='pdf'){openPdf();return}
   else if(a==='pnew'){npOpen();return}
