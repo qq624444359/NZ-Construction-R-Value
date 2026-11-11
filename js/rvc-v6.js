@@ -595,7 +595,9 @@ function nameHint(c){if(!c||c.el!=='wall')return;const s=c.name||'',k=/\bIT\b|\b
   else{if(c.kind!=='frame')setF('kind','frame',false,c);setF('o.cav',false,false,c);
     setF('v.clad.m',String(LIB.cladding.findIndex(m=>m.still&&/^None/.test(m.n))),false,c);setF('v.ab.m','0',false,c)}
   if(!mine){S.af=af;S.pin=pin}}   /* renamed on the Project page: the open construction keeps its state */
-function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.replace(/^p\./,''),raw);return}const c=cc||cur();if(!c)return;const val0=isNum?(raw===''?null:(isNaN(parseFloat(raw))?null:parseFloat(raw))):raw;
+function setF(path,raw,isNum,cc){if(XP&&/^(p|pp)\./.test(path)){XP.set(path.replace(/^p\./,''),raw);return}const c=cc||cur();if(!c)return;let val0=isNum?(raw===''?null:(isNaN(parseFloat(raw))?null:parseFloat(raw))):raw;
+  /* a negative size or R is a slip of the hand: not taken, the field goes back to what it was. A roof pitch stops at 60°, a spacing at 100 mm — the section cannot be drawn beyond them */
+  if(isNum&&val0!=null){if(val0<0)return;if(/\.pitch$/.test(path))val0=Math.min(val0,60);if(/^v\.\w+\.s$/.test(path)&&val0>0&&val0<100)val0=100}
   if(path==='kind'){const wasAuto=isAutoName(c);
     const frs=k=>{try{return(tpl(Object.assign({},c,{kind:k})).slots||[]).filter(s=>s.k==='frame')}catch(e){return[]}};
     c.vk=c.vk||{};const keep={};frs(c.kind).forEach(s=>{if(c.v[s.id])keep[s.id]=JSON.parse(JSON.stringify(c.v[s.id]))});c.vk[c.kind]=keep;

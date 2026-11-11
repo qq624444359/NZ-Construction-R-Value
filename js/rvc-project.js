@@ -143,7 +143,7 @@ function envelope(){const X=list().filter(c=>areaOf(c)>0&&excl(c)),L0=list().fil
 function skys(){if(!Array.isArray(P.skys)){P.skys=+P.skyA>0?[{n:'Skylight',a:P.skyA}]:[];if(+P.skyU>0&&!(+P.skyR>0))P.skyR=String(sig2(1/+P.skyU))}return P.skys}
 const skyR=()=>(skys(),+P.skyR>0?+P.skyR:null);
 /* the current design as entered: HL proposed (Equation 2.1) against HL reference */
-function current(){const E=envelope(),hr=refHL(E),miss=[];if(!hr)miss.push('climate zone');
+function current(){const E=envelope(),hr=refHL(E),miss=[];if(!hr)miss.push('climate zone');if(!E.roof)miss.push('roof area not entered');if(!E.wall)miss.push('wall areas not entered');
   if(E.sky&&!skyR())miss.push('skylight R');wins().forEach(w=>{if(opA(w)>0&&!winR(w).r)miss.push((w.n||'Windows')+' R');});E.L.filter(isSlab).forEach(c=>{const L=calc(c).slab;if(L&&!L.ok)miss.push(c.name+' — '+(L.none?L.why:slabMsg(L)))});
   let hp=fixedHL(E);E.L.forEach(c=>{if(isSlab(c)){const r=calc(c).total;if(r)hp+=areaOf(c)/r}else hp+=hlOf(c,rOf(c))});
   return{E,hp,hr,miss,ok:!miss.length&&!E.bad.length&&hr!=null}}
@@ -329,6 +329,8 @@ function pdf(){const z=zone(),pr=R().S.pdf.proj;
   return[`<section class="pjps"><h3>Project</h3><div class="pjkv">${[['Client',pr.client],['Address',pr.address],['DP / Lot',pr.legal],['Designer',pr.designer],['Territorial Authority',P.ta],['Climate zone',z?z+(P.zone?' (selected)':''):'—'],['Date',pr.date]].filter(([k,v])=>k!=='Client'||v).map(([k,v])=>`<div><span>${k}</span><b>${esc(v||'—')}</b></div>`).join('')}</div></section>`]}
 /* ---------- writes ---------- */
 function set(path,raw){if(typeof raw==='string'&&/^\.\d/.test(raw))raw='0'+raw;const p=path.split('.'),v=raw==null?'':String(raw);
+  /* a negative area, length or R is a slip of the hand: not taken, the field goes back to what it was (names and text are left alone) */
+  if(typeof raw==='string'&&/^\s*-\s*[\d.]/.test(raw)&&!(p[0]==='pp'||p[0]==='cn'||path==='lotn'||(/^(w|dr|sk)$/.test(p[0])&&p[2]==='n')))return;
   if(p[0]==='pp'){R().S.pdf.proj[p[1]]=v}
   else if(p[0]==='ra'||p[0]==='rp'){const c=list().find(c=>c.id===p[1]);if(c){c.v.edge=c.v.edge||{};c.v.edge[p[0]==='ra'?'area':'perim']=raw}}
   else if(p[0]==='bv'){const c=list().find(c=>c.id===p[1]);if(c){const sv=c.v.slab=c.v.slab||{},L=sv.parts=sv.parts||[],i=L.findIndex(x=>x.name===BVN),n=raw===''?'':parseFloat(raw);

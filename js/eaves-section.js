@@ -253,6 +253,8 @@
     function yi(x) { return yu(x) + rh / cos; }               // top face of the rafter blanket
     if (rafter) {
       var layer = S.insulation.filter(function (l) { return l.layer === 'between'; })[0] || S.insulation[0];
+    }
+    if (rafter && layer) {   // no insulation entered yet: the rafters are drawn empty
       rh = Math.min(layer.thickness, room);
       var rpts = [[0, 0], [S.wallDepth, 0], [X, yu(X)], [X, yi(X)], [0, yi(0)]];
       out.push(group('insulation-between', poly(rpts, 'insulation between',
