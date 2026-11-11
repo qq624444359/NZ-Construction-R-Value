@@ -311,6 +311,8 @@ function trussBody(o,s,ov0,F,depth,row,f,mv,fr,cvr,on,x,i,num,tR){const gn=group
 const RPI=window.RVC_PRODUCTS.insulation,pbT=L=>L.slice().sort((a,b)=>a.r-b.r||a.t-b.t).map(p=>[p.name,p.r,p.t,p.w,p.note,p.brand]);
 const PB_CEIL=pbT(RPI.ceiling),PB_SKILL=pbT(RPI.skillion);
 /* a list's heading and source line name the brands in it */
+/* brands in the order products.js gives (insulation.order); one not named there comes after, A–Z */
+const brRank=b=>{const i=(RPI.order||[]).indexOf(b);return i<0?999:i},byBrand=(a,b)=>brRank(a)-brRank(b)||a.localeCompare(b);
 const brandsOf=L=>[...new Set(L.map(p=>p[5]))],pbHead=L=>'Insulation · '+brandsOf(L).join(' · '),pbSrc=L=>brandsOf(L).map(b=>RPI.sources[b]||b+' declared values.').join(' ');
 const pbList=m=>m==='chord'?PB_CEIL:m==='rafter'?PB_SKILL:null;
 /* the ceiling perimeter's list: a perimeter batt and the ceiling batts for the strip, the ceiling batts for edge compression */
@@ -394,7 +396,7 @@ function slotLabel(c,id){const s=(tpl(c).slots||[]).find(s=>s.id===id);return s?
    the only underslab values the Appendix E tables have; the layout (1.2 m strip or full cover) stays as chosen */
 function slabProdCard(c){const s=c.v.slab||{},raft=s.sF==='raft',P=RPI.slab||{},A=x=>[x.name,x.r,x.t,null,null,x.brand],
     U=(P.under||[]).filter(x=>x.r>=1.2-1e-9).map(A).sort((a,b)=>a[1]-b[1]||a[2]-b[2]),E=(P.edge||[]).filter(x=>x.r>=1-1e-9).map(A),
-    key=c.id+':slab',brs=brandsOf(U.concat(E)).sort(),
+    key=c.id+':slab',brs=brandsOf(U.concat(E)).sort(byBrand),
     bf=S.pbfK===key&&brs.includes(S.pbf)?S.pbf:s.uProd&&brs.includes(s.uProd.b)?s.uProd.b:s.eProd&&brs.includes(s.eProd.b)?s.eProd.b:brs[0],
     sel=(p,q)=>!!q&&q.n===p[0]&&Math.abs(+q.r-p[1])<1e-9&&+q.t===p[2],
     row=(p,k,on,tag)=>{const ch=(on?'<i class="pchip on">Selected</i>':'')+(tag?`<i class="pchip fit">${tag}</i>`:'');return `<button class="prow2 v6pr" data-a="sprod" data-k="${k}" data-r="${p[1]}" data-t="${p[2]}" data-n="${esc(p[0])}" data-b="${esc(p[5])}"><b>R${p[1].toFixed(2)} · ${p[2]} mm</b><em>${esc(p[0])}</em>${ch?`<span class="pchips">${ch}</span>`:''}</button>`},
@@ -420,7 +422,7 @@ function prodCard(c){const t=tpl(c);if(t.slab)return slabProdCard(c);const edg=S
   const DB=RPI.byMember.brand,lay=edg?'edge':ovr?'over':(s&&s.id),key=c.id+':'+lay,LP=lay?layerProds(c,lay):null,isSel=(pv,name,brand)=>prodIs(pv,name,brand,LP),
     bfOf=brs=>layerBrand(c,lay,LP||[]),
     bfRow=(brs,bf)=>brs.length>1?`<div class="pbf"><span class="pbf-s"><i>1</i>Brand</span>${brs.map(b=>`<button class="pbf-c${bf===b?' on':''}" data-a="pbf" data-v="${esc(b)}" data-k="${esc(key)}">${esc(b)}</button>`).join('')}</div><div class="pbf-s pbf-s2"><i>2</i>R-value · ${esc(bf)}</div>`:'',
-    head=brs=>'Insulation',brOrd=L=>brandsOf(L).sort((a,b)=>(b===DB)-(a===DB)||a.localeCompare(b)),   /* the default brand first, then A–Z */
+    head=brs=>'Insulation',brOrd=L=>brandsOf(L).sort(byBrand),   /* the order set in products.js */
 srcOf=brs=>brs.map(b=>RPI.sources[b]||b+' declared values.').join(' ');
   if(edg){const v=edgeV(c),pr=edg.per==='product',brs=brOrd(LP),bf=bfOf(brs),
       rows=LP.filter(p=>!bf||p[5]===bf).map(p=>pbRow(p,Math.abs(v.insR-p[1])<1e-9&&v.insT===p[2]&&isSel(v.prod,p[0],p[5])?['<i class="pchip on">Selected</i>']:[])).join('');
