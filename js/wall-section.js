@@ -213,6 +213,7 @@
       'Horizontal cavity battens at ' + HB.spacing);
     labelL('barrier', [bOut / 2, ly - 100], S.barrier.label || (rigid ? 'Rigid air barrier ' + S.barrier.thickness + ' mm' : 'Building wrap'));
     var FS = 40, LGAP = 58;
+    if (numbers) { FS = 78; LGAP = 100; }   // the sheet prints its numbers at 9 pt, larger than the worded labels: keep them clear of each other
     var colL = clFace - 140, colR = liIn + 90;
     function place(list, col, side) {
       list.sort(function (a, b) { return b.a[1] - a.a[1]; });
