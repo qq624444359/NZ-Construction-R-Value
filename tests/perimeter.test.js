@@ -1,5 +1,7 @@
 /* Ceiling perimeter of a truss roof — run with: node tests/perimeter.test.js
-   The case is 32 Kaitiaki Drive (zone 1): 30° pitch, raised heel 269 mm, R7.0 275 mm between the chords + R2.6 110 mm over. */
+   The case is 32 Kaitiaki Drive (zone 1): 30° pitch, R7.0 275 mm between the chords + R2.6 110 mm over.
+   Heel height is measured from the top of the wall (underside of the bottom chord) to the top edge of the top chord
+   (MiTek GANG-NAIL Residential Manual). A 359 mm heel gives 385.0 mm of room at the top plate centreline. */
 'use strict';
 const assert = require('assert');
 const M = require('./_load.js');
@@ -8,7 +10,7 @@ function roof(edge, more) {
   const c = M.newC('roof'); c.id = 'c1'; c.name = 'Roof';
   Object.assign(c.v.fr, { insR: 7.0, insT: 275, prod: 'Pink® Superbatts®' });
   Object.assign(c.v.over, { on: true, r: 2.6, t: 110, prod: 'Pink® Batts® Ceiling' });
-  Object.assign(c.v.edge, { pitch: 30, heel: 269, psel: 'product', pprod: 'Pink® Superbatts®', pR: 7.0, pT: 275, pW: 460, area: 186.628, perim: 48 }, edge || {});
+  Object.assign(c.v.edge, { pitch: 30, heel: 359, psel: 'product', pprod: 'Pink® Superbatts®', pR: 7.0, pT: 275, pW: 460, area: 186.628, perim: 48 }, edge || {});
   Object.assign(c, more || {});
   const st = M.strategy(c), s = M.toSheet(st.ce, [st.ce]);
   return { c, st, s, P: s.perimeter, text: JSON.stringify(s) };
@@ -51,7 +53,7 @@ t('strip width: entered value kept between the least setback (rounded up to 50) 
   const a = roof({ width: 100 }); assert.strictEqual(a.st.G.W, 100); assert.strictEqual(a.P.area.aP.toFixed(1), '4.8'); assert.strictEqual(a.P.total, 7.1);
   assert.strictEqual(roof({ width: 20 }).st.G.W, 50);
   assert.strictEqual(roof({ width: 800 }).st.G.W, 500);
-  const low = roof({ heel: 200, width: 100 });      /* room 316 mm: 410 mm fits 162.8 mm in from the centreline, 117.8 mm from the ceiling edge */
+  const low = roof({ heel: 290, width: 100 });      /* room 316 mm: 410 mm fits 162.8 mm in from the centreline, 117.8 mm from the ceiling edge */
   assert.strictEqual(low.st.G.xEdge.toFixed(1), '117.8'); assert.strictEqual(low.st.G.Wmin, 150); assert.strictEqual(low.st.G.W, 150);
 });
 t('Pink Batts Perimeter R2.7 (560 mm): width and top-plate checks still made', () => {
@@ -71,5 +73,13 @@ t('15° pitch, standard heel: R7.0 does not fit, the perimeter is compressed sli
 t('minimums: R2.6 each part unless the ceiling is heated (R6.6, R3.3 within 500 mm)', () => {
   const a = roof(); assert.strictEqual(a.s.min, 2.6); assert.strictEqual(a.P.min, 2.6);
   const h = roof({}, { heated: true }); assert.strictEqual(h.s.min, 6.6); assert.strictEqual(h.P.min, 3.3);
+});
+t('heel height is from the top of the wall: the bottom chord is not added again', () => {
+  const a = roof({ heel: 269 });                    /* 269 + 45 × tan 30° = 295.0 mm: R7.0 (275 + 25 = 300) does not fit */
+  assert.strictEqual(a.st.G.H.toFixed(1), '295.0');
+  const k = a.P.checks.find(x => /Superbatts® R7\.0: 275 \+ 25 = 300 mm > room at the heel 295\.0 mm — does not fit/.test(x.text)); assert.ok(k && !k.ok && !k.warn);
+  const std = roof({ heel: null, pitch: 20 });      /* standard truss: heel = top chord depth ÷ cos pitch */
+  assert.strictEqual(std.st.G.heel.toFixed(1), (M.D.topChord / Math.cos(20 * Math.PI / 180)).toFixed(1));
+  assert.strictEqual(roof({ heel: 10 }).st.G.heel, roof({ heel: null }).st.G.heel);   /* never less than the standard heel */
 });
 console.log(n + ' tests passed');

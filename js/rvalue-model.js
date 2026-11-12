@@ -411,7 +411,7 @@ function basis(){return[
   'Insulation thicker than the framing it sits in is split by thickness: the part between the members is bridged, the part over them is the next layer. Truss roofs: insulation thicker than the bottom chords is taken to cover them unless the sheet says otherwise.',
   'Roofs: the air between ceiling battens is not counted; an empty wall or floor cavity is still air R'+D.emptyGap.toFixed(2)+'.',
   'Truss roofs: where the full insulation thickness does not fit under the roofing at the outer edge of the ceiling, the roof is calculated as two parts (2.1.2.9) — the field at full thickness, and a perimeter strip from the outer edge of the ceiling (500 mm by default; a narrower one may be entered, not less than where the full thickness first fits, rounded up to 50 mm) with less insulation: a perimeter product, an ordinary batt at full thickness with the layer over it left off, or insulation compressed under a guard. Each part must reach R2.6 (2.1.2.11 a)); a heated ceiling needs R3.3 within 500 mm of the edge (Table 2.1.2.12 note 4).',
-  'Room at the ceiling edge: bottom chord + heel height, less whatever of the 25 mm ventilation gap under the roofing the purlin zone does not already give, plus wall framing depth × tan(pitch) to the inside of the top plate.',
+  'Heel height is measured at the outside face of the wall, from the top of the load-bearing wall (the underside of the truss bottom chord) to the top edge of the top chord: top chord depth ÷ cos(pitch) for a standard truss, more for a raised heel. Room at the ceiling edge: heel height, less whatever of the 25 mm ventilation gap under the roofing the purlin zone does not already give, plus wall framing depth × tan(pitch) to the inside of the top plate.',
   'Truss roof insulation strategy, by the room at the heel (top plate centreline, where the insulation starts; product thickness + 25 mm ventilation gap must fit): 1 two layers Pink® Batts® Ceiling R3.6 (360 mm) to the edge; 2 Pink® Superbatts® R7.0 (275 mm) to the edge; 3 R7.0 field + perimeter product (2.1.2.9; default Pink® Batts® Perimeter R2.7, 100 mm, 560 mm wide, 500 mm into the ceiling — Pink® Batts® Ceiling Product and Installation Guide, March 2026) where it fits and its part reaches its minimum; 4 R7.0 field + compressed insulation under an insulation guard. Any choice can be made by hand. No target R is set: each part only has to meet its own minimum, the whole building is checked by the H1 calculation.',
   'Minimums checked: each part of a roof, the ceiling perimeter included, R2.6 (2.1.2.11(a)); walls R1.0 (2.1.2.11(b)); floors other than slabs R1.3 (2.1.2.11(c)); within 500 mm of the edge of a heated ceiling R3.3 (Table 2.1.2.12 note 4) — not required for an unheated ceiling.',
   'Compressed perimeter: BRANZ House Insulation Guide v2.7, Roof edge insulation method — 1 mm slices from the ceiling edge, t(x) = min(d0, t_low + x·tanθ), k_c = k0·(t/d0)^n, R(x) = t/k_c; each slice a full construction (the part within the chord depth bridged, 2.1.3.2); perimeter R = width ÷ Σ 1/RT(x). Pink® guidance: Superbatts® compressed at the eaves generally need a pitch of 18° or more, R4.5 down to 15°.',
@@ -424,8 +424,8 @@ function edge(c){
   if(c.el!=='roof'||c.kind!=='truss'||c.part)return null;
   const e=c.v.edge||{},fr=c.v.fr||{},ov=OV(c);
   const pitch=+e.pitch||20,rad=pitch*Math.PI/180,tan=Math.tan(rad),cos=Math.cos(rad);
-  const bc=+fr.d||MEMBER.chord.d,std=e.heel==null||e.heel==='',tcv=D.topChord/cos,heel=std?tcv:+e.heel;
-  const rise=D.purlin/cos,vent=Math.max(0,D.ventGap-rise),face=bc+heel-vent,tLow=face+D.wallDepth*tan;
+  const bc=+fr.d||MEMBER.chord.d,std=e.heel==null||e.heel==='',tcv=D.topChord/cos,heel=std?tcv:Math.max(tcv,+e.heel);
+  const rise=D.purlin/cos,vent=Math.max(0,D.ventGap-rise),face=heel-vent,tLow=face+D.wallDepth*tan;
   const layers=[[+fr.insT||0,+fr.insR||0],[+ov.t||0,+ov.r||0]].filter(x=>x[0]&&x[1]);
   const d0=layers.reduce((a,x)=>a+x[0],0),R0=layers.reduce((a,x)=>a+x[1],0);
   const n=e.n!=null&&e.n!==''?+e.n:.24,W=Math.max(1,Math.round(+e.width||500));
@@ -469,8 +469,11 @@ const isStrat=c=>!!c&&c.el==='roof'&&c.kind==='truss'&&!c.part&&!c.fkey;
 const ev=(c,k,d)=>{const e=c.v.edge||{};return e[k]!=null&&e[k]!==''?e[k]:d};
 function geom(c){
   const pitch=+ev(c,'pitch',20),rad=pitch*Math.PI/180,tan=Math.tan(rad),cos=Math.cos(rad);
-  const bc=+(c.v.fr||{}).d||MEMBER.chord.d,std=ev(c,'heel',null)==null,tcv=D.topChord/cos,heel=std?tcv:+ev(c,'heel');
-  const rise=D.purlin/cos,vent=Math.max(0,D.ventGap-rise),face=bc+heel-vent;
+  const bc=+(c.v.fr||{}).d||MEMBER.chord.d,std=ev(c,'heel',null)==null,tcv=D.topChord/cos,heel=std?tcv:Math.max(tcv,+ev(c,'heel'));
+  /* Heel height: at the outside face of the wall, from the top of the load-bearing wall (the underside of the bottom chord)
+     to the top edge of the top chord — heel = d ÷ cos θ for a standard truss, more with a raised heel (MiTek GANG-NAIL
+     Residential Manual, Terminology; BRANZ Build 191). It already holds the bottom chord, which is not added again. */
+  const rise=D.purlin/cos,vent=Math.max(0,D.ventGap-rise),face=heel-vent;
   /* Least setback: where the field insulation's full thickness + 25 mm first fits under the roofing —
      xCL from the top plate centreline, xEdge from the outer edge of the ceiling (the inside face of the plate).
      The strip is 500 mm unless a narrower one is entered: never less than the least setback (rounded up to 50 mm), never more than 500. */
@@ -619,7 +622,7 @@ function toSheet(c,list){
     const lt=F.layers.length>1?(same?'Two layers of '+rr+' '+l0.T+' mm':'Two layers, '+rr+' '+l0.T+' mm under R'+l1.R.toFixed(1)+' '+l1.T+' mm')+': the lower layer (row '+no('fr')+') lies between the '+bc+' mm chords and '+(l0.T-bc)+' mm above them — '+rr+' × '+bc+'/'+l0.T+' = '+r2(l0.R*bc/l0.T)+' between, '+rr+' × '+(l0.T-bc)+'/'+l0.T+' = '+r2(l0.R*(l0.T-bc)/l0.T)+' above; the upper layer (row '+no('over')+') lies on it, R'+r2(F.layers[1].R)+'. The part above the chords and the upper layer are adjacent insulation, counted on every heat path of B1 (2.1.3.2).'
       :'One layer of '+rr+' '+l0.T+' mm (row '+no('fr')+'): '+Math.min(bc,l0.T)+' mm between the '+bc+' mm chords, '+rr+' × '+Math.min(bc,l0.T)+'/'+l0.T+' = '+r2(l0.R*Math.min(bc,l0.T)/l0.T)+(l0.T>bc?', and '+(l0.T-bc)+' mm above them, '+rr+' × '+(l0.T-bc)+'/'+l0.T+' = '+r2(l0.R*(l0.T-bc)/l0.T)+', counted on every heat path of B1 (2.1.3.2)':'')+'.';
     const how=ST.used?'Insulation strategy step '+ST.used+' of 4, the first that works':'Insulation chosen by hand (the first workable strategy step is '+ST.auto+')';
-    const roomT='Room at the heel, at the top plate centreline where the insulation starts: '+L1(G.H)+' mm = bottom chord '+bc+' + heel '+L1(G.heel)+' − vent '+L1(G.vent)+' + '+(G.wall/2)+' × tan '+G.pitch+'° (the 45 mm purlin zone, '+L1(G.rise)+' mm, gives the ventilation gap under the roofing).';
+    const roomT='Room at the heel, at the top plate centreline where the insulation starts: '+L1(G.H)+' mm = heel '+L1(G.heel)+' − vent '+L1(G.vent)+' + '+(G.wall/2)+' × tan '+G.pitch+'° (the 45 mm purlin zone, '+L1(G.rise)+' mm, gives the ventilation gap under the roofing).';
     const pn=ST.per==='product'?ST.pp.name+' R'+ST.pp.R.toFixed(1):'compressed '+ST.cp.name+' R'+ST.cp.R.toFixed(1);
     s.edgeText=how+': '+F.name+(split?' with a '+pn+' perimeter':', full thickness to the edge')+'. '+lt+' '+roomT+(split?' Two parts (H1/AS1 2.1.2.9): this sheet is the field, its insulation starting '+G.W+' mm from the outer edge of the ceiling; the first '+G.W+' mm is the perimeter part (P1 in the drawing), on its own sheet.':' One roof, one R.')}
   if(split){const G=ST.G,pc=ST.pc,P=toSheet(pc,list),L1=x=>x.toFixed(1),ex=c.v.edge||{},isP=ST.per==='product',pr=isP?ST.pp:ST.cp,pn=pr.name+' R'+pr.R.toFixed(1),cs=ST.cs;
@@ -644,9 +647,9 @@ function toSheet(c,list){
       P.materials.splice(ci+1,0,{name:'P1 compressed '+pn+' — R(x) = t ÷ (k0 · (t/d0)^n), per slice',d:tl+'–'+pr.T,k:cs.k0.toFixed(4)+' · c^'+cs.n,r:'per slice',
         src:(pr.over!=null?'Manufacturer’s compressed R-value, slices scaled; ':'')+'BRANZ House Insulation Guide v2.7, Roof edge insulation method; k0 from the declared R'+pr.R.toFixed(1)+' over '+pr.T+' mm'})}
     P.edge=[['Minimum roof pitch θ',G.pitch+'°','Entered'],
-      ['Heel height',L1(G.heel)+' mm',(G.std?'Standard heel: top chord '+D.topChord+' ÷ cos '+G.pitch+'°':'Entered (raised heel)')+' — measured at the outside face of the wall, from the top of the bottom chord to the top of the top chord (the bottom chord’s '+G.bc+' mm is added separately)'],
+      ['Heel height',L1(G.heel)+' mm',(G.std?'Standard heel: top chord '+D.topChord+' ÷ cos '+G.pitch+'°':'Entered (raised heel)')+' — measured at the outside face of the wall, from the top of the load-bearing wall (underside of the bottom chord) to the top edge of the top chord'],
       ['Ventilation gap taken off',L1(G.vent)+' mm','25 mm clear under the roofing; the '+D.purlin+' mm purlin zone gives '+D.purlin+' ÷ cos '+G.pitch+'° = '+L1(G.rise)+' mm'+(G.vent>0?', the rest comes off the insulation':', which covers it')],
-      ['Room at the heel (top plate centreline)',L1(G.H)+' mm','bottom chord '+G.bc+' + heel '+L1(G.heel)+' − '+L1(G.vent)+' + '+(G.wall/2)+' × tan '+G.pitch+'° — the strategy checks thickness + 25 mm against this'],
+      ['Room at the heel (top plate centreline)',L1(G.H)+' mm','heel '+L1(G.heel)+' − '+L1(G.vent)+' + '+(G.wall/2)+' × tan '+G.pitch+'° — the strategy checks thickness + 25 mm against this'],
       ['Field insulation',ST.field.name+' · '+thk(ST.field)+' mm',thk(ST.field)+' + 25 = '+(thk(ST.field)+25)+' mm '+(thk(ST.field)+25<=G.H?'≤':'>')+' '+L1(G.H)+' mm'+(ST.used?' — strategy step '+ST.used:' — chosen by hand')]];
     const upT=ST.field.layers.length>1?ST.field.layers.slice(1).map(x=>'R'+x.R.toFixed(1)).join(' + '):'';
     P.edge.push(['Least setback for the full '+G.tF+' mm — from the top plate centreline · from the ceiling edge',(isFinite(G.xCL)?L1(G.xCL):'—')+' mm · '+(isFinite(G.xEdge)?L1(G.xEdge):'—')+' mm',
