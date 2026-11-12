@@ -234,9 +234,9 @@ function slabLookup(c){const X=(typeof window!=='undefined'?window:globalThis).S
   if(rest<-1e-9)return{ok:false,ap,eq,why:'The perimeter parts add up to '+used.toFixed(2)+' m, more than the perimeter '+P.toFixed(2)+' m.'};
   const segs=[{len:rest,sE:s.sE,sWall:s.sWall,rest:1}].concat(extra.map(x=>Object.assign({},x,{len:+x.len}))).filter(x=>x.len>1e-9).map(x=>Object.assign({},x,{L:look(x.sE,x.sWall)}));
   const bad=segs.find(x=>!x.L.ok);if(bad)return Object.assign({ap,eq},bad.L);
-  if(segs.length===1)return fin(Object.assign({ap,eq,A,P},segs[0].L));
+  if(segs.length===1)return fin(Object.assign({ap,eq,A,P,w:ext?wt:null},segs[0].L));
   const R=X.mix(segs.map(x=>({f:x.len/P,R:x.L.R})));
-  return fin({ok:true,mixed:true,expol:!!XR,src:XR?segs[0].L.src:undefined,R,ap,eq,A,P,segs:segs.map(x=>({len:x.len,rest:!!x.rest,name:x.name||'',edge:x.sE==='r10',wall:x.sWall||'other',table:x.L.table,title:x.L.title,apRow:x.L.apRow,band:x.L.band,R:x.L.R}))})}
+  return fin({ok:true,mixed:true,expol:!!XR,src:XR?segs[0].L.src:undefined,R,ap,eq,A,P,w:ext?wt:null,segs:segs.map(x=>({len:x.len,rest:!!x.rest,name:x.name||'',edge:x.sE==='r10',wall:x.sWall||'other',table:x.L.table,title:x.L.title,apRow:x.L.apRow,band:x.L.band,R:x.L.R}))})}
 
 /* EXPOL's raft table for the SLABX200 thickness picked: masonry veneer or lightweight cladding, with or without edge insulation.
    A/P: the smaller row, no interpolation; above the last row (5.0) the last row's value (R rises with A/P); below 1.0 none.
@@ -410,7 +410,7 @@ function basis(){return[
   'Vented wall cavity R'+D.vent.toFixed(2)+'; the outside surface and layers outside the cavity are counted at half value. Timber skillion roofs without “Insulated roofing, no vent cavity” are treated the same way: a vented cavity R'+D.vent.toFixed(2)+' over the insulation, on the cavity side of the bridged portion (2.1.3.2 i)), and the outside surface and roofing counted at half value. Roof space over a flat ceiling R'+D.roofSpace.toFixed(2)+'.',
   'Insulation thicker than the framing it sits in is split by thickness: the part between the members is bridged, the part over them is the next layer. Truss roofs: insulation thicker than the bottom chords is taken to cover them unless the sheet says otherwise.',
   'Roofs: the air between ceiling battens is not counted; an empty wall or floor cavity is still air R'+D.emptyGap.toFixed(2)+'.',
-  'Truss roofs: where the full insulation thickness does not fit under the roofing at the outer edge of the ceiling, the roof is calculated as two parts (2.1.2.9) — the field at full thickness, and a perimeter strip (default 500 mm from the outer edge of the ceiling) with the insulation compressed. Each part must reach R2.6 (2.1.2.11 a)); a heated ceiling needs R3.3 within 500 mm of the edge (Table 2.1.2.12 note 4).',
+  'Truss roofs: where the full insulation thickness does not fit under the roofing at the outer edge of the ceiling, the roof is calculated as two parts (2.1.2.9) — the field at full thickness, and a perimeter strip from the outer edge of the ceiling (500 mm by default; a narrower one may be entered, not less than where the full thickness first fits, rounded up to 50 mm) with less insulation: a perimeter product, an ordinary batt at full thickness with the layer over it left off, or insulation compressed under a guard. Each part must reach R2.6 (2.1.2.11 a)); a heated ceiling needs R3.3 within 500 mm of the edge (Table 2.1.2.12 note 4).',
   'Room at the ceiling edge: bottom chord + heel height, less whatever of the 25 mm ventilation gap under the roofing the purlin zone does not already give, plus wall framing depth × tan(pitch) to the inside of the top plate.',
   'Truss roof insulation strategy, by the room at the heel (top plate centreline, where the insulation starts; product thickness + 25 mm ventilation gap must fit): 1 two layers Pink® Batts® Ceiling R3.6 (360 mm) to the edge; 2 Pink® Superbatts® R7.0 (275 mm) to the edge; 3 R7.0 field + perimeter product (2.1.2.9; default Pink® Batts® Perimeter R2.7, 100 mm, 560 mm wide, 500 mm into the ceiling — Pink® Batts® Ceiling Product and Installation Guide, March 2026) where it fits and its part reaches its minimum; 4 R7.0 field + compressed insulation under an insulation guard. Any choice can be made by hand. No target R is set: each part only has to meet its own minimum, the whole building is checked by the H1 calculation.',
   'Minimums checked: each part of a roof, the ceiling perimeter included, R2.6 (2.1.2.11(a)); walls R1.0 (2.1.2.11(b)); floors other than slabs R1.3 (2.1.2.11(c)); within 500 mm of the edge of a heated ceiling R3.3 (Table 2.1.2.12 note 4) — not required for an unheated ceiling.',
@@ -471,7 +471,13 @@ function geom(c){
   const pitch=+ev(c,'pitch',20),rad=pitch*Math.PI/180,tan=Math.tan(rad),cos=Math.cos(rad);
   const bc=+(c.v.fr||{}).d||MEMBER.chord.d,std=ev(c,'heel',null)==null,tcv=D.topChord/cos,heel=std?tcv:+ev(c,'heel');
   const rise=D.purlin/cos,vent=Math.max(0,D.ventGap-rise),face=bc+heel-vent;
-  return{pitch,tan,cos,bc,std,tcv,heel,rise,vent,face,wall:D.wallDepth,H:face+D.wallDepth/2*tan,tLow:face+D.wallDepth*tan,W:Math.max(1,Math.round(+ev(c,'width',500)))}}
+  /* Least setback: where the field insulation's full thickness + 25 mm first fits under the roofing —
+     xCL from the top plate centreline, xEdge from the outer edge of the ceiling (the inside face of the plate).
+     The strip is 500 mm unless a narrower one is entered: never less than the least setback (rounded up to 50 mm), never more than 500. */
+  const H=face+D.wallDepth/2*tan,fr=c.v.fr||{},ov=OV(c),tF=(+fr.insR?+fr.insT||0:0)+(+ov.r?+ov.t||0:0);
+  const xCL=tF+D.ventGap<=H+1e-6?0:tan>1e-9?(tF+D.ventGap-H)/tan:Infinity,xEdge=Math.max(0,xCL-D.wallDepth/2);
+  const Wmin=isFinite(xEdge)?Math.min(500,Math.max(50,Math.ceil(xEdge/50-1e-9)*50)):500,Win=Math.round(+ev(c,'width',500))||500;
+  return{pitch,tan,cos,bc,std,tcv,heel,rise,vent,face,wall:D.wallDepth,H,tLow:face+D.wallDepth*tan,tF,xCL,xEdge,Wmin,Win,W:Math.min(500,Math.max(Wmin,Win))}}
 function fieldP(c,key){if(key==='own'){const fr=c.v.fr||{},ov=OV(c),L=[];if(+fr.insR)L.push({R:+fr.insR,T:+fr.insT||0,prod:fr.prod||''});if(+ov.r)L.push({R:+ov.r,T:+ov.t||0,prod:ov.prod||''});
     return{key:'own',name:L.length?L.map(x=>'R'+x.R.toFixed(1)+(x.T?' '+x.T+' mm':'')).join(' + '):'No insulation',layers:L.length?L:[{R:0,T:0,prod:''}]}}
   if(key==='custom'){const R=+ev(c,'cR',7.0),T=+ev(c,'cT',275),nm=String(ev(c,'cName','Custom insulation'));return{key,name:nm+' R'+R.toFixed(1),layers:[{R,T,prod:nm}]}}return FIELDP[key]||FIELDP.r70}
@@ -480,7 +486,11 @@ function withField(c,p){const q=JSON.parse(JSON.stringify(c)),L=p.layers;q.fkey=
   if(p.key==='own')return q   /* each row keeps its own insulation */
   q.v.fr=Object.assign({},q.v.fr,{insR:L[0].R,insT:L[0].T,prod:L[0].prod});
   q.v.over=L[1]?{r:L[1].R,t:L[1].T,prod:L[1].prod}:{r:0,t:0};return q}
-const perimProd=c=>({name:String(ev(c,'pprod','Pink® Batts® Perimeter')),R:+ev(c,'pR',2.7),T:+ev(c,'pT',100),W:+ev(c,'pW',560)});
+/* The perimeter part is either a dedicated perimeter product — named so, cut to its own strip width, checked for its lap
+   over the top plate — or an ordinary ceiling batt carried on to the edge (batt:true), which has no strip width of its own. */
+const perimProd=c=>{const name=String(ev(c,'pprod','Pink® Batts® Perimeter')),R=+ev(c,'pR',2.7),T=+ev(c,'pT',100),batt=!/perimeter/i.test(name);
+  const row=batt?((RP&&RP.insulation&&RP.insulation.ceiling)||[]).find(x=>x.name===name&&Math.abs(x.r-R)<1e-9)||((RP&&RP.insulation&&RP.insulation.ceiling)||[]).find(x=>x.name===name):null;
+  return{name,R,T,W:+ev(c,'pW',560),batt,brand:row?row.brand:batt?null:'Pink® Batts®'}};
 const compProd=c=>({name:String(ev(c,'cpName','Pink® Superbatts®')),R:+ev(c,'cpR',7.0),T:+ev(c,'cpT',275),n:+ev(c,'n',.24),over:ev(c,'rOver',null)==null?null:+ev(c,'rOver')});
 function partC(ce,kind,R,T,prod){const p=JSON.parse(JSON.stringify(ce)),fr=p.v.fr=p.v.fr||{};p.part='perimeter';p.pkind=kind;p.name=ce.name+' — ceiling perimeter';
   fr.insR=R;fr.insT=T;fr.cover=!!((ce.v.fr||{}).cover);fr.prod=prod;delete p.v.over;Object.defineProperty(p,'field',{value:ce,enumerable:false});return p}
@@ -513,9 +523,11 @@ function strategy(c){const hw=!!(c.heated&&!c.heatWet);const key=JSON.stringify(
   const ck=(ok,text,sev)=>st.checks.push({ok,text,sev:ok?'pass':sev||'fail'});
   if(per==='none')ck(fit(thk(field)),fit(thk(field))?fitTxt(thk(field),field.name)+' — full thickness to the edge':'Heel too low for full-thickness insulation — raise the heel or tick Ceiling perimeter ('+thk(field)+' + 25 = '+(thk(field)+25)+' mm > room at the heel '+L1(G.H)+' mm)','fail');
   else if(!fit(thk(field)))ck(true,fitTxt(thk(field),field.name)+' — the ceiling perimeter part takes the first '+G.W+' mm');
-  if(per==='product'){st.pc=partC(ce,'product',pp.R,pp.T,pp.name);st.pRT=calc(st.pc).total;pp.over=pp.W-G.W;
+  if(per==='product'){st.pc=partC(ce,'product',pp.R,pp.T,pp.name);st.pRT=calc(st.pc).total;if(!pp.batt)pp.over=pp.W-G.W;
+    /* the field's own lower layer carried to the edge, the layer over it left off the strip */
+    const l0=field.layers[0];pp.lower=pp.batt&&field.layers.length>1&&Math.abs(l0.R-pp.R)<1e-9&&l0.T===pp.T;
     ck(fit(pp.T),fitTxt(pp.T,pp.name+' R'+pp.R.toFixed(1)));
-    ck(pp.over>=G.wall/2-1e-6,'Perimeter product over the top plate '+L1(pp.over)+' mm ('+pp.W+' − '+G.W+') '+(pp.over>=G.wall/2-1e-6?'≥':'<')+' half the plate, '+G.wall/2+' mm','review')}
+    if(!pp.batt)ck(pp.over>=G.wall/2-1e-6,'Perimeter product over the top plate '+L1(pp.over)+' mm ('+pp.W+' − '+G.W+') '+(pp.over>=G.wall/2-1e-6?'≥':'<')+' half the plate, '+G.wall/2+' mm','review')}
   if(per==='comp'){const cs=st.cs=compSlices(ce,cp,G);st.pc=partC(ce,'comp',cp.R,cp.T,cp.name);st.pRT=cs.rt;
     ck(cs.rLow>3.3,'Compressed insulation at the ceiling edge R'+cs.rLow.toFixed(2)+(cs.rLow>3.3?' (above R3.3)':' — R3.3 or less'));
     ck(1-cs.cLow<=.5,'Compressed '+((1-cs.cLow)*100).toFixed(0)+'% at the ceiling edge'+(1-cs.cLow>.5?' — more than half: the manufacturer must confirm it may be used compressed':''),'review');
@@ -603,7 +615,8 @@ function toSheet(c,list){
     s.alt.text='For comparison only, not used: with each bridged layer as its own portion, '+s.alt.portions.map(p=>p.id+' '+p.name.toLowerCase()+' Rb = '+p.rb.toFixed(2)).join(', ')+
       '; RT = '+a.total.toFixed(2)+', '+Math.abs(r.total-a.total).toFixed(2)+' '+(a.total<r.total?'lower':'higher')+' than '+r.total.toFixed(2)+'. 2.1.3.2 makes adjacent bridged layers one portion, so the calculation above stands.'}
   if(ST){const G=ST.G,L1=x=>x.toFixed(1),F=ST.field,bc=G.bc,l0=F.layers[0],no=id=>(s.layers.find(l=>l.slot===id)||{}).no,r2=x=>x.toFixed(2),rr='R'+l0.R.toFixed(1);
-    const lt=F.layers.length>1?'Two layers of '+rr+' '+l0.T+' mm: the lower layer (row '+no('fr')+') lies between the '+bc+' mm chords and '+(l0.T-bc)+' mm above them — '+rr+' × '+bc+'/'+l0.T+' = '+r2(l0.R*bc/l0.T)+' between, '+rr+' × '+(l0.T-bc)+'/'+l0.T+' = '+r2(l0.R*(l0.T-bc)/l0.T)+' above; the upper layer (row '+no('over')+') lies on it, R'+r2(F.layers[1].R)+'. The part above the chords and the upper layer are adjacent insulation, counted on every heat path of B1 (2.1.3.2).'
+    const l1=F.layers[1],same=l1&&Math.abs(l1.R-l0.R)<1e-9&&l1.T===l0.T;
+    const lt=F.layers.length>1?(same?'Two layers of '+rr+' '+l0.T+' mm':'Two layers, '+rr+' '+l0.T+' mm under R'+l1.R.toFixed(1)+' '+l1.T+' mm')+': the lower layer (row '+no('fr')+') lies between the '+bc+' mm chords and '+(l0.T-bc)+' mm above them — '+rr+' × '+bc+'/'+l0.T+' = '+r2(l0.R*bc/l0.T)+' between, '+rr+' × '+(l0.T-bc)+'/'+l0.T+' = '+r2(l0.R*(l0.T-bc)/l0.T)+' above; the upper layer (row '+no('over')+') lies on it, R'+r2(F.layers[1].R)+'. The part above the chords and the upper layer are adjacent insulation, counted on every heat path of B1 (2.1.3.2).'
       :'One layer of '+rr+' '+l0.T+' mm (row '+no('fr')+'): '+Math.min(bc,l0.T)+' mm between the '+bc+' mm chords, '+rr+' × '+Math.min(bc,l0.T)+'/'+l0.T+' = '+r2(l0.R*Math.min(bc,l0.T)/l0.T)+(l0.T>bc?', and '+(l0.T-bc)+' mm above them, '+rr+' × '+(l0.T-bc)+'/'+l0.T+' = '+r2(l0.R*(l0.T-bc)/l0.T)+', counted on every heat path of B1 (2.1.3.2)':'')+'.';
     const how=ST.used?'Insulation strategy step '+ST.used+' of 4, the first that works':'Insulation chosen by hand (the first workable strategy step is '+ST.auto+')';
     const roomT='Room at the heel, at the top plate centreline where the insulation starts: '+L1(G.H)+' mm = bottom chord '+bc+' + heel '+L1(G.heel)+' − vent '+L1(G.vent)+' + '+(G.wall/2)+' × tan '+G.pitch+'° (the 45 mm purlin zone, '+L1(G.rise)+' mm, gives the ventilation gap under the roofing).';
@@ -612,10 +625,12 @@ function toSheet(c,list){
   if(split){const G=ST.G,pc=ST.pc,P=toSheet(pc,list),L1=x=>x.toFixed(1),ex=c.v.edge||{},isP=ST.per==='product',pr=isP?ST.pp:ST.cp,pn=pr.name+' R'+pr.R.toFixed(1),cs=ST.cs;
     const no={};s.layers.forEach(l=>{if(l.slot)no[l.slot]=l.no});const tl=Math.round(Math.min(pr.T,G.tLow));
     P.layers.forEach(l=>{if(!l.slot)return;if(l.slot==='fr'){l.no='P1';
-        if(isP){l.label='Truss bottom chord and perimeter insulation';l.material=pn+', '+pr.T+' mm, '+pr.W+' mm wide'}
+        if(isP){l.label='Truss bottom chord and perimeter insulation';l.material=pn+', '+pr.T+' mm'+(pr.batt?', carried to the edge at full thickness':', '+pr.W+' mm wide')}
         else{l.label='Truss bottom chord and compressed insulation';l.material=pn+', compressed to '+tl+'–'+pr.T+' mm under an insulation guard; the part within the '+G.bc+' mm chords is bridged';l.thickness=tl+'–'+pr.T;l.own=f(pr.R)}}
       else if(no[l.slot]!=null)l.no=no[l.slot]});
     P.ref=s.ref;P.part='perimeter';P.pkind=ST.per;P.width=G.W;P.type=s.type+' — ceiling perimeter, '+(isP?pn:'compressed '+pn);P.min=ST.pmin;P.insulation=isP?pn+' '+pr.T+' mm':'compressed '+pn;
+    /* what the strip is, in a few words — for the summary table */
+    P.build=!isP?'insulation compressed':!pr.batt?'perimeter product':pr.lower?'top layer omitted — R'+pr.R.toFixed(1)+' at full thickness':'R'+pr.R.toFixed(1)+' at full thickness';
     P.total=f(ST.pRT);P.checks=ST.checks.map(k=>({ok:k.ok,warn:k.sev==='review',text:k.text}));
     const B=P.portions[0];if(B)B.rows=P.layers.filter(l=>l.portion===B.id).map(l=>l.no);
     const bat=no.st!=null?' Row '+no.st+', the ceiling battens, is itself a bridged layer directly against row P1, so 2.1.3.2 puts it in the same portion.':'';
@@ -629,11 +644,18 @@ function toSheet(c,list){
       P.materials.splice(ci+1,0,{name:'P1 compressed '+pn+' — R(x) = t ÷ (k0 · (t/d0)^n), per slice',d:tl+'–'+pr.T,k:cs.k0.toFixed(4)+' · c^'+cs.n,r:'per slice',
         src:(pr.over!=null?'Manufacturer’s compressed R-value, slices scaled; ':'')+'BRANZ House Insulation Guide v2.7, Roof edge insulation method; k0 from the declared R'+pr.R.toFixed(1)+' over '+pr.T+' mm'})}
     P.edge=[['Minimum roof pitch θ',G.pitch+'°','Entered'],
-      ['Heel height',L1(G.heel)+' mm',G.std?'Standard heel: top chord '+D.topChord+' ÷ cos '+G.pitch+'°':'Entered (raised heel)'],
+      ['Heel height',L1(G.heel)+' mm',(G.std?'Standard heel: top chord '+D.topChord+' ÷ cos '+G.pitch+'°':'Entered (raised heel)')+' — measured at the outside face of the wall, from the top of the bottom chord to the top of the top chord (the bottom chord’s '+G.bc+' mm is added separately)'],
       ['Ventilation gap taken off',L1(G.vent)+' mm','25 mm clear under the roofing; the '+D.purlin+' mm purlin zone gives '+D.purlin+' ÷ cos '+G.pitch+'° = '+L1(G.rise)+' mm'+(G.vent>0?', the rest comes off the insulation':', which covers it')],
       ['Room at the heel (top plate centreline)',L1(G.H)+' mm','bottom chord '+G.bc+' + heel '+L1(G.heel)+' − '+L1(G.vent)+' + '+(G.wall/2)+' × tan '+G.pitch+'° — the strategy checks thickness + 25 mm against this'],
       ['Field insulation',ST.field.name+' · '+thk(ST.field)+' mm',thk(ST.field)+' + 25 = '+(thk(ST.field)+25)+' mm '+(thk(ST.field)+25<=G.H?'≤':'>')+' '+L1(G.H)+' mm'+(ST.used?' — strategy step '+ST.used:' — chosen by hand')]];
-    if(isP)P.edge.push(['Perimeter product',pn,'Pink® Batts® Ceiling Product and Installation Guide (March 2026), “Pink® Batts® Perimeter”'],
+    const upT=ST.field.layers.length>1?ST.field.layers.slice(1).map(x=>'R'+x.R.toFixed(1)).join(' + '):'';
+    P.edge.push(['Least setback for the full '+G.tF+' mm — from the top plate centreline · from the ceiling edge',(isFinite(G.xCL)?L1(G.xCL):'—')+' mm · '+(isFinite(G.xEdge)?L1(G.xEdge):'—')+' mm',
+        G.xCL>0&&isFinite(G.xCL)?'('+G.tF+' + 25 − '+L1(G.H)+') ÷ tan '+G.pitch+'° = '+L1(G.xCL)+' mm; the ceiling edge (inside face of the top plate) is '+(G.wall/2)+' mm in from the centreline':'Full thickness + 25 mm fits at the top plate centreline'],
+      ['Strip width',G.W+' mm',(G.Win===G.W?(G.W===500?'Default':'Entered'):'Entered '+G.Win+' mm, taken as '+G.W+' mm')+' — between the least setback rounded up to 50 mm ('+G.Wmin+' mm) and 500 mm. '+(isP&&pr.lower?'The top layer '+upT+' is held back '+G.W+' mm from the ceiling edge; the geometry needs '+L1(G.xEdge)+' mm. The difference is construction allowance, not compression.':'The full-thickness field insulation starts '+G.W+' mm from the ceiling edge; the geometry needs '+L1(G.xEdge)+' mm.')]);
+    if(isP&&pr.batt)P.edge.push(['Perimeter insulation',pn,(pr.brand&&RP.insulation.sources[pr.brand])||'Declared values, as entered'],
+      ['How it is laid',pr.T+' mm, full thickness',(pr.lower?'The field’s lower layer carried on to the edge; the layer over it is left off the strip':'An ordinary ceiling batt carried on to the edge')+' — not a perimeter product, so it has no strip width of its own'],
+      ['Product fit',(pr.T+25)+' mm '+(pr.T+25<=G.H?'≤ ':'> ')+L1(G.H)+' mm','thickness + 25 mm ventilation gap against the room at the heel']);
+    else if(isP)P.edge.push(['Perimeter product',pn,/^Pink® Batts® Perimeter$/.test(pr.name)?'Pink® Batts® Ceiling Product and Installation Guide (March 2026), “Pink® Batts® Perimeter”':'Declared values, as entered'],
       ['Product thickness · width',pr.T+' mm · '+pr.W+' mm','Laid from '+L1(pr.W-G.W)+' mm over the top plate to '+G.W+' mm into the ceiling'],
       ['Product fit',(pr.T+25)+' mm '+(pr.T+25<=G.H?'≤ ':'> ')+L1(G.H)+' mm','thickness + 25 mm ventilation gap against the room at the heel']);
     else{const nn=(NEXP.find(x=>Math.abs(x[0]-cs.n)<1e-9)||[0,'Entered'])[1];
