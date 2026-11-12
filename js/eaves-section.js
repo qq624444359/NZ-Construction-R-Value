@@ -441,7 +441,7 @@
         per += line([[dx, cb], [dx, pTop]], 'dim strong') + line([[dx - 15, cb], [dx + 15, cb]], 'dim') + line([[dx - 15, pTop], [dx + 15, pTop]], 'dim') +
           text(dx + 25, (cb + pTop) / 2 - 15, pp.thickness + ' mm', 'dimtext strong') +
           line([[dx, pTop], [dx, under0]], 'dim') + line([[dx - 15, under0], [dx + 15, under0]], 'dim') +
-          text(dx + 25, (pTop + under0) / 2 - 15, Math.round(under0 - pTop) + ' mm to underlay', 'dimtext strong');
+          text(dx + 25, (pTop + under0) / 2 - 15, Math.round(under0 - pTop) + ' mm clear above, to underlay', 'dimtext strong');
       }
       out.push(group('perimeter', per));
     }
