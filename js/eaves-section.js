@@ -15,12 +15,14 @@
  *   2. The bottom chord sits on the 135 x 35 extra top plate, which is at the same
  *      level as the ceiling battens; the lining runs under both.
  *
- * Heel height follows the BRANZ convention: measured at the outside face of the
- * wall, from the top of the bottom chord to the top of the top chord, i.e.
- * D / cos(pitch) - bird's mouth. A truss has no bird's mouth, so a standard heel is
- * top chord depth / cos(pitch); anything above that lifts the top chord on a heel
- * web. The insulation starts lower, at the underside of the bottom chord, so the
- * depth it has at the wall is bottom chord depth + heel height.
+ * Heel height: measured at the outside face of the wall, from the top of the
+ * load-bearing wall (the underside of the truss bottom chord) to the top edge of
+ * the top chord, i.e. D / cos(pitch) - bird's mouth (MiTek GANG-NAIL Residential
+ * Manual, Terminology; BRANZ Build 191). A truss has no bird's mouth, so a standard
+ * heel is top chord depth / cos(pitch) and the top chord's underside meets the
+ * underside of the bottom chord at the wall; anything above that lifts the top
+ * chord. The insulation starts at the underside of the bottom chord, so the depth
+ * it has at the wall is the heel height.
  *
  * Usage:  element.innerHTML = eavesSection({ roofing: 'shingle', pitch: 25, ... })
  * Every part sits in a <g data-layer="..."> so hover/pin highlighting can target it.
@@ -121,10 +123,10 @@
     // wallDepth * tan(pitch) off the heel (BRANZ: heel = D / cos - bird's mouth).
     // Its heel follows from that cut; only a truss can be raised.
     var standardHeel = rafter ? tcv - S.wallDepth * tan : tcv;
-    var heel = S.heelHeight == null || rafter ? standardHeel : S.heelHeight;
+    var heel = S.heelHeight == null || rafter ? standardHeel : Math.max(standardHeel, S.heelHeight);
     var lift = Math.max(0, heel - standardHeel);
-    var heelBase = rafter ? 0 : bt;                           // heel is measured up from here
-    function yu(x) { return rafter ? (x - S.wallDepth) * tan : bt + lift + x * tan; }  // member underside
+    var heelBase = rafter ? 0 : cb;                           // heel is measured up from here: the top of the wall
+    function yu(x) { return rafter ? (x - S.wallDepth) * tan : cb + lift + x * tan; }  // member underside
     function yt(x) { return yu(x) + tcv; }                    // top chord top = roof plane
     var battenTop = cb, battenBot = cb - S.battens.depth;
     var liningBot = battenBot - S.lining;
@@ -171,9 +173,12 @@
         return poly([[xTail, yu(xTail)], [0, yu(0)], [0, 0], [S.wallDepth, 0], [X, yu(X)],
           [X, yt(X)], [xTail, yt(xTail)]], cls);                // bird's mouth over the top plate
       }
-      return rect(0, cb, X, bt, cls) +
+      // the bottom chord is cut to the pitch where the top chord comes down onto it; a heel raised
+      // above the bottom chord stands on a heel web
+      var xk = (bt - yu(0)) / tan;
+      return (xk > 0.5 ? poly([[0, cb], [X, cb], [X, bt], [Math.min(X, xk), bt], [0, yu(0)]], cls) : rect(0, cb, X, bt, cls)) +
         poly([[xTail, yu(xTail)], [X, yu(X)], [X, yt(X)], [xTail, yt(xTail)]], cls) +
-        (lift > 0 ? poly([[0, bt], [S.heelWeb, bt], [S.heelWeb, yu(S.heelWeb)], [0, yu(0)]], cls) : '');
+        (yu(0) > bt + 0.5 ? poly([[0, bt], [S.heelWeb, bt], [S.heelWeb, yu(S.heelWeb)], [0, yu(0)]], cls) : '');
     }
     out.push(group('chord', beyond('beyond timber')));
     if (rafter) {
