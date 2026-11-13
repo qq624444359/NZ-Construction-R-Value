@@ -453,6 +453,7 @@
 
     // ---- labels with leaders -------------------------------------------------
     var FS = 44, GAP = 62;
+    if (numbers) { FS = 78; GAP = 100; }   // the sheet prints its numbers at 9 pt, larger than the worded labels: keep them clear of each other
     var colL = zone === 'perimeter' ? -XL - 80 : ov - 200, colR = X + 70;
     function place(list, col, side) {
       list.sort(function (a, b) { return b.a[1] - a.a[1]; });

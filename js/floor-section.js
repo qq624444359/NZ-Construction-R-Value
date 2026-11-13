@@ -159,6 +159,7 @@
 
     // ---- labels with leaders ------------------------------------------------------------------
     var FS = 40, LGAP = 58;
+    if (numbers) { FS = 78; LGAP = 100; }   // the sheet prints its numbers at 9 pt, larger than the worded labels: keep them clear of each other
     var colL = xa - 140, colR = xb + 90;
     function place(list, col, side) {
       list.sort(function (a, b) { return b.a[1] - a.a[1]; });
