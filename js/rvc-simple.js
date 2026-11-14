@@ -64,18 +64,13 @@ function resultHTML() {
   var ord = { roof: 0, wall: 1, floor: 2 }, rows = s.rows.slice().sort(function (a, b) { return ord[a.el] - ord[b.el]; });
   var glz = '<tr><td><span class="ezs-k">Glazing</span><button class="ezs-nm" data-z="open" data-v="openings">Windows and glazed doors' + (s.glzN ? ' (' + s.glzN + ')' : '') + '</button></td><td class="n">' + (s.glzA ? f1(s.glzA) : '—') + '</td><td class="n">' + (s.glzR.length ? s.glzR.map(function (r) { return 'R' + f2(r); }).join(' / ') : '—') + '</td></tr>' +
     (s.doorA ? '<tr><td><span class="ezs-k">Doors</span><button class="ezs-nm" data-z="open" data-v="openings">Opaque doors (' + s.doorN + ')</button></td><td class="n">' + f1(s.doorA) + '</td><td class="n"></td></tr>' : '');
-  var enc = info ? (info.enclosed || []).map(function (e) {
-    return '<div class="ezs-q"><span class="ms s18">help</span><div><b>“' + esc(e.name) + '” (' + f1(e.area) + ' m²) is closed in by the house’s walls. Is it roofed and inside the insulated envelope?</b>' +
-      '<p>Outside: its walls and doors count as external. Inside: it is part of the floor and roof, and its doors are internal.</p></div>' +
-      '<div class="ezs-seg" role="group"><button data-z="enc" data-v="' + esc(e.name) + '" data-in="0" class="' + (e.inside ? '' : 'on') + '">Outside</button><button data-z="enc" data-v="' + esc(e.name) + '" data-in="1" class="' + (e.inside ? 'on' : '') + '">Inside</button></div></div>';
-  }).join('') : '';
   var notes = info ? '<section class="ezs-card"><h2>What was read from ' + esc(info.file) + '</h2><p class="ezs-sub">Ticked lines were written on the drawings. Lines marked “check” are worked out from them — compare each with your own figures before a consent.</p><ul class="ezs-notes">' +
     info.notes.slice().sort(function (a, b) { var o = { warn: 0, miss: 1, check: 2, ok: 3 }; return o[a.k] - o[b.k]; }).map(function (n) {
       return '<li class="' + n.k + '"><span class="ms s18">' + ICON[n.k] + '</span><div><span>' + esc(n.t) + '</span>' + (n.src ? '<em>' + esc(n.src) + '</em>' : '') + '</div>' + (n.k === 'check' || n.k === 'miss' ? '<i>' + (n.k === 'miss' ? 'missing' : 'check') + '</i>' : '') + '</li>';
     }).join('') + '</ul></section>' : '';
   return '<div class="ezs-top"><div><p class="kicker">H1/AS1 6th Edition · Calculation Method</p><h1>' + esc(pr.address || 'Project') + '</h1>' + (meta ? '<p class="ezs-meta">' + meta + '</p>' : '') + '</div>' +
     '<div class="ezs-act"><button class="v6btn" data-z="again"><span class="ms s18">upload_file</span>Read another PDF</button><button class="v6btn" data-z="expert"><span class="ms s18">tune</span>Expert mode</button></div></div>' +
-    verdictHTML(s) + sugHTML(s) + enc +
+    verdictHTML(s) + sugHTML(s) +
     '<section class="ezs-card"><h2>The house</h2><p class="ezs-sub">Change an area here; open a row to change its build-up in expert mode.</p>' +
     '<table class="ezs-t"><thead><tr><th>Element</th><th class="n">Area m²</th><th class="n">Construction R-value</th></tr></thead><tbody>' + rows.map(rowHTML).join('') + glz + '</tbody></table></section>' +
     notes +
@@ -122,7 +117,6 @@ document.addEventListener('click', async function (e) {
   else if (z === 'save') R.simple.save();
   else if (z === 'solve') { EZSeed.busy(true, 'Trying the insulation combinations…'); setTimeout(function () { ST.sug = XP.solve(); EZSeed.busy(false); draw(); }, 30); }
   else if (z === 'apply') { var g = ST.sug; if (g && g.state === 'ok') R.S.list.forEach(function (c) { if (g.by[c.id]) g.by[c.id].apply(c); }); ST.sug = null; R.render(); draw(); }
-  else if (z === 'enc') { EZSeed.busy(true, 'Measuring the plan again…'); try { await R.simple.indoor(v, b.dataset.in === '1'); } catch (er) { console.warn(er); } ST.sug = null; EZSeed.busy(false); draw(); }
   else if (z === 'dx') { ST.pend = null; dlgClose(); }
   else if (z === 'dgo') { var f = ST.pend; ST.pend = null; dlgClose(); read(f); }
   else if (z === 'dsave') { var f2 = ST.pend; ST.pend = null; dlgClose(); R.simple.save(); setTimeout(function () { read(f2); }, 400); }

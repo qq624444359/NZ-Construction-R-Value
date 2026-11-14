@@ -179,7 +179,7 @@ function parse(pages) {
     ta: ta, levels: Object.keys(lv).map(function (k) { return { name: k, src: lv[k] }; }), pitch: pv ? { v: +pv, n: pc[pv], src: psrc[pv] } : null
   };
 }
-async function readDrawings(file, opts) {
+async function readDrawings(file) {
   var lib = await loadPdfJs(), data = new Uint8Array(await file.arrayBuffer());
   var doc = await lib.getDocument({ data: data }).promise, pages = [], chars = 0;
   for (var i = 1; i <= Math.min(doc.numPages, 120); i++) {
@@ -188,16 +188,15 @@ async function readDrawings(file, opts) {
   }
   if (chars < 40) throw new Error('No text found in this PDF — it looks scanned. Export the drawings from Revit, ArchiCAD or AutoCAD as a PDF with text.');
   readDrawings.last = { lib: lib, doc: doc, pages: pages };
-  return { found: await measure(opts), pages: doc.numPages };
+  return { found: await measure(), pages: doc.numPages };
 }
-/* the text and the plan's walls again — opts.indoor: enclosed spaces named as outdoor (YARD, COURTYARD) that are inside the envelope after all */
-async function measure(opts) {
+async function measure() {
   var L = readDrawings.last, lib = L.lib, doc = L.doc, pages = L.pages, F = parse(pages);
   F.stud = studHeight(pages);
   /* the plan's walls: area and perimeter of the heated floor, and which side of the envelope each opening is on */
   var pgs = {}; F.openings.forEach(function (o) { if (o.at && o.at.pg != null) pgs[o.at.pg] = (pgs[o.at.pg] || 0) + 1; });
   var plan = Object.keys(pgs).sort(function (a, b) { return pgs[b] - pgs[a]; })[0];
-  if (plan != null) { try { var page = await doc.getPage(+plan + 1); var G = await planGeom(lib, page, pages[+plan], opts); readDrawings.plan = G; applyGeom(F, G, +plan); if (F.garWall) F.garWall.h = F.stud; } catch (e) { console.warn('plan walls not read:', e); } }
+  if (plan != null) { try { var page = await doc.getPage(+plan + 1); var G = await planGeom(lib, page, pages[+plan]); readDrawings.plan = G; applyGeom(F, G, +plan); if (F.garWall) F.garWall.h = F.stud; } catch (e) { console.warn('plan walls not read:', e); } }
   return F;
 }
 
@@ -219,8 +218,7 @@ function studHeight(pages) {
    walls is a room, named by the room label in it. The heated floor is every room except the garage (GARAGE, CARPORT) and the outdoor spaces
    (YARD, COURTYARD, DECK…), plus the walls around them, to the outer face of the framing — the slab's external dimensions. */
 var GAR = /^(GARAGE|CARPORT)$/i, OUTD = /^(YARD|COURTYARD|DECK|PATIO|PORCH|VERANDAH|ALFRESCO|OUTLOOK)$/i;
-async function planGeom(lib, page, items, opts) {
-  var indoor = ((opts || {}).indoor || []).map(function (s) { return String(s).toUpperCase(); });
+async function planGeom(lib, page, items) {
   var OPS = lib.OPS, U = lib.Util, ol = await page.getOperatorList(), fn = ol.fnArray, ar = ol.argsArray;
   var ctm = [1, 0, 0, 1, 0, 0], fill = '#000000', st = [], cur = [], shapes = [], clip = null, pclip = false;
   var hex = function (a) { if (typeof a[0] === 'string') return a[0].toLowerCase(); return '#' + [0, 1, 2].map(function (i) { return ('0' + Math.round(+a[i] || 0).toString(16)).slice(-2); }).join(''); };
@@ -304,7 +302,7 @@ async function planGeom(lib, page, items, opts) {
     var x = cx(it.x + (it.w / 2) * (it.d === 0 ? 1 : 0)), y = cy(it.y); if (x < 0 || y < 0 || x >= W || y >= H) return;
     var r = lab[y * W + x]; if (!r || r === out) return;
     (names[r] = names[r] || []).push(s);
-    if (GAR.test(s)) kind[r] = 'garage'; else if (OUTD.test(s) && kind[r] !== 'garage' && indoor.indexOf(s.toUpperCase()) < 0) kind[r] = 'outdoor';
+    if (GAR.test(s)) kind[r] = 'garage'; else if (OUTD.test(s) && kind[r] !== 'garage') kind[r] = 'outdoor';
   });
   var type = function (r) { return !r ? 'wall' : r === out ? 'outside' : kind[r] || 'house'; };
   /* the heated floor: the house's spaces and the wall cells within one wall thickness of them */
@@ -350,19 +348,13 @@ async function planGeom(lib, page, items, opts) {
       if ((k0 === 'house' && k1 === 'garage') || (k0 === 'garage' && k1 === 'house')) garLen += step * mmU / 1000;
     }
   });
-  var cells = {}; for (var i5 = 0; i5 < W * H; i5++) if (lab[i5]) cells[lab[i5]] = (cells[lab[i5]] || 0) + 1;
-  var rooms = Object.keys(names).map(function (r) { return { names: names[r], kind: type(+r), area: (cells[r] || 0) * 1e-4 }; });
-  /* a space named as outdoor that the walls close off all round (a courtyard inside the house): it is its own space here, so it may be roofed and inside the envelope — a question for the reader.
-     With opts.indoor it has been counted as a room of the house */
-  var enclosed = [];
-  Object.keys(names).forEach(function (r) { var nm = names[r].filter(function (s) { return OUTD.test(s); })[0]; if (!nm || kind[r] === 'garage') return; enclosed.push({ name: nm, area: +((cells[r] || 0) * 1e-4).toFixed(1), inside: type(+r) === 'house' }); });
-  return { scale: scale, area: area * 1e-4, perimeter: edges * 0.01, sides: sides, rooms: rooms, walls: R.length, gaps: gaps.length, garLen: garLen, enclosed: enclosed };
+  var rooms = Object.keys(names).map(function (r) { return { names: names[r], kind: type(+r) }; });
+  return { scale: scale, area: area * 1e-4, perimeter: edges * 0.01, sides: sides, rooms: rooms, walls: R.length, gaps: gaps.length, garLen: garLen };
 }
 function applyGeom(F, G, pg) {
   if (!G) return;
   var src = 'p.' + (pg + 1) + ': the plan’s walls (1:' + G.scale + ') — heated floor to the outer face of the framing, ' + (G.rooms.some(function (r) { return r.kind === 'garage'; }) ? 'garage' : '') + (G.rooms.some(function (r) { return r.kind === 'outdoor'; }) ? ' and ' + G.rooms.filter(function (r) { return r.kind === 'outdoor'; }).map(function (r) { return r.names.filter(function (s) { return OUTD.test(s); })[0]; }).join(', ') : '') + ' left out';
   if (G.area > 10) { F.area = { v: +G.area.toFixed(1), src: src }; F.perimeter = { v: +G.perimeter.toFixed(2), src: src }; }
-  F.enclosed = G.enclosed || [];
   /* the external walls: the heated floor's outline less the wall to the garage */
   if (G.area > 10) F.extWall = { len: +(G.perimeter - (G.garLen > 1 ? G.garLen : 0)).toFixed(2), src: 'p.' + (pg + 1) + ': the plan’s walls (1:' + G.scale + ') — the heated floor’s outline ' + G.perimeter.toFixed(2) + ' m' + (G.garLen > 1 ? ' less the ' + G.garLen.toFixed(2) + ' m to the garage' : '') };
   if (G.garLen > 1) F.garWall = { len: +G.garLen.toFixed(2), src: 'p.' + (pg + 1) + ': the plan’s walls (1:' + G.scale + ') — wall between the house and the garage, ' + G.garLen.toFixed(2) + ' m long' };
@@ -428,5 +420,5 @@ function review(F, file, onApply, onCancel, cons) {
   };
 }
 
-g.EZSeed = { busy: busy, fromHash: fromHash, hashSeed: hashSeed, clearHash: clearHash, readDrawings: readDrawings, measure: measure, review: review, parse: parse, toLines: toLines };
+g.EZSeed = { busy: busy, fromHash: fromHash, hashSeed: hashSeed, clearHash: clearHash, readDrawings: readDrawings, review: review, parse: parse, toLines: toLines };
 })(window);

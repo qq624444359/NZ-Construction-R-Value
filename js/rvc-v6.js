@@ -575,18 +575,16 @@ function simpleFill(F){const props=seedCons(F),notes=[],N=(k,t,src)=>notes.push(
   if(ops.length)N('ok',nG+' windows and glazed doors, '+nD+' opaque door'+(nD===1?'':'s')+' in the envelope'+(out.length?' — left out: '+out.map(o=>o.name+' ('+(o.note||'outside the envelope')+')').join(', '):''),ops[0].src);
   else N('miss','No window or door tags with sizes were found — enter the windows and doors.');
   if((F.levels||[]).length>1)N('warn','This set draws '+F.levels.length+' floors ('+F.levels.map(l=>l.name.toLowerCase()).join(', ')+'). Only one plan is measured so far, so the areas here cover one floor — complete them in expert mode.',F.levels[1].src);
-  SIMPLE.info={file:SIMPLE.file,notes,enclosed:(F.enclosed||[]),indoor:SIMPLE.indoor||[],levels:F.levels||[]};
+  SIMPLE.info={file:SIMPLE.file,notes};
   render();return SIMPLE.info}
-async function simpleRead(file){SIMPLE.file=file.name;SIMPLE.indoor=[];hPush();const r=await EZSeed.readDrawings(file,{indoor:[]});return simpleFill(r.found)}
-/* an enclosed yard or courtyard, in or out of the envelope: the plan is measured again with that answer */
-async function simpleIndoor(name,inside){const s=new Set(SIMPLE.indoor||[]);inside?s.add(name):s.delete(name);SIMPLE.indoor=[...s];return simpleFill(await EZSeed.measure({indoor:SIMPLE.indoor}))}
+async function simpleRead(file){SIMPLE.file=file.name;hPush();const r=await EZSeed.readDrawings(file);return simpleFill(r.found)}
 /* what the simple page shows: the H1 comparison and one row per element, read from the project as it stands */
 function simpleState(){const cu=XP.current(),z=XP.zone(),rows=S.list.map(c=>{const A=XP.areaOf(c),x=A>0||c.kind==='slab'?XP.rOf(c):{r:calc(c).total};return{id:c.id,el:c.el,slab:c.kind==='slab',name:c.name,area:A,r:x.r,rp:x.rp}});
   const wn=XP.wins().filter(w=>XP.opA(w)>0),dr=XP.doors().filter(d=>XP.opA(d)>0);
   return{zone:z,ta:XP.state().ta,proj:S.pdf.proj,rows,glzA:wn.reduce((a,w)=>a+XP.opA(w),0),glzN:wn.length,glzR:[...new Set(wn.map(w=>XP.winR(w).r).filter(Boolean))].sort(),doorA:dr.reduce((a,d)=>a+XP.opA(d),0),doorN:dr.length,
     hp:cu.hp,hr:cu.hr,miss:cu.miss,bad:(cu.E.bad||[]).map(c=>c.name),state:cu.ok?(cu.hp<=cu.hr+1e-9?'pass':'fail'):'need',info:SIMPLE.info}}
 function simpleArea(id,v){const c=S.list.find(x=>x.id===id);if(!c||!(+v>=0))return;hPush('sa'+id);if(c.el==='roof'){c.v.edge=Object.assign(c.v.edge||{},{area:+v})}else c.area=+v;render()}
-window.RVC.simple={read:simpleRead,indoor:simpleIndoor,state:simpleState,area:simpleArea,hasProject:()=>!!((S.pdf.proj||{}).address),save:()=>EZFile.save(S,XP.state()),pdf:()=>openPdf(),go:id=>{S.cur=id||'project';render()}};
+window.RVC.simple={read:simpleRead,state:simpleState,area:simpleArea,hasProject:()=>!!((S.pdf.proj||{}).address),save:()=>EZFile.save(S,XP.state()),pdf:()=>openPdf(),go:id=>{S.cur=id||'project';render()}};
 /* ---------- New project ---------- */
 function npOpen(){const nm=((S.pdf&&S.pdf.proj)||{}).address||'untitled project';let el=document.getElementById('v6np');if(!el){el=document.createElement('div');el.id='v6np';document.body.appendChild(el)}
   el.innerHTML=`<div class="np-bg" data-a="np" data-v="x"></div><div class="np-box" role="dialog" aria-modal="true" aria-labelledby="np-t"><h3 id="np-t">Start a new project?</h3><p>The current project (${esc(nm)}) is only kept in this browser. Save it first if you want to come back to it.</p>
