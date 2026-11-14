@@ -536,6 +536,57 @@ function pdfFill(){let f=document.getElementById('v6dfile');if(!f){f=document.cr
         EZSeed.review(r.found,file.name,(pick,ops,ci,repl)=>{EZSeed.busy(true,'Filling in…');hPush();seedConsApply(props,ci||[],repl);seedMerge(pick,ops);render();EZSeed.busy(false)},()=>EZSeed.busy(false),props)}
       catch(e){EZSeed.busy(false);projMsg(`<div class="pd-in bad"><span class="ms s18">error</span><span>${esc(e.message)}</span><button class="v6btn" data-a="pdlg" data-v="x">OK</button></div>`)}})}
   f.click()}
+/* ---------- Simple mode: a drawing set in, a whole project out — no dialog. Everything the review dialog would tick is taken as read,
+   the areas the dialog leaves to the Project page are estimated from the plan, and each estimate is listed for the reader to check ---------- */
+const SIMPLE={file:'',info:null};
+function simpleFill(F){const props=seedCons(F),notes=[],N=(k,t,src)=>notes.push({k,t,src:src||''}),f1=x=>(+x).toFixed(1);
+  const h=F.stud?F.stud.v:2.4,ops=F.openings.filter(o=>o.inc!==false),opA=o=>o.width_mm*o.height_mm/1e6,
+    garD=ops.filter(o=>o.gar).reduce((a,o)=>a+opA(o),0),extD=ops.filter(o=>!o.gar&&o.type!=='skylight').reduce((a,o)=>a+opA(o),0);
+  /* the wall to the garage: its length × the stud height, less the doors into the garage */
+  props.forEach(p=>{if(p.gar)p.area=+Math.max(0,p.gar.len*h-garD).toFixed(1)});
+  const list=[];props.forEach(p=>{const c=p.el==='slab'?mk('floor',x=>{x.kind='slab';x.v={slab:SLAB0()}}):mk(p.el);p.build(c);ensure(c);list.push(c)});
+  /* external walls: a default wall when no cladding note was recognised; the net area is shared equally between the claddings found */
+  let ext=list.filter(c=>c.el==='wall'&&c.nh!=='int');
+  if(!ext.length){const c=mk('wall',x=>{x.name='Wall – external'});ensure(c);list.unshift(c);ext=[c];N('check','External wall: no cladding note was recognised — the calculator’s default wall is used. Choose the cladding and insulation in expert mode.')}
+  else props.filter(q=>q.el==='wall'&&!q.gar).forEach(q=>N('ok',q.label+(F.ins&&F.ins.wall&&F.ins.wall.r?'':' — wall insulation not found, the default is used'),q.src));
+  props.filter(q=>q.gar).forEach(q=>N('check',q.label+': '+q.gar.len.toFixed(1)+' m × '+h.toFixed(2)+' m − '+garD.toFixed(1)+' m² of doors = '+q.area+' m²',q.src));
+  if(F.extWall){const gross=F.extWall.len*h,net=Math.max(0,gross-extD),each=+(net/ext.length).toFixed(1);ext.forEach(c=>{c.area=each});
+    N('check','External walls: '+F.extWall.len.toFixed(1)+' m × '+h.toFixed(2)+' m stud height − '+f1(extD)+' m² of openings = '+f1(net)+' m²'+(ext.length>1?', shared equally between the '+ext.length+' claddings (the drawings’ text does not say how much of each)':'')+'. Gable ends and walls above the top plate are not included.',F.extWall.src)}
+  else N('miss','Wall areas: the plan’s walls could not be measured — enter the wall areas.')
+  N(F.stud?'ok':'check',F.stud?'Stud height '+h.toFixed(2)+' m':'Stud height not found on the sections — 2.40 m assumed',F.stud?F.stud.src:'');
+  /* the roof: a flat ceiling over the heated floor on a single-storey house */
+  let roof=list.find(c=>c.el==='roof');
+  if(!roof){roof=mk('roof');ensure(roof);list.push(roof);N('check','Roof: no ceiling insulation was found in the drawings’ text — the calculator’s default truss roof is used.')}
+  else N('ok',roof.name+' — from the insulation summary',(props.find(q=>q.el==='roof')||{}).src);
+  if(F.area){roof.v.edge=Object.assign(roof.v.edge||{},{area:F.area.v},F.extWall?{perim:+F.extWall.len.toFixed(1)}:{});N('check','Roof: ceiling area taken as the heated floor area, '+f1(F.area.v)+' m² — right for a flat ceiling under one roof; a skillion or raking ceiling is larger.',F.area.src)}
+  else N('miss','Floor and roof areas: no plan with readable walls was found — enter the areas.');
+  if(F.pitch){roof.v.edge=Object.assign(roof.v.edge||{},{pitch:F.pitch.v});N('check','Roof pitch '+F.pitch.v+'° — the angle written most often on the roof sheets',F.pitch.src)}
+  const Pn=Object.assign(XP.newOpen(),{wins:[],doors:[],skys:[]}),pr={date:today()};
+  XP.replaceWith({format:EZFile.FORMAT,version:EZFile.VERSION,savedAt:new Date().toISOString(),project:{P:Pn,proj:pr},list:toSaved(list),guide:{}});
+  S.pdf.proj=pr;n=S.list.reduce((m,c)=>Math.max(m,+String(c.id).slice(1)||0),n);S.list.forEach(ensure);
+  const pick={};['address','legal','client','designer','area','perimeter'].forEach(k=>{if(F[k])pick[k]=String(F[k].v)});
+  seedMerge(pick,ops);
+  if(F.ta&&!(F.address&&XP.taFrom&&XP.taFrom(F.address.v)))XP.state().ta=F.ta.v;
+  N(F.address?'ok':'miss',F.address?'Address: '+F.address.v:'Address not found',F.address&&F.address.src);
+  if(F.ta)N('ok','Council: '+F.ta.v,F.ta.src);else N('check','Council not found in the drawings — '+XP.state().ta+' is assumed; it sets the climate zone.');
+  const sl=S.list.find(c=>c.el==='floor'&&c.kind==='slab');
+  if(sl&&F.area)N('ok','Slab on ground: '+f1(F.area.v)+' m², perimeter '+f1(F.perimeter.v)+' m — to the outer face of the framing',F.area.src);
+  const nG=ops.filter(o=>o.type==='glazing').length,nD=ops.filter(o=>o.type==='door').length,out=F.openings.filter(o=>o.inc===false&&!/inside the house/.test(o.note||''));
+  if(ops.length)N('ok',nG+' windows and glazed doors, '+nD+' opaque door'+(nD===1?'':'s')+' in the envelope'+(out.length?' — left out: '+out.map(o=>o.name+' ('+(o.note||'outside the envelope')+')').join(', '):''),ops[0].src);
+  else N('miss','No window or door tags with sizes were found — enter the windows and doors.');
+  if((F.levels||[]).length>1)N('warn','This set draws '+F.levels.length+' floors ('+F.levels.map(l=>l.name.toLowerCase()).join(', ')+'). Only one plan is measured so far, so the areas here cover one floor — complete them in expert mode.',F.levels[1].src);
+  SIMPLE.info={file:SIMPLE.file,notes,enclosed:(F.enclosed||[]),indoor:SIMPLE.indoor||[],levels:F.levels||[]};
+  render();return SIMPLE.info}
+async function simpleRead(file){SIMPLE.file=file.name;SIMPLE.indoor=[];hPush();const r=await EZSeed.readDrawings(file,{indoor:[]});return simpleFill(r.found)}
+/* an enclosed yard or courtyard, in or out of the envelope: the plan is measured again with that answer */
+async function simpleIndoor(name,inside){const s=new Set(SIMPLE.indoor||[]);inside?s.add(name):s.delete(name);SIMPLE.indoor=[...s];return simpleFill(await EZSeed.measure({indoor:SIMPLE.indoor}))}
+/* what the simple page shows: the H1 comparison and one row per element, read from the project as it stands */
+function simpleState(){const cu=XP.current(),z=XP.zone(),rows=S.list.map(c=>{const A=XP.areaOf(c),x=A>0||c.kind==='slab'?XP.rOf(c):{r:calc(c).total};return{id:c.id,el:c.el,slab:c.kind==='slab',name:c.name,area:A,r:x.r,rp:x.rp}});
+  const wn=XP.wins().filter(w=>XP.opA(w)>0),dr=XP.doors().filter(d=>XP.opA(d)>0);
+  return{zone:z,ta:XP.state().ta,proj:S.pdf.proj,rows,glzA:wn.reduce((a,w)=>a+XP.opA(w),0),glzN:wn.length,glzR:[...new Set(wn.map(w=>XP.winR(w).r).filter(Boolean))].sort(),doorA:dr.reduce((a,d)=>a+XP.opA(d),0),doorN:dr.length,
+    hp:cu.hp,hr:cu.hr,miss:cu.miss,bad:(cu.E.bad||[]).map(c=>c.name),state:cu.ok?(cu.hp<=cu.hr+1e-9?'pass':'fail'):'need',info:SIMPLE.info}}
+function simpleArea(id,v){const c=S.list.find(x=>x.id===id);if(!c||!(+v>=0))return;hPush('sa'+id);if(c.el==='roof'){c.v.edge=Object.assign(c.v.edge||{},{area:+v})}else c.area=+v;render()}
+window.RVC.simple={read:simpleRead,indoor:simpleIndoor,state:simpleState,area:simpleArea,hasProject:()=>!!((S.pdf.proj||{}).address),save:()=>EZFile.save(S,XP.state()),pdf:()=>openPdf(),go:id=>{S.cur=id||'project';render()}};
 /* ---------- New project ---------- */
 function npOpen(){const nm=((S.pdf&&S.pdf.proj)||{}).address||'untitled project';let el=document.getElementById('v6np');if(!el){el=document.createElement('div');el.id='v6np';document.body.appendChild(el)}
   el.innerHTML=`<div class="np-bg" data-a="np" data-v="x"></div><div class="np-box" role="dialog" aria-modal="true" aria-labelledby="np-t"><h3 id="np-t">Start a new project?</h3><p>The current project (${esc(nm)}) is only kept in this browser. Save it first if you want to come back to it.</p>
