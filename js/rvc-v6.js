@@ -491,7 +491,7 @@ function seedMerge(pick,ops){const pr=S.pdf.proj;['address','legal','client','de
   if(ops.length){seedOpen(XP.state(),ops);XP.syncOpen()}S.cur='project';if(XP)XP.after()}
 /* constructions from the drawings' text: each named cladding in the notes is a wall (vertical if the note says so), the insulation summary fills
    the walls' and roof's insulation, and a RibRaft / slab note makes the slab. Brands are matched against the cladding list; a generic word alone is not enough */
-const CL_OWN=/^(Linea|Stria|Oblique|Axon|HardieFlex|ExoTec|Hardie Plank|Shera|Shadowclad|RustiClad|VertiClad|Territory|Barestone)$/i;
+const CL_OWN=/^(Linea|Stria|Oblique|Axon|HardieFlex|ExoTec|Hardie Plank|Shera|Akera|Shadowclad|RustiClad|VertiClad|Territory|Barestone)$/i;
 function cladFams(){const L=LIB.cladding,F={};L.forEach((o,j)=>{if(o.old||!o.brand||o.brand==='Generic'||!/^(fc|tb)$/.test(o.grp||''))return;
   const inner=((o.dn||'').split(' (')[1]||'').replace(/\)$/,'').split(',')[0],rest=inner.slice(o.brand.length).trim(),w=rest.split(' '),prod=/^Hardie$/i.test(w[0])?w.slice(0,2).join(' '):w[0];if(!prod)return;
   const k=o.brand+'|'+prod;(F[k]=F[k]||{brand:o.brand,prod,items:[]}).items.push(j)});return Object.values(F)}
@@ -501,17 +501,20 @@ function seedCons(F){const out=[],ins=F.ins||{},pages={};(F.lines||[]).forEach(l
   const wi=ins.wall&&ins.wall.r?studFill(ins.wall.r):null;
   /* a cladding counts where a note names it with its brand or its thickness ("14mm James Hardie Oblique …"), not in a detail title.
      Its note runs to the next keynote ID (E-02, R-01 …); it is vertical if any of its notes says so and none says horizontal */
-  cladFams().forEach(fam=>{const B=fam.brand.replace(/\s+/g,'\\s+'),P=fam.prod.replace(/\s+/g,'\\s+'),own=CL_OWN.test(fam.prod),G0=new RegExp('(?:\\b(\\d{1,2}(?:\\.\\d)?)\\s*mm\\s+)?('+B+'\\s+)?'+P+'\\b','gi'),hits=[];
+  cladFams().forEach(fam=>{const B=fam.brand.replace(/s$/,'s?').replace(/\s+/g,'\\s+'),P=fam.prod.replace(/\s+/g,'\\s+'),own=CL_OWN.test(fam.prod),G0=new RegExp('(?:\\b(\\d{1,2}(?:\\.\\d)?)\\s*mm\\s+)?('+B+'\\s+)?'+P+'\\b','gi'),hits=[];
     Object.keys(pages).forEach(pg=>{const txt=pages[pg].map(l=>l.t).join(' '),G=new RegExp(G0.source,'gi');let m;
       while((m=G.exec(txt))){if(own?!m[1]&&!m[2]:!m[2])continue;   /* a generic word ("Vertical", "Rusticated") needs its brand */
 const note=txt.slice(m.index,m.index+200).split(/\s(?=[A-Z]-\d{2}\b)/)[0];
         hits.push({th:m[1],note,v:/vertical/i.test(note),h:/horizontal/i.test(note),src:'p.'+(+pg+1)+': “'+note.slice(0,90).trim()+'”'})}});
+    /* when the set has wall keynotes (E-01 …), a cladding counts only if a keynote names its brand or product — a detail drawn for another cladding does not */
+    const KN=(F.cladNotes||[]).map(k=>k.full||'').join(' | ');
+    if(KN&&!new RegExp('\\b(?:'+(own?'':B+'|')+P+')\\b','i').test(KN))return;   /* a product with its own name (Shera, Akera, Stria) must be named itself */
     if(!hits.length)return;const anyV=hits.some(x=>x.v),anyH=hits.some(x=>x.h&&!x.v);
     [true,false].forEach(vert=>{if(vert?!anyV:(anyV&&!anyH))return;const hs=hits.filter(x=>vert?x.v:!x.v),hh=hs[0]||hits[0],th=(hs.find(x=>x.th)||{}).th;
       const its=fam.items.filter(j=>/^Board — vertical/.test(LIB.cladding[j].dn)===vert),pick=(th&&its.find(j=>+LIB.cladding[j].t===+th))||its[0];if(pick==null)return;
       const o=LIB.cladding[pick],short=((o.dn||'').split(' (')[1]||'').replace(/\)$/,'');
-      out.push({el:'wall',label:'Wall – '+short+(vert?' (vertical)':'')+(wi?' · R'+wi.insR+' / '+wi.insT+' mm':''),src:hh.src,
-        build:c=>{c.name='Wall – '+short.replace(/,.*/,'')+(vert?' vertical':'');c.v.clad={m:pick};if(wi)Object.assign(c.v.fr,wi)}})})});
+      out.push({el:'wall',brand:fam.brand,prod:fam.prod,label:'Wall – '+short+(vert?' (vertical)':'')+(wi?' · R'+wi.insR+' / '+wi.insT+' mm':''),src:hh.src,
+        build:c=>{c.name='Wall – '+short.replace(/,.*/,'').replace(/ · .*/,'')+(vert?' vertical':'');c.v.clad={m:pick};if(wi)Object.assign(c.v.fr,wi)}})})});
   const ro=ins['truss roof']||ins.roof||ins.ceiling;
   if(ro&&ro.r){const a=ceilFill(ro.r),b=ro.r2?ceilFill(ro.r2):null;
     out.push({el:'roof',label:'Roof – truss, flat ceiling · R'+a.r+(b?' + R'+b.r+' over the chords':''),src:ro.src,build:c=>{c.name='Roof – truss'+(b?', two layers':'');Object.assign(c.v.fr,{insR:a.r,insT:a.t,prod:a.prod});if(b)c.v.over={on:true,r:b.r,t:b.t,prod:b.prod}}})}
@@ -536,6 +539,71 @@ function pdfFill(){let f=document.getElementById('v6dfile');if(!f){f=document.cr
         EZSeed.review(r.found,file.name,(pick,ops,ci,repl)=>{EZSeed.busy(true,'Filling in…');hPush();seedConsApply(props,ci||[],repl);seedMerge(pick,ops);render();EZSeed.busy(false)},()=>EZSeed.busy(false),props)}
       catch(e){EZSeed.busy(false);projMsg(`<div class="pd-in bad"><span class="ms s18">error</span><span>${esc(e.message)}</span><button class="v6btn" data-a="pdlg" data-v="x">OK</button></div>`)}})}
   f.click()}
+/* ---------- Simple mode: a drawing set in, a whole project out — no dialog. Everything the review dialog would tick is taken as read,
+   the areas the dialog leaves to the Project page are estimated from the plan, and each estimate is listed for the reader to check ---------- */
+const SIMPLE={file:'',info:null};
+function simpleFill(F){const props=seedCons(F),notes=[],N=(k,t,src)=>notes.push({k,t,src:src||''}),f1=x=>(+x).toFixed(1);
+  const h=F.stud?F.stud.v:2.4,WL=F.walls&&F.walls.length?F.walls:(F.extWall?[{len:F.extWall.len,h:F.stud?F.stud.v:null,src:F.extWall.src}]:[]),ops=F.openings.filter(o=>o.inc!==false),opA=o=>o.width_mm*o.height_mm/1e6,
+    garD=ops.filter(o=>o.gar).reduce((a,o)=>a+opA(o),0),extD=ops.filter(o=>!o.gar&&o.type!=='skylight').reduce((a,o)=>a+opA(o),0);
+  /* the wall to the garage: its length × the stud height, less the doors into the garage */
+  props.forEach(p=>{if(p.gar)p.area=+Math.max(0,p.gar.len*h-garD).toFixed(1)});
+  const list=[];props.forEach(p=>{const c=p.el==='slab'?mk('floor',x=>{x.kind='slab';x.v={slab:SLAB0()}}):mk(p.el);p.build(c);ensure(c);list.push(c)});
+  /* external walls: a default wall when no cladding note was recognised; the net area is shared equally between the claddings found */
+  let ext=list.filter(c=>c.el==='wall'&&c.nh!=='int');
+  if(!ext.length){const c=mk('wall',x=>{x.name='Wall – external'});ensure(c);list.unshift(c);ext=[c];N('check','External wall: no cladding note was recognised — the calculator’s default wall is used. Choose the cladding and insulation in expert mode.')}
+  /* a cladding keynote ("E-01 Selected on 12mm Clad Solution AKERA Weatherboard") whose product is not in the list */
+  const known=props.filter(q=>q.el==='wall'&&!q.gar),lc=x=>String(x||'').toLowerCase();
+  (F.cladNotes||[]).forEach(k=>{if(!known.some(q=>lc(k.t).indexOf(lc(q.brand).split(/\s+/)[0])>=0||lc(k.t).indexOf(lc(q.prod).split(/\s+/)[0])>=0))N('warn',k.id+' '+k.t+' — this cladding is not in the calculator’s list, so its walls are counted with the cladding'+(ext.length>1?'s':'')+' above. Choose the nearest cladding in expert mode.',k.src)});
+  if(ext.length)props.filter(q=>q.el==='wall'&&!q.gar).forEach(q=>N('ok',q.label+(F.ins&&F.ins.wall&&F.ins.wall.r?'':' — wall insulation not found, the default is used'),q.src));
+  props.filter(q=>q.gar).forEach(q=>N('check',q.label+': '+q.gar.len.toFixed(1)+' m × '+h.toFixed(2)+' m − '+garD.toFixed(1)+' m² of doors = '+q.area+' m²',q.src));
+  /* external walls, floor by floor: the heated outline less the wall to the garage × that floor's stud height */
+  if(WL.length){const fl=['Ground floor','First floor','Second floor','Third floor'],part=WL.map((w,i)=>{const hh=w.h||2.4;return{t:(WL.length>1?fl[i]||'Floor '+(i+1):'Walls')+' '+w.len.toFixed(1)+' m × '+hh.toFixed(2)+' m',g:w.len*hh}}),
+      gross=part.reduce((a,x)=>a+x.g,0),net=Math.max(0,gross-extD),each=+(net/ext.length).toFixed(1);ext.forEach(c=>{c.area=each});
+    N('check','External walls: '+part.map(x=>x.t).join(' + ')+' = '+f1(gross)+' m² gross − '+f1(extD)+' m² of windows and doors = '+f1(net)+' m²'+(ext.length>1?', shared equally between the '+ext.length+' claddings (the drawings’ text does not say how much of each)':'')+'. Gable ends and walls above the top plate are not included.',WL[0].src)
+    WL.forEach((w,i)=>N(w.h?'ok':'check',w.h?(WL.length>1?(fl[i]||'Floor '+(i+1))+' stud height ':'Stud height ')+w.h.toFixed(3).replace(/0$/,'')+' m':(WL.length>1?(fl[i]||'Floor '+(i+1))+': stud':'Stud')+' height not found on the elevations or sections — 2.40 m assumed',w.hsrc||(F.stud&&i===0?F.stud.src:'')))}
+  else N('miss','Wall areas: the plan’s walls could not be measured — enter the wall areas.')
+  /* a floor over the garage or over outside air (the upper floor's area not over the heated floor below) */
+  if(F.otherFloor&&F.otherFloor.v>=1){const fi=F.ins&&(F.ins['mid-floor']||F.ins.midfloor||F.ins['timber floor']),c=mk('floor',x=>{x.name='Floor – over garage / outside';x.o.lined=true});
+    if(fi&&fi.r){const P=prodDef('joist',+c.v.fr.d||240).find(x=>Math.abs(x[0]-fi.r)<1e-9);Object.assign(c.v.fr,P?{insR:P[0],insT:P[1],prod:P[2]||RPI.byMember.brand}:{insR:fi.r,insT:Math.min(+c.v.fr.d||240,Math.round(fi.r*40)),prod:''})}
+    ensure(c);c.area=F.otherFloor.v;list.push(c);
+    N('check','Floor over the garage or outside: '+f1(F.otherFloor.v)+' m² — the upper floor plan laid over the one below; the part not over a heated room.'+(fi&&fi.r?' Insulation R'+fi.r+' from the insulation summary.':' Insulation not found — the default is used.'),F.otherFloor.src)}
+  if(F.unaligned)N('warn','The floor plans could not be laid over each other, so the floor over the garage or outside and the roof area are not worked out — enter them.');
+  /* the roof: a flat ceiling over the heated floor on a single-storey house */
+  let roof=list.find(c=>c.el==='roof');
+  if(!roof){roof=mk('roof');ensure(roof);list.push(roof);N('check','Roof: no ceiling insulation was found in the drawings’ text — the calculator’s default truss roof is used.')}
+  else N('ok',roof.name+' — from the insulation summary',(props.find(q=>q.el==='roof')||{}).src);
+  if(F.roofArea){roof.v.edge=Object.assign(roof.v.edge||{},{area:F.roofArea.v},WL.length?{perim:+WL[WL.length-1].len.toFixed(1)}:{});N('check','Roof: '+f1(F.roofArea.v)+' m² — the top floor plus the parts of the floors below that are not under it, as flat ceilings. A skillion or raking ceiling is larger; perimeter and skillion parts are split out in expert mode.',F.roofArea.src)}
+  else if(F.area){roof.v.edge=Object.assign(roof.v.edge||{},{area:F.area.v},WL.length?{perim:+WL[0].len.toFixed(1)}:{});N('check','Roof: ceiling area taken as the heated floor area, '+f1(F.area.v)+' m² — right for a flat ceiling under one roof; a skillion or raking ceiling is larger.',F.area.src)}
+  else N('miss','Floor and roof areas: no plan with readable walls was found — enter the areas.');
+  if(F.pitch){roof.v.edge=Object.assign(roof.v.edge||{},{pitch:F.pitch.v});N('check','Roof pitch '+F.pitch.v+'° — the angle written most often on the roof sheets',F.pitch.src)}
+  const Pn=Object.assign(XP.newOpen(),{wins:[],doors:[],skys:[]}),pr={date:today()};
+  XP.replaceWith({format:EZFile.FORMAT,version:EZFile.VERSION,savedAt:new Date().toISOString(),project:{P:Pn,proj:pr},list:toSaved(list),guide:{}});
+  S.pdf.proj=pr;n=S.list.reduce((m,c)=>Math.max(m,+String(c.id).slice(1)||0),n);S.list.forEach(ensure);
+  const pick={};['address','legal','client','designer','area','perimeter'].forEach(k=>{if(F[k])pick[k]=String(F[k].v)});
+  seedMerge(pick,ops);
+  if(F.ta&&!(F.address&&XP.taFrom&&XP.taFrom(F.address.v)))XP.state().ta=F.ta.v;
+  N(F.address?'ok':'miss',F.address?'Address: '+F.address.v:'Address not found',F.address&&F.address.src);
+  if(F.ta)N('ok','Council: '+F.ta.v,F.ta.src);else N('check','Council not found in the drawings — '+XP.state().ta+' is assumed; it sets the climate zone.');
+  const sl=S.list.find(c=>c.el==='floor'&&c.kind==='slab');
+  if(sl&&F.area)N('ok','Slab on ground: '+f1(F.area.v)+' m², perimeter '+f1(F.perimeter.v)+' m — to the outer face of the framing',F.area.src);
+  const nG=ops.filter(o=>o.type==='glazing').length,nD=ops.filter(o=>o.type==='door').length,out=F.openings.filter(o=>o.inc===false&&!/inside the house/.test(o.note||''));
+  if(ops.length)N('ok',nG+' windows and glazed doors, '+nD+' opaque door'+(nD===1?'':'s')+' in the envelope'+(out.length?' — left out: '+out.map(o=>o.name+' ('+(o.note||'outside the envelope')+')').join(', '):''),ops[0].src);
+  else N('miss','No window or door tags with sizes were found — enter the windows and doors.');
+  if((F.units||[]).length>1)N('warn','This set draws more than one dwelling ('+F.units.map(u=>u.name.toLowerCase().replace(/^\w/,c=>c.toUpperCase())).join(', ')+'). Simple mode cannot tell their rooms apart yet, so the areas and openings here mix them — check each dwelling in expert mode.',F.units[1].src);
+  const nf=(F.floors||[]).length;
+  if(nf>1)N('ok',nf+' floor plans measured: '+F.floors.map(x=>'p.'+x.pg+' '+f1(x.area)+' m²').join(', '));
+  else if((F.levels||[]).length>1)N('warn','This set draws '+F.levels.length+' floors ('+F.levels.map(l=>l.name.toLowerCase()).join(', ')+') but only one plan could be measured, so the areas here cover one floor — complete them in expert mode.',F.levels[1].src);
+  if(F.ins&&F.ins['skillion roof']&&F.ins['skillion roof'].r)N('check','The insulation summary also lists a skillion roof (R'+F.ins['skillion roof'].r+') — its area is inside the roof figure above; split it out in expert mode.',F.ins['skillion roof'].src);
+  SIMPLE.info={file:SIMPLE.file,notes};
+  render();return SIMPLE.info}
+async function simpleRead(file){SIMPLE.file=file.name;hPush();const r=await EZSeed.readDrawings(file);return simpleFill(r.found)}
+/* what the simple page shows: the H1 comparison and one row per element, read from the project as it stands */
+function simpleState(){const cu=XP.current(),z=XP.zone(),rows=S.list.map(c=>{const A=XP.areaOf(c),x=A>0||c.kind==='slab'?XP.rOf(c):{r:calc(c).total};return{id:c.id,el:c.el,slab:c.kind==='slab',name:c.name,area:A,r:x.r,rp:x.rp}});
+  const wn=XP.wins().filter(w=>XP.opA(w)>0),dr=XP.doors().filter(d=>XP.opA(d)>0);
+  return{zone:z,ta:XP.state().ta,proj:S.pdf.proj,rows,glzA:wn.reduce((a,w)=>a+XP.opA(w),0),glzN:wn.length,glzR:[...new Set(wn.map(w=>XP.winR(w).r).filter(Boolean))].sort(),doorA:dr.reduce((a,d)=>a+XP.opA(d),0),doorN:dr.length,
+    hp:cu.hp,hr:cu.hr,miss:cu.miss,bad:(cu.E.bad||[]).map(c=>c.name),state:cu.ok?(cu.hp<=cu.hr+1e-9?'pass':'fail'):'need',info:SIMPLE.info}}
+function simpleArea(id,v){const c=S.list.find(x=>x.id===id);if(!c||!(+v>=0))return;hPush('sa'+id);if(c.el==='roof'){c.v.edge=Object.assign(c.v.edge||{},{area:+v})}else c.area=+v;render()}
+window.RVC.simple={read:simpleRead,state:simpleState,area:simpleArea,hasProject:()=>!!((S.pdf.proj||{}).address),save:()=>EZFile.save(S,XP.state()),pdf:()=>openPdf(),go:id=>{S.cur=id||'project';render()}};
 /* ---------- New project ---------- */
 function npOpen(){const nm=((S.pdf&&S.pdf.proj)||{}).address||'untitled project';let el=document.getElementById('v6np');if(!el){el=document.createElement('div');el.id='v6np';document.body.appendChild(el)}
   el.innerHTML=`<div class="np-bg" data-a="np" data-v="x"></div><div class="np-box" role="dialog" aria-modal="true" aria-labelledby="np-t"><h3 id="np-t">Start a new project?</h3><p>The current project (${esc(nm)}) is only kept in this browser. Save it first if you want to come back to it.</p>
