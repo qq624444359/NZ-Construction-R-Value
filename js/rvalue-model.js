@@ -201,11 +201,14 @@ const val=(c,id)=>(c.v[id]=c.v[id]||{});
 /* truss roofs: the layer over the framing counts only when ticked. Saved before the tick box: on when it has an R. */
 const ovOn=v=>!!v&&(v.on!=null?!!v.on:+v.r>0);
 const OV=c=>{const v=c&&c.v&&c.v.over;return ovOn(v)?v:{}};
+/* a vented skillion: the rafters bridge the insulation and the 25 mm air gap required over it; the rafter depth above that stands in the vented space and is not counted.
+   Checked against the BRANZ House Insulation Guide 6th edition calculator (Roofs sheet), which leaves the space over the insulation out */
+const bridgeDepth=(slot,depth,insT)=>slot.cavGap&&slot.member==='rafter'&&insT>0&&insT+D.ventGap<depth?insT+D.ventGap:depth;
 /* a framing layer on its own — its members and what lies between them, parallel paths, before 2.1.3.2 joins it to its neighbours.
    Display only: the construction R always uses the joined bridged portion. */
 function layerR(c,slot){const v=c.v[slot.id]||{},d=MEMBER[slot.member],depth=+v.d||d.d,F=frac(slot,v,c);let insR=+v.insR||0,above=0;const insT=+v.insT||0;
   if(slot.cover&&v.cover&&insT>depth&&insR){above=insR*(insT-depth)/insT;insR-=above}
-  let cav=insR+(slot.gap?LIB.gap[gapIdx(slot,v)].r:0)+(slot.cavGap||0);if(cav<=0)cav=airOf(c,slot);const tr=depth/1000/D.kTimber+(slot.brk&&+v.brkR||0);
+  let cav=insR+(slot.gap?LIB.gap[gapIdx(slot,v)].r:0)+(slot.cavGap||0);if(cav<=0)cav=airOf(c,slot);const tr=bridgeDepth(slot,depth,insT)/1000/D.kTimber+(slot.brk&&+v.brkR||0);
   return (cav>0?1/(F.f/tr+(1-F.f)/cav):0)+above}
 /* slab-on-ground: every number from window.SlabAppE (slab-appendix-e.js). Area = the construction's area (entered on the Project page). */
 const SLABU={none:[null,null],s12:['strip',1.2],s24:['strip',2.4],f12:['full',1.2],f24:['full',2.4]};
@@ -305,8 +308,8 @@ function calc(c,opt){
       if(slot.cover&&v.cover&&insT>depth&&insR){above=insR*(insT-depth)/insT;insR-=above}
       const g=slot.gap?LIB.gap[gapIdx(slot,v)].r:0,cg=slot.cavGap||0;let cav=insR+g+cg;
       if(cav<=0){cav=airOf(c,slot);if(slot.member!=='batten')notes.push(slot.label+': empty cavity taken as a still air gap, R'+D.emptyGap.toFixed(2)+'.')}
-      const shared=above,w=+v.w||d.w,sp=+v.s||d.s,tr=depth/1000/D.kTimber;
-      const fp=[{name:d.name+' '+depth+' × '+w+' mm timber',r:tr}];if(slot.brk&&+v.brkR)fp.push({name:'Thermal break strip',r:+v.brkR});
+      const shared=above,w=+v.w||d.w,sp=+v.s||d.s,bd=bridgeDepth(slot,depth,insT),tr=bd/1000/D.kTimber;
+      const fp=[{name:d.name+' '+(bd<depth?bd+' mm of '+depth:depth)+' × '+w+' mm timber'+(bd<depth?' (beside the insulation and the 25 mm gap over it; the rest stands in the vented space)':''),r:tr}];if(slot.brk&&+v.brkR)fp.push({name:'Thermal break strip',r:+v.brkR});
       const cp=[];if(insR)cp.push({name:'Insulation R'+(+v.insR).toFixed(1)+(insT?', '+insT+' mm':'')+(above?' — '+depth+' mm of it between the framing':''),r:insR});
       if(g)cp.push({name:LIB.gap[gapIdx(slot,v)].n+(GAPM.includes(slot.member)&&v.gapMan===false?' ('+gapMM(slot,v)+' mm, stud − insulation)':''),r:g});if(cg)cp.push({name:slot.cavLabel||'Air gap in the joist space',r:cg});if(!cp.length)cp.push({name:slot.member==='batten'?(cav>0?'Still air between the battens':'Air between the ceiling battens — not counted'):'Empty cavity, still air',r:cav});
       const sh=[];
@@ -407,7 +410,7 @@ function basis(){return[
   'A homogeneous layer between two bridged layers is counted half in each portion (2.1.3.2 ii).',
   'Pliable membranes and underlays are passed over when finding where a portion ends (2.1.3.2 iii).',
   'Surface resistances: outside R'+D.se.toFixed(2)+', inside and still indoor air R'+D.si.toFixed(2)+'. Timber framing conductivity '+D.kTimber.toFixed(2)+' W/m·K.',
-  'Vented wall cavity R'+D.vent.toFixed(2)+'; the outside surface and layers outside the cavity are counted at half value. Timber skillion roofs without “Insulated roofing, no vent cavity” are treated the same way: a vented cavity R'+D.vent.toFixed(2)+' over the insulation, on the cavity side of the bridged portion (2.1.3.2 i)), and the outside surface and roofing counted at half value. Roof space over a flat ceiling R'+D.roofSpace.toFixed(2)+'.',
+  'Vented wall cavity R'+D.vent.toFixed(2)+'; the outside surface and layers outside the cavity are counted at half value. Timber skillion roofs without “Insulated roofing, no vent cavity” are treated the same way: a vented cavity R'+D.vent.toFixed(2)+' over the insulation, on the cavity side of the bridged portion (2.1.3.2 i)); where the insulation is thinner than the rafters, only the rafter depth beside the insulation and the 25 mm air gap over it is counted as bridging — the rest of the rafter stands in the vented space — and the outside surface and roofing counted at half value. Roof space over a flat ceiling R'+D.roofSpace.toFixed(2)+'.',
   'Insulation thicker than the framing it sits in is split by thickness: the part between the members is bridged, the part over them is the next layer. Truss roofs: insulation thicker than the bottom chords is taken to cover them unless the sheet says otherwise.',
   'Roofs: the air between ceiling battens is not counted; an empty wall or floor cavity is still air R'+D.emptyGap.toFixed(2)+'.',
   'Truss roofs: where the full insulation thickness does not fit under the roofing at the outer edge of the ceiling, the roof is calculated as two parts (2.1.2.9) — the field at full thickness, and a perimeter strip from the outer edge of the ceiling (500 mm by default; a narrower one may be entered, not less than where the full thickness first fits, rounded up to 50 mm) with less insulation: a perimeter product, an ordinary batt at full thickness with the layer over it left off, or insulation compressed under a guard. Each part must reach R2.6 (2.1.2.11 a)); a heated ceiling needs R3.3 within 500 mm of the edge (Table 2.1.2.12 note 4).',
