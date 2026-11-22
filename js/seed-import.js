@@ -197,9 +197,9 @@ function parse(pages) {
 }
 /* the wall keynotes: "E-01 Selected on 12mm Clad Solution AKERA Weatherboard (AKS 300) with …" — one per ID, cut at "with" / "on building paper" */
 function cladNotes(lines) {
-  var out = {}; lines.forEach(function (l) { var m = /^(E-\d{2})\s+(.{8,})$/.exec(l.t); if (!m || out[m[1]]) return;
+  var out = {}; lines.forEach(function (l) { var m = /^(E-\d{2})\s+(.{8,})$/.exec(l.t); if (!m || (out[m[1]] && out[m[1]].full.length >= m[2].length)) return;   /* the longest of its occurrences: a note may lose its last word to the next line on one sheet */
     var t = m[2].replace(/\s+(?:with|fixed|over)\b.*$/i, '').replace(/^Selected\s+(?:paint|one coating|finish)?\s*(?:on\s+)?/i, '').replace(/(\s+(?:IN\d+|EX[WD]\s?\d+|[A-Z]{3,}(?:\s+[A-Z]{3,})+))+$/, '').trim(); if (t.length < 6 || !/[A-Za-z]{3}/.test(t)) return;
-    out[m[1]] = { id: m[1], t: t.slice(0, 70), src: l.src }; });
+    out[m[1]] = { id: m[1], t: t.slice(0, 70), full: m[2], src: l.src }; });
   return Object.keys(out).sort().map(function (k) { return out[k]; });
 }
 async function readDrawings(file) {
