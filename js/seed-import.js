@@ -191,8 +191,16 @@ function parse(pages) {
   return {
     address: pick(A), legal: pick(Lg), client: pick(Cl), designer: pick(Ds),
     area: ar, perimeter: perims[0] || null, openings: list, winR: winR, ins: ins, lines: lines,
-    ta: ta, levels: Object.keys(lv).map(function (k) { return { name: k, src: lv[k] }; }), pitch: pv ? { v: +pv, n: pc[pv], src: psrc[pv] } : null
+    units: (function () { var u = {}; lines.forEach(function (l) { var re = /\b(LOT|UNIT|DWELLING|HOUSE|TYPE)\s?-?\s?(\d{1,2}|[A-H])\b(?!\s*(?:DPS?|LT|SO|ON)\b)\s*[-–:]?\s*(?:\+\s*\S+\s+)?(?:BASEMENT|LOWER GROUND|GROUND|FIRST|SECOND|UPPER|LEVEL|FLOOR|ROOF|SECTION|ELEVATION)/gi, m; while ((m = re.exec(l.t))) { var k = m[1].toUpperCase() + ' ' + m[2].toUpperCase(); if (!u[k]) u[k] = l.src; } }); return Object.keys(u).map(function (k) { return { name: k, src: u[k] }; }); })(),
+    cladNotes: cladNotes(lines), ta: ta, levels: Object.keys(lv).map(function (k) { return { name: k, src: lv[k] }; }), pitch: pv ? { v: +pv, n: pc[pv], src: psrc[pv] } : null
   };
+}
+/* the wall keynotes: "E-01 Selected on 12mm Clad Solution AKERA Weatherboard (AKS 300) with …" — one per ID, cut at "with" / "on building paper" */
+function cladNotes(lines) {
+  var out = {}; lines.forEach(function (l) { var m = /^(E-\d{2})\s+(.{8,})$/.exec(l.t); if (!m || out[m[1]]) return;
+    var t = m[2].replace(/\s+(?:with|fixed|over)\b.*$/i, '').replace(/^Selected\s+(?:paint|one coating|finish)?\s*(?:on\s+)?/i, '').replace(/(\s+(?:IN\d+|EX[WD]\s?\d+|[A-Z]{3,}(?:\s+[A-Z]{3,})+))+$/, '').trim(); if (t.length < 6 || !/[A-Za-z]{3}/.test(t)) return;
+    out[m[1]] = { id: m[1], t: t.slice(0, 70), src: l.src }; });
+  return Object.keys(out).sort().map(function (k) { return out[k]; });
 }
 async function readDrawings(file) {
   var lib = await loadPdfJs(), data = new Uint8Array(await file.arrayBuffer());
@@ -218,6 +226,16 @@ function gridOff(A, B) {
   var dx = diff(a.h, b.h, 'x'), dy = diff(a.v, b.v, 'y');
   return dx == null || dy == null ? null : { dx: dx, dy: dy };
 }
+/* the shift between two plans drawn on different sheets: wall bands of the same size vote for the offset that puts one on the other.
+   Returns the offset and how many bands agree with it */
+function bandOff(G1, G2) {
+  var v = {}, best = null;
+  G1.rects.forEach(function (a) { var wa = a[2] - a[0], ha = a[3] - a[1]; if (Math.max(wa, ha) < 20) return;
+    G2.rects.forEach(function (b) { if (Math.abs(b[2] - b[0] - wa) > 0.6 || Math.abs(b[3] - b[1] - ha) > 0.6) return;
+      var k = Math.round((b[0] - a[0]) * 2) + ',' + Math.round((b[1] - a[1]) * 2); v[k] = (v[k] || 0) + 1; }); });
+  Object.keys(v).forEach(function (k) { var n = 0, xy = k.split(',').map(Number); Object.keys(v).forEach(function (q) { var z = q.split(',').map(Number); if (Math.abs(z[0] - xy[0]) <= 1 && Math.abs(z[1] - xy[1]) <= 1) n += v[q]; }); if (!best || n > best.n) best = { n: n, dx: xy[0] / 2, dy: xy[1] / 2 }; });
+  return best;
+}
 /* how much of the upper floor sits over the lower one: both heated outlines on the same 10 mm cells, shifted by the grids */
 function overlap(up, lo, off) {
   var n = 0, U = up.mask, Lm = lo.mask, sx = Math.round((U.x0 + off.dx - Lm.x0) / Lm.cell), sy = Math.round((U.y0 + off.dy - Lm.y0) / Lm.cell);
@@ -242,10 +260,12 @@ async function measure() {
       /* the same floor: walls of the same extent, or the same FFL written on both sheets and the same grid */
       var same = Math.abs(w1 - w0) < 0.015 * w0 && Math.abs(h1 - h0) < 0.015 * h0, fT = fflOf(pages[T]), fP = fflOf(pages[p]);
       if (!same && fT != null && fT === fP && Gp.scale === GT.scale && gridOff(pages[T], pages[p])) same = true;
+      var bo = !same && Gp.scale === GT.scale ? bandOff(GT, Gp) : null; if (bo && bo.n >= Math.max(6, 0.4 * Math.min(GT.rects.length, Gp.rects.length))) same = true;
       if (same) { C = p; GC = Gp; } }
     if (!GC || GC.area <= 10) continue;
     var ffl = null; [T, C].forEach(function (pg) { toLines(pages[pg]).forEach(function (s) { var m = /FFL\s*[=:]?\s*(\d{4,6})\b/i.exec(s); if (m && ffl == null) ffl = +m[1]; }); });
-    levels.push({ tpg: T, pg: C, G: GC, ffl: ffl, off: C === T ? { dx: 0, dy: 0 } : gridOff(pages[T], pages[C]) || { dx: GC.bb[0] - GT.bb[0], dy: GC.bb[1] - GT.bb[1] } });
+    var bo2 = C === T ? null : bandOff(GT, GC);
+    levels.push({ tpg: T, pg: C, G: GC, ffl: ffl, off: C === T ? { dx: 0, dy: 0 } : gridOff(pages[T], pages[C]) || (bo2 && bo2.n >= 6 ? bo2 : { dx: GC.bb[0] - GT.bb[0], dy: GC.bb[1] - GT.bb[1] }) });
   }
   if (levels.every(function (l) { return l.ffl != null; })) levels.sort(function (a, b) { return a.ffl - b.ffl; });
   readDrawings.plan = levels[0] ? levels[0].G : null;
@@ -258,7 +278,7 @@ async function measure() {
   /* floors over the garage or over outside air, and the roof: the upper outlines laid over the lower ones */
   if (levels.length > 1) {
     var other = 0, roof = levels[levels.length - 1].G.area, ok = true;
-    for (var i = 1; i < levels.length; i++) { var up = levels[i], lo = levels[i - 1], off = up.G.scale === lo.G.scale ? gridOff(pages[up.pg], pages[lo.pg]) : null; if (!off) { ok = false; break; } var ov = overlap(up.G, lo.G, off); other += up.G.area - ov; roof += lo.G.area - ov; }
+    for (var i = 1; i < levels.length; i++) { var up = levels[i], lo = levels[i - 1], off = null; if (up.G.scale === lo.G.scale) { off = gridOff(pages[up.pg], pages[lo.pg]); if (!off) { var b2 = bandOff(up.G, lo.G); if (b2 && b2.n >= 4) off = b2; } } if (!off) { ok = false; break; } var ov = overlap(up.G, lo.G, off); other += up.G.area - ov; roof += lo.G.area - ov; }
     if (ok) { F.otherFloor = { v: +other.toFixed(1), src: 'the ' + levels.length + ' floor plans laid over each other by their grid lines: upper floor area that is not over the heated floor below' }; F.roofArea = { v: +roof.toFixed(1), src: 'the ' + levels.length + ' floor plans laid over each other by their grid lines: the top floor plus the lower floor not under it' }; }
     else F.unaligned = true;
   }
@@ -419,11 +439,16 @@ async function planGeom(lib, page, items) {
     gaps.forEach(function (o) { if (wmm && (o.len < wmm - 60 || o.len > wmm + Math.max(120, 0.1 * wmm))) return; var dd = Math.hypot(o.x - px, o.y - py) * mmU; if (dd < gd) { gd = dd; gp = o; } });
     sides.last = gp && gd < 2500 ? Math.round(gp.len) + 'mm gap, ' + Math.round(gd) + 'mm away' : 'no gap';
     if (gp && gd < 2500) { var hw = (gp.hor ? gp.r[3] - gp.r[1] : gp.r[2] - gp.r[0]) / 2 + 250 / mmU; return gp.hor ? [at(gp.x, gp.y - hw), at(gp.x, gp.y + hw)] : [at(gp.x - hw, gp.y), at(gp.x + hw, gp.y)]; }
-    var best = null, bd = Infinity, along = td == null ? null : td % 2 === 0;
-    R.forEach(function (r) { if (along != null && (r[2] - r[0] > r[3] - r[1]) !== along) return; var dx = Math.max(r[0] - px, 0, px - r[2]), dy = Math.max(r[1] - py, 0, py - r[3]), dd = Math.hypot(dx, dy); if (dd < bd) { bd = dd; best = r; } });
-    if (!best || bd * mmU > 1500) return null;
-    var hor = best[2] - best[0] > best[3] - best[1], off = 250 / mmU, mx = Math.min(Math.max(px, best[0]), best[2]), my = Math.min(Math.max(py, best[1]), best[3]);
-    return hor ? [at(mx, best[1] - off), at(mx, best[3] + off)] : [at(best[0] - off, my), at(best[2] + off, my)];
+    var along = td == null ? null : td % 2 === 0, near = [];
+    R.forEach(function (r) { if (along != null && (r[2] - r[0] > r[3] - r[1]) !== along) return; var dx = Math.max(r[0] - px, 0, px - r[2]), dy = Math.max(r[1] - py, 0, py - r[3]), dd = Math.hypot(dx, dy); if (dd * mmU <= 1500) near.push({ r: r, d: dd }); });
+    if (!near.length) return null;
+    near.sort(function (p, q) { return p.d - q.d; });
+    var sideOf = function (best) { var hor = best[2] - best[0] > best[3] - best[1], off = 250 / mmU, mx = Math.min(Math.max(px, best[0]), best[2]), my = Math.min(Math.max(py, best[1]), best[3]);
+      return hor ? [at(mx, best[1] - off), at(mx, best[3] + off)] : [at(best[0] - off, my), at(best[2] + off, my)]; };
+    /* the nearest wall — unless it has no room of the house on either side and another wall close by does (a tag written out on a porch, past a stub wall) */
+    var first = sideOf(near[0].r); if (first.indexOf('house') >= 0) return first;
+    for (var ni = 1; ni < near.length && near[ni].d <= near[0].d + 1200 / mmU; ni++) { var sd = sideOf(near[ni].r); if (sd.indexOf('house') >= 0 && sd.some(function (x) { return x !== 'house' && x !== 'wall'; })) return sd; }
+    return first;
   };
   /* the wall between the house and the garage: walked along each wall band in 20 mm steps, looking just past both faces */
   var garLen = 0, step = 20 / mmU;
@@ -437,7 +462,7 @@ async function planGeom(lib, page, items) {
   });
   var rooms = Object.keys(names).map(function (r) { return { names: names[r], kind: type(+r) }; });
   var inM = new Uint8Array(W * H); for (var i6 = 0; i6 < W * H; i6++) inM[i6] = ext[i6] ? 0 : 1;
-  return { scale: scale, area: area * 1e-4, perimeter: edges * 0.01, sides: sides, rooms: rooms, walls: R.length, gaps: gaps.length, garLen: garLen, bb: bb, mask: { m: inM, W: W, H: H, x0: bx0, y0: by0, cell: cell } };
+  return { scale: scale, area: area * 1e-4, perimeter: edges * 0.01, sides: sides, rooms: rooms, walls: R.length, gaps: gaps.length, garLen: garLen, bb: bb, rects: R.map(function (r) { return r.slice(0, 4); }), mask: { m: inM, W: W, H: H, x0: bx0, y0: by0, cell: cell } };
 }
 function applyGeom(F, G, pg, tpg, off, upper) {
   if (!G) return; if (tpg == null) tpg = pg; off = off || { dx: 0, dy: 0 };

@@ -510,8 +510,8 @@ const note=txt.slice(m.index,m.index+200).split(/\s(?=[A-Z]-\d{2}\b)/)[0];
     [true,false].forEach(vert=>{if(vert?!anyV:(anyV&&!anyH))return;const hs=hits.filter(x=>vert?x.v:!x.v),hh=hs[0]||hits[0],th=(hs.find(x=>x.th)||{}).th;
       const its=fam.items.filter(j=>/^Board — vertical/.test(LIB.cladding[j].dn)===vert),pick=(th&&its.find(j=>+LIB.cladding[j].t===+th))||its[0];if(pick==null)return;
       const o=LIB.cladding[pick],short=((o.dn||'').split(' (')[1]||'').replace(/\)$/,'');
-      out.push({el:'wall',label:'Wall – '+short+(vert?' (vertical)':'')+(wi?' · R'+wi.insR+' / '+wi.insT+' mm':''),src:hh.src,
-        build:c=>{c.name='Wall – '+short.replace(/,.*/,'')+(vert?' vertical':'');c.v.clad={m:pick};if(wi)Object.assign(c.v.fr,wi)}})})});
+      out.push({el:'wall',brand:fam.brand,prod:fam.prod,label:'Wall – '+short+(vert?' (vertical)':'')+(wi?' · R'+wi.insR+' / '+wi.insT+' mm':''),src:hh.src,
+        build:c=>{c.name='Wall – '+short.replace(/,.*/,'').replace(/ · .*/,'')+(vert?' vertical':'');c.v.clad={m:pick};if(wi)Object.assign(c.v.fr,wi)}})})});
   const ro=ins['truss roof']||ins.roof||ins.ceiling;
   if(ro&&ro.r){const a=ceilFill(ro.r),b=ro.r2?ceilFill(ro.r2):null;
     out.push({el:'roof',label:'Roof – truss, flat ceiling · R'+a.r+(b?' + R'+b.r+' over the chords':''),src:ro.src,build:c=>{c.name='Roof – truss'+(b?', two layers':'');Object.assign(c.v.fr,{insR:a.r,insT:a.t,prod:a.prod});if(b)c.v.over={on:true,r:b.r,t:b.t,prod:b.prod}}})}
@@ -540,7 +540,7 @@ function pdfFill(){let f=document.getElementById('v6dfile');if(!f){f=document.cr
    the areas the dialog leaves to the Project page are estimated from the plan, and each estimate is listed for the reader to check ---------- */
 const SIMPLE={file:'',info:null};
 function simpleFill(F){const props=seedCons(F),notes=[],N=(k,t,src)=>notes.push({k,t,src:src||''}),f1=x=>(+x).toFixed(1);
-  const h=F.stud?F.stud.v:2.4,ops=F.openings.filter(o=>o.inc!==false),opA=o=>o.width_mm*o.height_mm/1e6,
+  const h=F.stud?F.stud.v:2.4,WL=F.walls&&F.walls.length?F.walls:(F.extWall?[{len:F.extWall.len,h:F.stud?F.stud.v:null,src:F.extWall.src}]:[]),ops=F.openings.filter(o=>o.inc!==false),opA=o=>o.width_mm*o.height_mm/1e6,
     garD=ops.filter(o=>o.gar).reduce((a,o)=>a+opA(o),0),extD=ops.filter(o=>!o.gar&&o.type!=='skylight').reduce((a,o)=>a+opA(o),0);
   /* the wall to the garage: its length × the stud height, less the doors into the garage */
   props.forEach(p=>{if(p.gar)p.area=+Math.max(0,p.gar.len*h-garD).toFixed(1)});
@@ -548,17 +548,29 @@ function simpleFill(F){const props=seedCons(F),notes=[],N=(k,t,src)=>notes.push(
   /* external walls: a default wall when no cladding note was recognised; the net area is shared equally between the claddings found */
   let ext=list.filter(c=>c.el==='wall'&&c.nh!=='int');
   if(!ext.length){const c=mk('wall',x=>{x.name='Wall – external'});ensure(c);list.unshift(c);ext=[c];N('check','External wall: no cladding note was recognised — the calculator’s default wall is used. Choose the cladding and insulation in expert mode.')}
-  else props.filter(q=>q.el==='wall'&&!q.gar).forEach(q=>N('ok',q.label+(F.ins&&F.ins.wall&&F.ins.wall.r?'':' — wall insulation not found, the default is used'),q.src));
+  /* a cladding keynote ("E-01 Selected on 12mm Clad Solution AKERA Weatherboard") whose product is not in the list */
+  const known=props.filter(q=>q.el==='wall'&&!q.gar),lc=x=>String(x||'').toLowerCase();
+  (F.cladNotes||[]).forEach(k=>{if(!known.some(q=>lc(k.t).indexOf(lc(q.brand).split(/\s+/)[0])>=0||lc(k.t).indexOf(lc(q.prod).split(/\s+/)[0])>=0))N('warn',k.id+' '+k.t+' — this cladding is not in the calculator’s list, so its walls are counted with the cladding'+(ext.length>1?'s':'')+' above. Choose the nearest cladding in expert mode.',k.src)});
+  if(ext.length)props.filter(q=>q.el==='wall'&&!q.gar).forEach(q=>N('ok',q.label+(F.ins&&F.ins.wall&&F.ins.wall.r?'':' — wall insulation not found, the default is used'),q.src));
   props.filter(q=>q.gar).forEach(q=>N('check',q.label+': '+q.gar.len.toFixed(1)+' m × '+h.toFixed(2)+' m − '+garD.toFixed(1)+' m² of doors = '+q.area+' m²',q.src));
-  if(F.extWall){const gross=F.extWall.len*h,net=Math.max(0,gross-extD),each=+(net/ext.length).toFixed(1);ext.forEach(c=>{c.area=each});
-    N('check','External walls: '+F.extWall.len.toFixed(1)+' m × '+h.toFixed(2)+' m stud height − '+f1(extD)+' m² of openings = '+f1(net)+' m²'+(ext.length>1?', shared equally between the '+ext.length+' claddings (the drawings’ text does not say how much of each)':'')+'. Gable ends and walls above the top plate are not included.',F.extWall.src)}
+  /* external walls, floor by floor: the heated outline less the wall to the garage × that floor's stud height */
+  if(WL.length){const fl=['Ground floor','First floor','Second floor','Third floor'],part=WL.map((w,i)=>{const hh=w.h||2.4;return{t:(WL.length>1?fl[i]||'Floor '+(i+1):'Walls')+' '+w.len.toFixed(1)+' m × '+hh.toFixed(2)+' m',g:w.len*hh}}),
+      gross=part.reduce((a,x)=>a+x.g,0),net=Math.max(0,gross-extD),each=+(net/ext.length).toFixed(1);ext.forEach(c=>{c.area=each});
+    N('check','External walls: '+part.map(x=>x.t).join(' + ')+' = '+f1(gross)+' m² gross − '+f1(extD)+' m² of windows and doors = '+f1(net)+' m²'+(ext.length>1?', shared equally between the '+ext.length+' claddings (the drawings’ text does not say how much of each)':'')+'. Gable ends and walls above the top plate are not included.',WL[0].src)
+    WL.forEach((w,i)=>N(w.h?'ok':'check',w.h?(WL.length>1?(fl[i]||'Floor '+(i+1))+' stud height ':'Stud height ')+w.h.toFixed(3).replace(/0$/,'')+' m':(WL.length>1?(fl[i]||'Floor '+(i+1))+': stud':'Stud')+' height not found on the elevations or sections — 2.40 m assumed',w.hsrc||(F.stud&&i===0?F.stud.src:'')))}
   else N('miss','Wall areas: the plan’s walls could not be measured — enter the wall areas.')
-  N(F.stud?'ok':'check',F.stud?'Stud height '+h.toFixed(2)+' m':'Stud height not found on the sections — 2.40 m assumed',F.stud?F.stud.src:'');
+  /* a floor over the garage or over outside air (the upper floor's area not over the heated floor below) */
+  if(F.otherFloor&&F.otherFloor.v>=1){const fi=F.ins&&(F.ins['mid-floor']||F.ins.midfloor||F.ins['timber floor']),c=mk('floor',x=>{x.name='Floor – over garage / outside';x.o.lined=true});
+    if(fi&&fi.r){const P=prodDef('joist',+c.v.fr.d||240).find(x=>Math.abs(x[0]-fi.r)<1e-9);Object.assign(c.v.fr,P?{insR:P[0],insT:P[1],prod:P[2]||RPI.byMember.brand}:{insR:fi.r,insT:Math.min(+c.v.fr.d||240,Math.round(fi.r*40)),prod:''})}
+    ensure(c);c.area=F.otherFloor.v;list.push(c);
+    N('check','Floor over the garage or outside: '+f1(F.otherFloor.v)+' m² — the upper floor plan laid over the one below; the part not over a heated room.'+(fi&&fi.r?' Insulation R'+fi.r+' from the insulation summary.':' Insulation not found — the default is used.'),F.otherFloor.src)}
+  if(F.unaligned)N('warn','The floor plans could not be laid over each other, so the floor over the garage or outside and the roof area are not worked out — enter them.');
   /* the roof: a flat ceiling over the heated floor on a single-storey house */
   let roof=list.find(c=>c.el==='roof');
   if(!roof){roof=mk('roof');ensure(roof);list.push(roof);N('check','Roof: no ceiling insulation was found in the drawings’ text — the calculator’s default truss roof is used.')}
   else N('ok',roof.name+' — from the insulation summary',(props.find(q=>q.el==='roof')||{}).src);
-  if(F.area){roof.v.edge=Object.assign(roof.v.edge||{},{area:F.area.v},F.extWall?{perim:+F.extWall.len.toFixed(1)}:{});N('check','Roof: ceiling area taken as the heated floor area, '+f1(F.area.v)+' m² — right for a flat ceiling under one roof; a skillion or raking ceiling is larger.',F.area.src)}
+  if(F.roofArea){roof.v.edge=Object.assign(roof.v.edge||{},{area:F.roofArea.v},WL.length?{perim:+WL[WL.length-1].len.toFixed(1)}:{});N('check','Roof: '+f1(F.roofArea.v)+' m² — the top floor plus the parts of the floors below that are not under it, as flat ceilings. A skillion or raking ceiling is larger; perimeter and skillion parts are split out in expert mode.',F.roofArea.src)}
+  else if(F.area){roof.v.edge=Object.assign(roof.v.edge||{},{area:F.area.v},WL.length?{perim:+WL[0].len.toFixed(1)}:{});N('check','Roof: ceiling area taken as the heated floor area, '+f1(F.area.v)+' m² — right for a flat ceiling under one roof; a skillion or raking ceiling is larger.',F.area.src)}
   else N('miss','Floor and roof areas: no plan with readable walls was found — enter the areas.');
   if(F.pitch){roof.v.edge=Object.assign(roof.v.edge||{},{pitch:F.pitch.v});N('check','Roof pitch '+F.pitch.v+'° — the angle written most often on the roof sheets',F.pitch.src)}
   const Pn=Object.assign(XP.newOpen(),{wins:[],doors:[],skys:[]}),pr={date:today()};
@@ -574,7 +586,11 @@ function simpleFill(F){const props=seedCons(F),notes=[],N=(k,t,src)=>notes.push(
   const nG=ops.filter(o=>o.type==='glazing').length,nD=ops.filter(o=>o.type==='door').length,out=F.openings.filter(o=>o.inc===false&&!/inside the house/.test(o.note||''));
   if(ops.length)N('ok',nG+' windows and glazed doors, '+nD+' opaque door'+(nD===1?'':'s')+' in the envelope'+(out.length?' — left out: '+out.map(o=>o.name+' ('+(o.note||'outside the envelope')+')').join(', '):''),ops[0].src);
   else N('miss','No window or door tags with sizes were found — enter the windows and doors.');
-  if((F.levels||[]).length>1)N('warn','This set draws '+F.levels.length+' floors ('+F.levels.map(l=>l.name.toLowerCase()).join(', ')+'). Only one plan is measured so far, so the areas here cover one floor — complete them in expert mode.',F.levels[1].src);
+  if((F.units||[]).length>1)N('warn','This set draws more than one dwelling ('+F.units.map(u=>u.name.toLowerCase().replace(/^\w/,c=>c.toUpperCase())).join(', ')+'). Simple mode cannot tell their rooms apart yet, so the areas and openings here mix them — check each dwelling in expert mode.',F.units[1].src);
+  const nf=(F.floors||[]).length;
+  if(nf>1)N('ok',nf+' floor plans measured: '+F.floors.map(x=>'p.'+x.pg+' '+f1(x.area)+' m²').join(', '));
+  else if((F.levels||[]).length>1)N('warn','This set draws '+F.levels.length+' floors ('+F.levels.map(l=>l.name.toLowerCase()).join(', ')+') but only one plan could be measured, so the areas here cover one floor — complete them in expert mode.',F.levels[1].src);
+  if(F.ins&&F.ins['skillion roof']&&F.ins['skillion roof'].r)N('check','The insulation summary also lists a skillion roof (R'+F.ins['skillion roof'].r+') — its area is inside the roof figure above; split it out in expert mode.',F.ins['skillion roof'].src);
   SIMPLE.info={file:SIMPLE.file,notes};
   render();return SIMPLE.info}
 async function simpleRead(file){SIMPLE.file=file.name;hPush();const r=await EZSeed.readDrawings(file);return simpleFill(r.found)}
