@@ -499,6 +499,8 @@ function seedCons(F){const out=[],ins=F.ins||{},pages={};(F.lines||[]).forEach(l
   const studFill=r=>{const p=prodDef('stud',90).find(x=>Math.abs(x[0]-r)<1e-9&&x[1]<=90)||prodDef('stud',140).find(x=>Math.abs(x[0]-r)<1e-9);return p?{insR:p[0],insT:p[1],prod:p[2]||RPI.byMember.brand}:{insR:r,insT:90,prod:''}};
   const ceilFill=r=>{const p=PB_CEIL.find(x=>Math.abs(x[1]-r)<1e-9&&x[5]===RPI.byMember.brand)||PB_CEIL.find(x=>Math.abs(x[1]-r)<1e-9);return p?{r:p[1],t:p[2],prod:p[0]}:{r,t:Math.round(r*50),prod:''}};
   const wi=ins.wall&&ins.wall.r?studFill(ins.wall.r):null;
+  /* one summary cell, two walls ("90mm - R2.8, 140mm - R4.0"): a wall of each, on its own framing depth */
+  const wis=ins.wall&&ins.wall.alt?ins.wall.alt.map(a=>{const p=prodDef('stud',a.t).find(x=>Math.abs(x[0]-a.r)<1e-9&&x[1]<=a.t);return Object.assign(p?{insR:p[0],insT:p[1],prod:p[2]||RPI.byMember.brand}:{insR:a.r,insT:a.t,prod:''},a.t===90||a.t===140?{d:a.t}:{})}):[wi];
   /* a cladding counts where a note names it with its brand or its thickness ("14mm James Hardie Oblique …"), not in a detail title.
      Its note runs to the next keynote ID (E-02, R-01 …); it is vertical if any of its notes says so and none says horizontal */
   cladFams().forEach(fam=>{const B=fam.brand.replace(/s$/,'s?').replace(/\s+/g,'\\s+'),P=fam.prod.replace(/\s+/g,'\\s+'),own=CL_OWN.test(fam.prod),G0=new RegExp('(?:\\b(\\d{1,2}(?:\\.\\d)?)\\s*mm\\s+)?('+B+'\\s+)?'+P+'\\b','gi'),hits=[];
@@ -513,11 +515,15 @@ const note=txt.slice(m.index,m.index+200).split(/\s(?=[A-Z]-\d{2}\b)/)[0];
     [true,false].forEach(vert=>{if(vert?!anyV:(anyV&&!anyH))return;const hs=hits.filter(x=>vert?x.v:!x.v),hh=hs[0]||hits[0],th=(hs.find(x=>x.th)||{}).th;
       const its=fam.items.filter(j=>/^Board — vertical/.test(LIB.cladding[j].dn)===vert),pick=(th&&its.find(j=>+LIB.cladding[j].t===+th))||its[0];if(pick==null)return;
       const o=LIB.cladding[pick],short=((o.dn||'').split(' (')[1]||'').replace(/\)$/,'');
-      out.push({el:'wall',brand:fam.brand,prod:fam.prod,label:'Wall – '+short+(vert?' (vertical)':'')+(wi?' · R'+wi.insR+' / '+wi.insT+' mm':''),src:hh.src,
-        build:c=>{c.name='Wall – '+short.replace(/,.*/,'').replace(/ · .*/,'')+(vert?' vertical':'');c.v.clad={m:pick};if(wi)Object.assign(c.v.fr,wi)}})})});
+      wis.forEach((w,wk)=>out.push({el:'wall',alt:wis.length>1?wk:null,brand:fam.brand,prod:fam.prod,label:'Wall – '+short+(vert?' (vertical)':'')+(w?(w.d&&wis.length>1?' · '+w.d+' mm framing':'')+' · R'+w.insR+' / '+w.insT+' mm':''),src:hh.src+(wis.length>1?' · '+ins.wall.src:''),
+        build:c=>{c.name='Wall – '+short.replace(/,.*/,'').replace(/ · .*/,'')+(vert?' vertical':'')+(w&&w.d&&wis.length>1?' '+w.d+'mm':'');c.v.clad={m:pick};if(w)Object.assign(c.v.fr,w)}}))})});
   const ro=ins['truss roof']||ins.roof||ins.ceiling;
   if(ro&&ro.r){const a=ceilFill(ro.r),b=ro.r2?ceilFill(ro.r2):null;
     out.push({el:'roof',label:'Roof – truss, flat ceiling · R'+a.r+(b?' + R'+b.r+' over the chords':''),src:ro.src,build:c=>{c.name='Roof – truss'+(b?', two layers':'');Object.assign(c.v.fr,{insR:a.r,insT:a.t,prod:a.prod});if(b)c.v.over={on:true,r:b.r,t:b.t,prod:b.prod}}})}
+  /* a skillion roof in the summary: rafters with the skillion batt it names */
+  const sk=ins['skillion roof'];
+  if(sk&&sk.r){const p=PB_SKILL.find(x=>Math.abs(x[1]-sk.r)<1e-9&&x[5]===RPI.byMember.brand)||PB_SKILL.find(x=>Math.abs(x[1]-sk.r)<1e-9),fr={insR:sk.r,insT:p?p[2]:Math.round(sk.r*37),prod:p?p[0]:''};
+    out.push({el:'roof',label:'Roof – skillion, rafters · R'+sk.r+(p?' ('+p[0]+', '+p[2]+' mm)':''),src:sk.src,build:c=>{c.kind='skillion';c.name='Roof – skillion';c.v={roof:{m:libI('roofing','metal-sheet-any-profile')},fr:Object.assign({d:290,w:45,s:600,mode:'std',gap:0,cover:false},fr),st:{d:35,w:70,s:450,s450:1},ceil:{m:1}}}})}
   const all=(F.lines||[]).map(l=>l.t).join(' '),raft=/rib\s?raft|waffle|pod\s?(?:slab|raft)|raft\s+(?:slab|foundation)/i.exec(all);
   if(raft||ins['slab floor']||ins.slab){const sl=(F.lines||[]).find(l=>raft&&l.t.indexOf(raft[0])>=0);
     out.push({el:'slab',label:'Floor – concrete slab'+(raft?' (raft: '+raft[0]+')':'')+(ins['slab floor']&&ins['slab floor'].none?' · no insulation':''),src:sl?sl.src:(ins['slab floor']||{}).src,
@@ -558,8 +564,10 @@ function simpleFill(F){const props=seedCons(F),notes=[],N=(k,t,src)=>notes.push(
   props.filter(q=>q.gar).forEach(q=>N('check',q.label+': '+q.gar.len.toFixed(1)+' m × '+h.toFixed(2)+' m − '+garD.toFixed(1)+' m² of doors = '+q.area+' m²',q.src));
   /* external walls, floor by floor: the heated outline less the wall to the garage × that floor's stud height */
   if(WL.length){const fl=['Ground floor','First floor','Second floor','Third floor'],part=WL.map((w,i)=>{const hh=w.h||2.4;return{t:(WL.length>1?fl[i]||'Floor '+(i+1):'Walls')+' '+w.len.toFixed(1)+' m × '+hh.toFixed(2)+' m',g:w.len*hh}}),
-      gross=part.reduce((a,x)=>a+x.g,0),net=Math.max(0,gross-extD),each=+(net/ext.length).toFixed(1);ext.forEach(c=>{c.area=each});
-    N('check','External walls: '+part.map(x=>x.t).join(' + ')+' = '+f1(gross)+' m² gross − '+f1(extD)+' m² of windows and doors = '+f1(net)+' m²'+(ext.length>1?', shared equally between the '+ext.length+' claddings (the drawings’ text does not say how much of each)':'')+'. Gable ends and walls above the top plate are not included.',WL[0].src)
+      gross=part.reduce((a,x)=>a+x.g,0),net=Math.max(0,gross-extD);
+    /* two framing depths of one cladding (90 and 140 mm in the summary): the net area goes to the first; the other is usually a short run, left for the reader to enter */
+    const pOf=c=>props[list.indexOf(c)]||{},main=ext.filter(c=>!pOf(c).alt),rest=ext.filter(c=>pOf(c).alt),each=+(net/Math.max(1,main.length)).toFixed(1);main.forEach(c=>{c.area=each});rest.forEach(c=>{c.area=0});
+    N('check','External walls: '+part.map(x=>x.t).join(' + ')+' = '+f1(gross)+' m² gross − '+f1(extD)+' m² of windows and doors = '+f1(net)+' m²'+(main.length>1?', shared equally between the '+main.length+' claddings (the drawings’ text does not say how much of each)':'')+(rest.length?'; all on '+main.map(c=>c.name).join(', ')+' — enter the area of '+rest.map(c=>c.name).join(', ')+' and take it off':'')+'. Gable ends and walls above the top plate are not included.',WL[0].src)
     WL.forEach((w,i)=>N(w.h?'ok':'check',w.h?(WL.length>1?(fl[i]||'Floor '+(i+1))+' stud height ':'Stud height ')+w.h.toFixed(3).replace(/0$/,'')+' m':(WL.length>1?(fl[i]||'Floor '+(i+1))+': stud':'Stud')+' height not found on the elevations or sections — 2.40 m assumed',w.hsrc||(F.stud&&i===0?F.stud.src:'')))}
   else N('miss','Wall areas: the plan’s walls could not be measured — enter the wall areas.')
   /* a floor over the garage or over outside air (the upper floor's area not over the heated floor below) */
@@ -593,7 +601,7 @@ function simpleFill(F){const props=seedCons(F),notes=[],N=(k,t,src)=>notes.push(
   const nf=(F.floors||[]).length;
   if(nf>1)N('ok',nf+' floor plans measured: '+F.floors.map(x=>'p.'+x.pg+' '+f1(x.area)+' m²').join(', '));
   else if((F.levels||[]).length>1)N('warn','This set draws '+F.levels.length+' floors ('+F.levels.map(l=>l.name.toLowerCase()).join(', ')+') but only one plan could be measured, so the areas here cover one floor — complete them in expert mode.',F.levels[1].src);
-  if(F.ins&&F.ins['skillion roof']&&F.ins['skillion roof'].r)N('check','The insulation summary also lists a skillion roof (R'+F.ins['skillion roof'].r+') — its area is inside the roof figure above; split it out in expert mode.',F.ins['skillion roof'].src);
+  if(F.ins&&F.ins['skillion roof']&&F.ins['skillion roof'].r)N('check','The insulation summary also lists a skillion roof (R'+F.ins['skillion roof'].r+') — the roof area above is all on '+roof.name+'; enter the skillion part on its own row and take it off.',F.ins['skillion roof'].src);
   SIMPLE.info={file:SIMPLE.file,notes};
   render();return SIMPLE.info}
 async function simpleRead(file){SIMPLE.file=file.name;hPush();const r=await EZSeed.readDrawings(file);return simpleFill(r.found)}
