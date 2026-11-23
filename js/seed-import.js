@@ -311,7 +311,7 @@ async function measure() {
   if (levels.every(function (l) { return l.ffl != null; })) levels.sort(function (a, b) { return a.ffl - b.ffl; });
   readDrawings.plan = levels[0] ? levels[0].G : null;
   levels.forEach(function (lv, i) { var hh = hts.filter(function (h) { return h.ffl === lv.ffl; })[0] || (lv.ffl == null ? hts[i] : null); lv.h = hh || null; applyGeom(F, lv.G, lv.pg, lv.tpg, lv.off, i > 0); });
-  if (!levels.length) return F;
+  if (!levels.length) { entryDoor(F); return F; }
   var g0 = levels[0].G, where = function (lv) { return 'p.' + (lv.pg + 1) + ': the plan’s walls (1:' + lv.G.scale + ')'; };
   /* walls, floor by floor: the heated outline less the wall to the garage, at that floor's own stud height */
   F.walls = levels.map(function (lv) { var gl = lv.G.garLen > 1 ? lv.G.garLen : 0; return { len: +(lv.G.perimeter - gl).toFixed(2), gar: +gl.toFixed(2), h: lv.h ? lv.h.v : null, hsrc: lv.h ? lv.h.src : '', area: +lv.G.area.toFixed(1), src: where(lv) }; });
@@ -324,6 +324,7 @@ async function measure() {
     else F.unaligned = true;
   }
   F.floors = levels.map(function (lv) { return { pg: lv.pg + 1, ffl: lv.ffl, area: +lv.G.area.toFixed(1) }; });
+  entryDoor(F);
   return F;
 }
 
@@ -493,7 +494,8 @@ async function planGeom(lib, page, items, pts) {
   /* which spaces an opening's wall has on its two sides */
   /* an opening's tag sits beside it, written along its wall: the nearest wall running the same way as the tag's text */
   var sides = function (px, py, td, wmm) {
-    var at = function (x, y) { var X = cx(x), Y = cy(y); return X < 0 || Y < 0 || X >= W || Y >= H ? 'outside' : type(lab[Y * W + X]); };
+    var at = function (x, y) { var X = cx(x), Y = cy(y); if (X < 0 || Y < 0 || X >= W || Y >= H) return 'outside'; var l = lab[Y * W + X]; if (names[l]) sides.rooms = sides.rooms.concat(names[l]); return type(l); };
+    sides.rooms = [];   /* the names of the rooms either side, for the caller */
     /* the nearest gap of the opening's width, if the walls have them */
     var gp = null, gd = Infinity;
     gaps.forEach(function (o) { if (wmm && (o.len < wmm - 60 || o.len > wmm + Math.max(120, 0.1 * wmm))) return; var dd = Math.hypot(o.x - px, o.y - py) * mmU; if (dd < gd) { gd = dd; gp = o; } });
@@ -534,11 +536,24 @@ function applyGeom(F, G, pg, tpg, off, upper) {
   F.openings.forEach(function (o) {
     var a = o.at; if (!a || a.pg !== tpg || a.x == null) return; var s = G.sides((a.cx != null ? a.cx : a.x) + off.dx, (a.cy != null ? a.cy : a.y) + off.dy, a.td, o.width_mm); if (!s) return;
     var h = s.indexOf('house') >= 0, oth = s[0] === 'house' ? s[1] : s[0];
+    if (h) o.rm = (G.sides.rooms || []).join(' ');
     if (h && oth !== 'house' && oth !== 'wall') { o.inc = true; if (oth === 'garage') { o.note = 'to the garage'; o.gar = true; if (a.pre === 'IN') o.type = 'door'; } else o.note = oth === 'outdoor' ? 'to an outdoor space left out of the floor — an external opening' : o.width_mm ? '' : o.note; }
     /* an EX- tag says itself that it is in an external wall: where the plan reads otherwise (a gable window, a tag drawn inside the room) it stays ticked, to check */
     else if (h && oth === 'house') { if (/^EX/.test(a.pre)) o.note = (o.width_mm ? '' : 'no size on the drawings — enter its area; ') + 'check — the plan reads it as inside the house'; else { o.inc = false; o.note = 'inside the house'; } }
     else if (!h && s.indexOf('wall') < 0) { if (/^EX/.test(a.pre) && s.indexOf('garage') < 0) o.note = (o.width_mm ? '' : 'no size on the drawings — enter its area; ') + 'check — the plan reads it as outside the envelope'; else { o.inc = false; o.note = s.indexOf('garage') >= 0 ? 'garage — outside the envelope' : 'outside the envelope'; } }
   });
+}
+/* Narrow external doors: the entrance door is the solid one; the others (French doors, a laundry or a deck door) are glazed — the elevations show which.
+   The entrance is the one into an ENTRY or FOYER, or else the lowest number (EXD101) */
+function entryDoor(F) {
+  var pre = function (o) { return (o.at && o.at.pre) || o.pre || (/^[A-Z]+/.exec(o.name) || [''])[0]; };
+  var c = F.openings.filter(function (o) { return o.type === 'door' && o.inc !== false && !o.gar && pre(o) !== 'IN' && /D/.test(pre(o)) && o.width_mm; });
+  if (c.length < 2) return;
+  var e = c.filter(function (o) { return /\b(ENTRY|ENTRANCE|FOYER|LOBBY|VESTIBULE)\b/i.test(o.rm || ''); })[0] ||
+    c.slice().sort(function (p, q) { return p.name.localeCompare(q.name, undefined, { numeric: true }); })[0];
+  c.forEach(function (o) { if (o === e) { o.note = (o.note ? o.note + '; ' : '') + 'the entrance door — solid'; return; }
+    o.type = 'glazing'; if (F.winCell && !o.r_value) o.r_value = (o.frame === 'timber' ? F.winCell.timber : F.winCell.alu) || F.winCell.alu || F.winCell.timber;
+    o.note = (o.note ? o.note + '; ' : '') + 'glazed door — check on the elevations (' + e.name + ' is taken as the solid entrance door)'; });
 }
 /* ---------- what was found, to tick before it is filled in ---------- */
 function review(F, file, onApply, onCancel, cons) {
