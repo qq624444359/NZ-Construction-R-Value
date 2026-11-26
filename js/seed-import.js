@@ -147,12 +147,13 @@ function parse(pages) {
       txt = txt.replace(/\((?:c|r|tm)\)|[©®™]/gi, ' ').replace(/\s+/g, ' ').trim();
       var R = txt.match(/R\s?(\d{1,2}\.\d)(?:\s*\+\s*R?\s?(\d{1,2}\.\d))?/i), none = /^(N\/A|none|nil)\b/i.test(txt); if (!R && !none) return;
       ins[k] = { v: txt.slice(0, 60), r: R ? +R[1] : 0, r2: R && R[2] ? +R[2] : 0, none: !R, src: 'p.' + (pi + 1) + ': “' + m[1] + ': ' + txt.slice(0, 90) + '”' };
+      var pm = /perimeter\s+R\s?(\d{1,2}\.\d)/i.exec(txt); if (pm) ins[k].perim = +pm[1];   /* "R7.0+3.6 with perimeter R6.0": less over the wall plates, where the trusses are shallow */
       /* one cell, two walls: "90mm - Pink batts R2.8  140mm - Pink batts R4.0" */
       var alt = [], ra = /(\d{2,3})\s*mm\b[^R]{0,40}?R\s?(\d{1,2}\.\d)/gi, q; while ((q = ra.exec(txt))) alt.push({ t: +q[1], r: +q[2] }); if (alt.length > 1) ins[k].alt = alt;
     });
     /* the windows' cell of the summary: "Windows  Aluminium Windows - Thermally broken R0.46 (Ug1.3)  Timber Windows - R0.56 (Ug1.9)" */
     N.forEach(function (T) { if (winCell || !/^(Windows?|Glazing|Joinery)\s*:?$/i.test(T.s)) return; var t = cellText(T, N, ''); if (!t) return;
-      var al = /alumin(?:(?!timber).){0,80}?\bR\s?(0\.\d{1,2})\b/i.exec(t), tb = /timber(?:(?!alumin).){0,80}?\bR\s?(0\.\d{1,2})\b/i.exec(t); if (!al && !tb) return;
+      var al = /alumin(?:(?!timber).){0,80}?\bR\s?(0\.\d{1,2})\b/i.exec(t) || /\bR\s?-?\s?(0\.\d{1,2})\b[^R]{0,20}?alumin/i.exec(t), tb = /timber(?:(?!alumin).){0,80}?\bR\s?(0\.\d{1,2})\b/i.exec(t) || /\bR\s?-?\s?(0\.\d{1,2})\b[^R]{0,20}?timber/i.exec(t); if (!al && !tb) return;
       winCell = { alu: al ? +al[1] : 0, timber: tb ? +tb[1] : 0, src: 'p.' + (pi + 1) + ': “' + T.s + ' ' + t.slice(0, 90) + '”' }; });
     /* a frame written by a tag on the plan ("Timber Frame") */
     N.forEach(function (T) { var f = /^(timber|aluminium|aluminum|upvc|pvc)\s+(?:frame|window|joinery)s?$/i.exec(T.s); if (f) frames.push({ f: /^timber/i.test(f[1]) ? 'timber' : /pvc/i.test(f[1]) ? 'pvc' : 'alu', x: T.x, y: T.y, fs: T.fs, pg: pi }); });
@@ -160,12 +161,13 @@ function parse(pages) {
     if (N.some(function (T) { return /\bROOF\s+PLAN\b/i.test(T.s); }) && !N.some(function (T) { return /\bFLOOR\s+PLAN\b/i.test(T.s); })) roofPg[pi] = 1;
     /* a tag ("EXW 107") and the size written under it ("3000Wx1500H", or "760W" for a door) — paired by where they sit on the sheet */
     var dims = N.filter(function (n) { return RE.dims.test(n.s) && RE.dims.exec(n.s).index === 0 || RE.wonly.test(n.s); });
-    var seen = {}; N.forEach(function (T) { var m = RE.tag.exec(T.s); if (m) seen[m[2]] = 1; });
-    N.forEach(function (T) {
-      var m = RE.tag.exec(T.s), bare = !m && RE.bare.exec(T.s); if (bare && !seen[bare[1]] && Object.keys(seen).length >= 3) m = [T.s, 'EXW', bare[1]]; if (!m) return;
+    var seen = {}, used = []; N.forEach(function (T) { var m = RE.tag.exec(T.s); if (m) seen[m[2]] = 1; });
+    /* the tags with their prefix first; then a bare number ("102") may take a size no tag has — a dimension (4690) beside a tag's size does not steal it */
+    var pass = function (T, second) {
+      var m = RE.tag.exec(T.s), bare = !m && RE.bare.exec(T.s); if (!!bare !== second) return; if (bare && !seen[bare[1]] && Object.keys(seen).length >= 3) m = [T.s, 'EXW', bare[1]]; if (!m) return;
       var code = m[1].toUpperCase() + m[2].toUpperCase(), best = null, bs = 1e9;
       dims.forEach(function (D) {
-        if (D.d !== T.d || (bare && !RE.whBoth.test(D.s))) return;
+        if (D.d !== T.d || (bare && (!RE.whBoth.test(D.s) || used.indexOf(D) >= 0))) return;
         var db = T.b - D.b, da = Math.abs(D.a - T.a), s;
         if (db > 0.2 * T.fs && db < 3.2 * T.fs && da < 3 * T.fs) s = da + db;
         else if (Math.abs(db) < 0.3 * T.fs && D.a > T.a + T.w - 1 && D.a - (T.a + T.w) < 4 * T.fs) s = D.a - (T.a + T.w);
@@ -173,11 +175,12 @@ function parse(pages) {
         if (s < bs) { bs = s; best = D; }
       });
       if (!best) { if (!bare && /^EX/i.test(m[1]) && !nos[code]) nos[code] = { pre: m[1].toUpperCase(), name: code, width_mm: 0, height_mm: 0, x: T.x, y: T.y, pg: pi, td: T.d, src: 'p.' + (pi + 1) + ': “' + T.s + '” — no size beside it' }; return; }
-      if (ops[code]) return;
+      if (ops[code]) return; used.push(best);
       var dd = RE.dims.exec(best.s), w, h;
       if (dd && dd.index === 0) { var s2 = wh(dd); w = s2[0]; h = s2[1]; } else { w = +RE.wonly.exec(best.s)[1]; h = 0; }
       ops[code] = { pre: m[1].toUpperCase(), name: code, width_mm: w, height_mm: h, x: T.x, y: T.y, pg: pi, td: T.d, cx: T.x + Math.cos(T.d * Math.PI / 2) * T.w / 2 - Math.sin(T.d * Math.PI / 2) * T.fs * 0.35, cy: T.y + Math.sin(T.d * Math.PI / 2) * T.w / 2 + Math.cos(T.d * Math.PI / 2) * T.fs * 0.35, src: 'p.' + (pi + 1) + ': “' + T.s + ' — ' + best.s + '”' };
-    });
+    };
+    N.forEach(function (T) { pass(T, false); }); N.forEach(function (T) { pass(T, true); });
     /* an R-value written beside a window ("R0.46") belongs to the nearest tag */
     N.forEach(function (R) { var m = RE.rlab.exec(R.s); if (m) rs.push({ r: +m[1], x: R.x, y: R.y, pg: pi }); });
   });
@@ -189,6 +192,11 @@ function parse(pages) {
   Object.keys(nos).forEach(function (k) { if (!ops[k]) ops[k] = nos[k]; });
   /* each tag takes the frame written right by it */
   Object.keys(ops).forEach(function (k) { var o = ops[k], b = null, bd = 1e9; frames.forEach(function (f) { if (f.pg !== o.pg || o.x == null) return; var d = Math.hypot(f.x - o.x, f.y - o.y); if (d < 3 * f.fs && d < bd) { bd = d; b = f; } }); if (b) o.frame = b.f; });
+  /* "sectional garage door … R0.85": an insulated garage door puts the garage inside the thermal envelope (its floor, walls and door are counted; the wall to the house is internal) */
+  var garDoor = null; pages.forEach(function (N, pi) { N.forEach(function (T) { if (garDoor || !/garage\s+door/i.test(T.s)) return;
+    /* the note and the lines under it, in its column */
+    var t = [T].concat(N.filter(function (D) { var db = T.b - D.b; return D !== T && D.d === T.d && Math.abs(D.a - T.a) < 2 * T.fs && db > 0.3 * T.fs && db < 3.5 * T.fs; }).sort(function (p, q) { return q.b - p.b; })).map(function (D) { return D.s; }).join(' ');
+    var m = /garage\s+door.{0,80}?\bR\s?-?\s?(\d\.\d{1,2})\b/i.exec(t); if (m && +m[1] >= 0.3 && +m[1] <= 3) garDoor = { r: +m[1], src: 'p.' + (pi + 1) + ': “' + m[0].replace(/\s+/g, ' ').slice(0, 90) + '”' }; }); });
   var list = Object.keys(ops).sort(function (a, b) { return a.localeCompare(b, undefined, { numeric: true }); }).map(function (k) {
     var o = ops[k], inr = o.pre === 'IN';
     if (!o.height_mm && o.width_mm) o.height_mm = inr ? headIn || 2200 : headEx || 2400;
@@ -217,14 +225,15 @@ function parse(pages) {
   var ar = areas.sort(function (a, b) { return (b.total - a.total) || (b.v - a.v); })[0] || null;
   return {
     address: pick(A), legal: pick(Lg), client: pick(Cl), designer: pick(Ds),
-    area: ar, perimeter: perims[0] || null, openings: list, winR: winR, winCell: winCell, ins: ins, lines: lines,
+    area: ar, perimeter: perims[0] || null, openings: list, winR: winR, winCell: winCell, garDoor: garDoor, ins: ins, lines: lines,
     units: (function () { var u = {}; lines.forEach(function (l) { var re = /\b(LOT|UNIT|DWELLING|HOUSE|TYPE)\s?-?\s?(\d{1,2}|[A-H])\b(?!\s*(?:DPS?|LT|SO|ON)\b)\s*[-–:]?\s*(?:\+\s*\S+\s+)?(?:BASEMENT|LOWER GROUND|GROUND|FIRST|SECOND|UPPER|LEVEL|FLOOR|ROOF|SECTION|ELEVATION)/gi, m; while ((m = re.exec(l.t))) { var k = m[1].toUpperCase() + ' ' + m[2].toUpperCase(); if (!u[k]) u[k] = l.src; } }); return Object.keys(u).map(function (k) { return { name: k, src: u[k] }; }); })(),
     cladNotes: cladNotes(lines), ta: ta, levels: Object.keys(lv).map(function (k) { return { name: k, src: lv[k] }; }), pitch: pv ? { v: +pv, n: pc[pv], src: psrc[pv] } : null
   };
 }
 /* the wall keynotes: "E-01 Selected on 12mm Clad Solution AKERA Weatherboard (AKS 300) with …" — one per ID, cut at "with" / "on building paper" */
 function cladNotes(lines) {
-  var out = {}; lines.forEach(function (l) { var m = /^(E-\d{2})\s+(.{8,})$/.exec(l.t); if (!m || (out[m[1]] && out[m[1]].full.length >= m[2].length)) return;   /* the longest of its occurrences: a note may lose its last word to the next line on one sheet */
+  var out = {}; lines.forEach(function (l) { var m = /^(E-\d{2})\s+(.{8,})$/.exec(l.t); if (!m || (out[m[1]] && out[m[1]].full.length >= m[2].length)) return;
+    if (/\b(?:(?:Skillion|Truss|Pitched)\s+Roof|(?:Slab|Timber)\s+Floor|Wall)\s*:/i.test(m[2])) return;   /* a line run into the insulation summary beside it is not the note */   /* the longest of its occurrences: a note may lose its last word to the next line on one sheet */
     var t = m[2].replace(/\s+(?:with|fixed|over)\b.*$/i, '').replace(/^Selected\s+(?:paint|one coating|finish)?\s*(?:on\s+)?/i, '').replace(/(\s+(?:IN\d+|EX[WD]\s?\d+|[A-Z]{3,}(?:\s+[A-Z]{3,})+))+$/, '').trim(); if (t.length < 6 || !/[A-Za-z]{3}/.test(t)) return;
     out[m[1]] = { id: m[1], t: t.slice(0, 70), full: m[2], src: l.src }; });
   return Object.keys(out).sort().map(function (k) { return out[k]; });
@@ -286,7 +295,7 @@ async function measure() {
   var pgs = {}; F.openings.forEach(function (o) { if (o.at && o.at.pg != null) pgs[o.at.pg] = (pgs[o.at.pg] || 0) + 1; });
   var top = Math.max.apply(0, Object.keys(pgs).map(function (k) { return pgs[k]; }).concat(0));
   var tagPgs = Object.keys(pgs).map(Number).filter(function (p) { return pgs[p] >= 3 && pgs[p] >= 0.2 * top; }).sort(function (a, b) { return a - b; });
-  var cache = {}, geom = async function (p) { if (!(p in cache)) { try { cache[p] = await planGeom(lib, await doc.getPage(p + 1), pages[p]); } catch (e) { console.warn('plan walls not read (p.' + (p + 1) + '):', e); cache[p] = null; } } return cache[p]; };
+  var cache = {}, geom = async function (p) { if (!(p in cache)) { try { cache[p] = await planGeom(lib, await doc.getPage(p + 1), pages[p], null, !!F.garDoor); } catch (e) { console.warn('plan walls not read (p.' + (p + 1) + '):', e); cache[p] = null; } } return cache[p]; };
   var ROOMW = /^(BED(ROOM)?\s?\d*|MASTER|LIVING|LOUNGE|FAMILY|DINING|KITCHEN|SCULLERY|PANTRY|BATH(ROOM)?|ENS(UITE)?\s?\d*|WC|TOILET|LAUNDRY|LDRY|GARAGE|CARPORT|STUDY|OFFICE|ENTRY|FOYER|HALL(WAY)?|WIR\s?\d*|WR\s?\d*|ROBE|MEDIA|RUMPUS|GUEST|STORE|STORAGE|ST|LINEN|LIN|UTILITY|POWDER|DECK|PATIO|YARD|COURTYARD|PORCH|LOBBY|STAIRS?|VOID)$/i;
   /* a services plan (drainage, plumbing, electrical) draws the same walls but is not the floor plan: it is often placed differently on its sheet */
   var svc = function (p) { return toLines(pages[p]).some(function (l) { return /\b(DRAINAGE|PLUMBING|ELECTRICAL|LIGHTING|SERVICES)\s+PLAN\b/i.test(l); }); };
@@ -305,7 +314,7 @@ async function measure() {
     var bo2 = C === T ? null : bandOff(GT, GC), off0 = C === T ? { dx: 0, dy: 0 } : gridOff(pages[T], pages[C]) || (bo2 && bo2.n >= 6 ? bo2 : null);
     /* the walls once more, with the opening tags laid on them: an opening drawn as a gap between two wall pieces is closed where a tag says it is one */
     if (off0) { var pts = F.openings.filter(function (o) { return o.at && o.at.pg === T && o.at.x != null && o.at.pre !== 'IN'; }).map(function (o) { var a = o.at; return [(a.cx != null ? a.cx : a.x) + off0.dx, (a.cy != null ? a.cy : a.y) + off0.dy, o.width_mm * (o.qty || 1)]; });
-      if (pts.length) { try { var G2 = await planGeom(lib, await doc.getPage(C + 1), pages[C], pts); if (G2 && G2.area > 10) GC = G2; } catch (e) { console.warn('plan walls not re-read (p.' + (C + 1) + '):', e); } } }
+      if (pts.length) { try { var G2 = await planGeom(lib, await doc.getPage(C + 1), pages[C], pts, !!F.garDoor); if (G2 && G2.area > 10) GC = G2; } catch (e) { console.warn('plan walls not re-read (p.' + (C + 1) + '):', e); } } }
     levels.push({ tpg: T, pg: C, G: GC, ffl: ffl, off: off0 || { dx: GC.bb[0] - GT.bb[0], dy: GC.bb[1] - GT.bb[1] } });
   }
   if (levels.every(function (l) { return l.ffl != null; })) levels.sort(function (a, b) { return a.ffl - b.ffl; });
@@ -315,7 +324,7 @@ async function measure() {
   var g0 = levels[0].G, where = function (lv) { return 'p.' + (lv.pg + 1) + ': the plan’s walls (1:' + lv.G.scale + ')'; };
   /* walls, floor by floor: the heated outline less the wall to the garage, at that floor's own stud height */
   F.walls = levels.map(function (lv) { var gl = lv.G.garLen > 1 ? lv.G.garLen : 0; return { len: +(lv.G.perimeter - gl).toFixed(2), gar: +gl.toFixed(2), h: lv.h ? lv.h.v : null, hsrc: lv.h ? lv.h.src : '', area: +lv.G.area.toFixed(1), src: where(lv) }; });
-  if (F.garWall) F.garWall.h = F.walls[0].h;
+  if (F.garWall && F.walls[0].h) F.garWall.h = { v: F.walls[0].h, src: F.walls[0].hsrc || '' };
   /* floors over the garage or over outside air, and the roof: the upper outlines laid over the lower ones */
   if (levels.length > 1) {
     var other = 0, roof = levels[levels.length - 1].G.area, ok = true;
@@ -357,7 +366,7 @@ function levelHeights(pages) {
 var GAR = /^(GARAGE|CARPORT)$/i, OUTD = /^(YARD|COURTYARD|DECK|PATIO|PORCH|VERANDAH|ALFRESCO|OUTLOOK)$/i;
 /* two wall pieces on one line (B: the axis across the wall): their bands overlap by most of the thinner one — a 95 mm mullion in a 145 mm wall is on its line */
 function inLine(r, q, B) { var t = Math.min(r[B + 2] - r[B], q[B + 2] - q[B]), ov = Math.min(r[B + 2], q[B + 2]) - Math.max(r[B], q[B]); return t > 0 && ov >= 0.6 * t && Math.max(r[B + 2] - r[B], q[B + 2] - q[B]) <= 2.2 * t; }
-async function planGeom(lib, page, items, pts) {
+async function planGeom(lib, page, items, pts, garIn) {
   var OPS = lib.OPS, U = lib.Util, ol = await page.getOperatorList(), fn = ol.fnArray, ar = ol.argsArray;
   var ctm = [1, 0, 0, 1, 0, 0], fill = '#000000', st = [], cur = [], shapes = [], clip = null, pclip = false;
   var hex = function (a) { if (typeof a[0] === 'string') return a[0].toLowerCase(); return '#' + [0, 1, 2].map(function (i) { return ('0' + Math.round(+a[i] || 0).toString(16)).slice(-2); }).join(''); };
@@ -470,7 +479,7 @@ async function planGeom(lib, page, items, pts) {
     var x = cx(it.x + (it.w / 2) * (it.d === 0 ? 1 : 0)), y = cy(it.y); if (x < 0 || y < 0 || x >= W || y >= H) return;
     var r = lab[y * W + x]; if (!r || r === out) return;
     (names[r] = names[r] || []).push(s);
-    if (GAR.test(s)) kind[r] = 'garage'; else if (OUTD.test(s) && kind[r] !== 'garage') kind[r] = 'outdoor';
+    if (GAR.test(s)) { if (!garIn) kind[r] = 'garage'; } else if (OUTD.test(s) && kind[r] !== 'garage') kind[r] = 'outdoor';
   });
   var type = function (r) { return !r ? 'wall' : r === out ? 'outside' : kind[r] || 'house'; };
   /* the heated floor: the house's spaces and the wall cells within one wall thickness of them */
@@ -487,6 +496,8 @@ async function planGeom(lib, page, items, pts) {
   heat = grow;
   /* fill small holes (a duct, a column), then measure: cells × 0.0001 m², and the outline by its cell edges */
   var ext = new Uint8Array(W * H), hh = 0, tt = 0; q[tt++] = 0; ext[0] = 1;
+  /* a named outdoor space or a garage left out is outside even where the house closes round it (a YARD in the middle of the plan): it is no hole to fill */
+  for (var i5 = 0; i5 < W * H; i5++) if (!heat[i5] && lab[i5] && lab[i5] !== out && type(lab[i5]) !== 'house') { ext[i5] = 1; q[tt++] = i5; }
   while (hh < tt) { var c3 = q[hh++], x3 = c3 % W, y3 = (c3 - x3) / W;
     [[x3 > 0, c3 - 1], [x3 < W - 1, c3 + 1], [y3 > 0, c3 - W], [y3 < H - 1, c3 + W]].forEach(function (z) { if (z[0] && !heat[z[1]] && !ext[z[1]]) { ext[z[1]] = 1; q[tt++] = z[1]; } }); }
   var area = 0, edges = 0;
@@ -528,7 +539,7 @@ async function planGeom(lib, page, items, pts) {
 }
 function applyGeom(F, G, pg, tpg, off, upper) {
   if (!G) return; if (tpg == null) tpg = pg; off = off || { dx: 0, dy: 0 };
-  var src = 'p.' + (pg + 1) + ': the plan’s walls (1:' + G.scale + ') — heated floor to the outer face of the framing, ' + (G.rooms.some(function (r) { return r.kind === 'garage'; }) ? 'garage' : '') + (G.rooms.some(function (r) { return r.kind === 'outdoor'; }) ? ' and ' + G.rooms.filter(function (r) { return r.kind === 'outdoor'; }).map(function (r) { return r.names.filter(function (s) { return OUTD.test(s); })[0]; }).join(', ') : '') + ' left out';
+  var src = 'p.' + (pg + 1) + ': the plan’s walls (1:' + G.scale + ') — heated floor to the outer face of the framing, ' + (G.rooms.some(function (r) { return r.kind === 'garage'; }) ? 'garage' : '') + (G.rooms.some(function (r) { return r.kind === 'outdoor'; }) ? ' and ' + G.rooms.filter(function (r) { return r.kind === 'outdoor'; }).map(function (r) { return r.names.filter(function (s) { return OUTD.test(s); })[0]; }).join(', ') : '') + ' left out' + (F.garDoor && !upper ? '; the garage counted in — its door is insulated, R' + F.garDoor.r : '');
   if (G.area > 10 && !upper) { F.area = { v: +G.area.toFixed(1), src: src }; F.perimeter = { v: +G.perimeter.toFixed(2), src: src }; }
   /* the external walls: the heated floor's outline less the wall to the garage */
   if (G.area > 10 && !upper) F.extWall = { len: +(G.perimeter - (G.garLen > 1 ? G.garLen : 0)).toFixed(2), src: 'p.' + (pg + 1) + ': the plan’s walls (1:' + G.scale + ') — the heated floor’s outline ' + G.perimeter.toFixed(2) + ' m' + (G.garLen > 1 ? ' less the ' + G.garLen.toFixed(2) + ' m to the garage' : '') };
@@ -537,7 +548,8 @@ function applyGeom(F, G, pg, tpg, off, upper) {
     var a = o.at; if (!a || a.pg !== tpg || a.x == null) return; var s = G.sides((a.cx != null ? a.cx : a.x) + off.dx, (a.cy != null ? a.cy : a.y) + off.dy, a.td, o.width_mm); if (!s) return;
     var h = s.indexOf('house') >= 0, oth = s[0] === 'house' ? s[1] : s[0];
     if (h) o.rm = (G.sides.rooms || []).join(' ');
-    if (h && oth !== 'house' && oth !== 'wall') { o.inc = true; if (oth === 'garage') { o.note = 'to the garage'; o.gar = true; if (a.pre === 'IN') o.type = 'door'; } else o.note = oth === 'outdoor' ? 'to an outdoor space left out of the floor — an external opening' : o.width_mm ? '' : o.note; }
+    if (F.garDoor && h && oth === 'outside' && /D/.test(a.pre) && o.width_mm >= 2100 && /GARAGE/i.test(o.rm || '')) { o.type = 'door'; o.r_value = F.garDoor.r; o.garDoor = 1; }
+    if (h && oth !== 'house' && oth !== 'wall') { o.inc = true; if (oth === 'garage') { o.note = 'to the garage'; o.gar = true; if (a.pre === 'IN') o.type = 'door'; } else o.note = oth === 'outdoor' ? 'to an outdoor space left out of the floor — an external opening' : o.garDoor ? 'insulated garage door R' + o.r_value + ' — the garage is inside the envelope' : o.width_mm ? '' : o.note; }
     /* an EX- tag says itself that it is in an external wall: where the plan reads otherwise (a gable window, a tag drawn inside the room) it stays ticked, to check */
     else if (h && oth === 'house') { if (/^EX/.test(a.pre)) o.note = (o.width_mm ? '' : 'no size on the drawings — enter its area; ') + 'check — the plan reads it as inside the house'; else { o.inc = false; o.note = 'inside the house'; } }
     else if (!h && s.indexOf('wall') < 0) { if (/^EX/.test(a.pre) && s.indexOf('garage') < 0) o.note = (o.width_mm ? '' : 'no size on the drawings — enter its area; ') + 'check — the plan reads it as outside the envelope'; else { o.inc = false; o.note = s.indexOf('garage') >= 0 ? 'garage — outside the envelope' : 'outside the envelope'; } }
@@ -547,7 +559,7 @@ function applyGeom(F, G, pg, tpg, off, upper) {
    The entrance is the one into an ENTRY or FOYER, or else the lowest number (EXD101) */
 function entryDoor(F) {
   var pre = function (o) { return (o.at && o.at.pre) || o.pre || (/^[A-Z]+/.exec(o.name) || [''])[0]; };
-  var c = F.openings.filter(function (o) { return o.type === 'door' && o.inc !== false && !o.gar && pre(o) !== 'IN' && /D/.test(pre(o)) && o.width_mm; });
+  var c = F.openings.filter(function (o) { return o.type === 'door' && o.inc !== false && !o.gar && !o.garDoor && pre(o) !== 'IN' && /D/.test(pre(o)) && o.width_mm && o.width_mm < 1100; });
   if (c.length < 2) return;
   var e = c.filter(function (o) { return /\b(ENTRY|ENTRANCE|FOYER|LOBBY|VESTIBULE)\b/i.test(o.rm || ''); })[0] ||
     c.slice().sort(function (p, q) { return p.name.localeCompare(q.name, undefined, { numeric: true }); })[0];

@@ -601,6 +601,7 @@ function simpleFill(F){const props=seedCons(F),notes=[],N=(k,t,src)=>notes.push(
   const nf=(F.floors||[]).length;
   if(nf>1)N('ok',nf+' floor plans measured: '+F.floors.map(x=>'p.'+x.pg+' '+f1(x.area)+' m²').join(', '));
   else if((F.levels||[]).length>1)N('warn','This set draws '+F.levels.length+' floors ('+F.levels.map(l=>l.name.toLowerCase()).join(', ')+') but only one plan could be measured, so the areas here cover one floor — complete them in expert mode.',F.levels[1].src);
+  if(F.ins&&F.ins['truss roof']&&F.ins['truss roof'].perim)N('check','The insulation summary gives the roof perimeter R'+F.ins['truss roof'].perim+' (over the wall plates, where the trusses are shallow) — the whole roof is counted at the main figure; split the perimeter strip off as a second roof in expert mode.',F.ins['truss roof'].src);
   if(F.ins&&F.ins['skillion roof']&&F.ins['skillion roof'].r)N('check','The insulation summary also lists a skillion roof (R'+F.ins['skillion roof'].r+') — the roof area above is all on '+roof.name+'; enter the skillion part on its own row and take it off.',F.ins['skillion roof'].src);
   SIMPLE.info={file:SIMPLE.file,notes};
   render();return SIMPLE.info}
