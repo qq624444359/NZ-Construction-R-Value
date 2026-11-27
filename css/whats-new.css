@@ -1,0 +1,25 @@
+/* What's new: the release notes dialog and its button in the bar */
+.nav-wn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:600 12.5px/1 Inter;white-space:nowrap;cursor:pointer}
+.nav-wn:hover{border-color:var(--border-strong)}
+.nav-wn .ezwn-v{font:600 11px/1 'JetBrains Mono',monospace;color:var(--text-3)}
+@media(max-width:560px){.nav-r .nav-wn{display:none}}   /* the bar is full on a phone: the footer link opens the notes there */
+.ezwn-link{background:none;border:0;padding:0;font:inherit;color:var(--brand-on);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+#ezwn{position:fixed;inset:0;z-index:1100;display:grid;place-items:center;padding:16px}
+#ezwn .ezwn-bg{position:absolute;inset:0;background:rgba(15,23,42,.45)}
+#ezwn .ezwn-box{position:relative;display:flex;flex-direction:column;width:100%;max-width:560px;max-height:min(80vh,680px);padding:22px 22px 18px;border-radius:16px;border:1px solid var(--border);background:var(--surface);box-shadow:0 20px 50px rgba(15,23,42,.25)}
+#ezwn h3{font:700 18px/1.3 Inter;color:var(--text)}
+#ezwn .ezwn-sub{margin:4px 0 14px;font:400 13.5px/1.5 Inter;color:var(--text-2)}
+#ezwn .ezwn-list{overflow:auto;min-height:0;margin:0 -4px;padding:0 4px}
+#ezwn section{padding:12px 0;border-top:1px solid var(--border)}
+#ezwn .ezwn-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+#ezwn .ezwn-h b{font:700 14px/1.3 Inter;color:var(--text)}
+#ezwn .ezwn-h span{font:500 12px/1 'JetBrains Mono',monospace;color:var(--text-3);white-space:nowrap}
+#ezwn ul{margin:0;padding-left:18px}
+#ezwn li{margin:5px 0;font:400 13.5px/1.55 Inter;color:var(--text-2);overflow-wrap:anywhere}
+#ezwn details{border-top:1px solid var(--border);padding-top:10px}
+#ezwn summary{cursor:pointer;font:600 13px/1.4 Inter;color:var(--brand-on)}
+#ezwn details section:first-of-type{border-top:0}
+#ezwn .ezwn-foot{display:flex;justify-content:flex-end;padding-top:16px}
+#ezwn .ezwn-ok{height:38px;padding:0 18px;border-radius:9px;border:0;background:var(--brand);color:#fff;font:600 13.5px/1 Inter;cursor:pointer}
+#ezwn .ezwn-ok:hover{background:var(--brand-h)}
+#ezwn .ezwn-ok:focus{outline:none}#ezwn .ezwn-ok:focus-visible{outline:2px solid var(--brand-on);outline-offset:2px}
